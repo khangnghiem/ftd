@@ -25,3 +25,6 @@ ftd-vscode/node_modules/
 ftd-vscode/out/
 ftd-vscode/wasm/
 *.vsix
+
+# Environment secrets
+.env

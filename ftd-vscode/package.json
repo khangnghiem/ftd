@@ -3,7 +3,7 @@
   "displayName": "FTD — Fast Draft",
   "description": "Syntax highlighting, live parser validation, and interactive canvas editor for .ftd (Fast Draft) files",
   "version": "0.1.0",
-  "publisher": "khangnghiem",
+  "publisher": "KhangNghiem",
   "license": "MIT",
   "icon": "icon.png",
   "repository": {

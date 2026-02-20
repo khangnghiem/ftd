@@ -51,7 +51,7 @@ class FtdEditorProvider implements vscode.CustomTextEditorProvider {
           edit.replace(
             document.uri,
             new vscode.Range(0, 0, document.lineCount, 0),
-            message.text
+            message.text ?? ""
           );
           vscode.workspace.applyEdit(edit);
           break;
