@@ -5,8 +5,17 @@
   "patterns": [
     { "include": "#comment" },
     { "include": "#style-block" },
+    {
+      "include": "#table-block"
+    },
+    {
+      "include": "#clone-line"
+    },
     { "include": "#node-declaration" },
     { "include": "#constraint-line" },
+    {
+      "include": "#anim-block"
+    },
     { "include": "#property" },
     { "include": "#string" },
     { "include": "#hex-color" },
@@ -34,19 +43,99 @@
         { "include": "#number" }
       ]
     },
+    "table-block": {
+      "begin": "\\b(table)\\s+(group|rect|ellipse|path|text)\\s*\\{",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.declaration.table.ftd"
+        },
+        "2": {
+          "name": "keyword.declaration.node.ftd"
+        }
+      },
+      "end": "\\}",
+      "patterns": [
+        {
+          "include": "#comment"
+        },
+        {
+          "include": "#hex-color"
+        },
+        {
+          "include": "#node-id"
+        },
+        {
+          "include": "#number"
+        },
+        {
+          "include": "#string"
+        }
+      ]
+    },
+    "clone-line": {
+      "match": "(@\\w+)\\s*(=)\\s*(clone)\\s+(@\\w+)",
+      "captures": {
+        "1": {
+          "name": "variable.other.node-id.ftd"
+        },
+        "2": {
+          "name": "keyword.operator.assignment.ftd"
+        },
+        "3": {
+          "name": "keyword.control.clone.ftd"
+        },
+        "4": {
+          "name": "variable.other.node-id.ftd"
+        }
+      }
+    },
+    "anim-block": {
+      "begin": "\\b(anim)\\s+(:\\w+)\\s*\\{",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.declaration.anim.ftd"
+        },
+        "2": {
+          "name": "entity.name.tag.trigger.ftd"
+        }
+      },
+      "end": "\\}",
+      "patterns": [
+        {
+          "include": "#comment"
+        },
+        {
+          "include": "#property"
+        },
+        {
+          "include": "#hex-color"
+        },
+        {
+          "include": "#number"
+        },
+        {
+          "include": "#keywords"
+        }
+      ]
+    },
     "node-declaration": {
       "match": "\\b(group|rect|ellipse|path|text)\\b",
       "name": "keyword.declaration.node.ftd"
     },
     "constraint-line": {
-      "match": "(@\\w+)\\s*(->)",
+      "match": "(@\\w+)\\s*(->)\\s*(\\w+)\\s*:",
       "captures": {
         "1": { "name": "variable.other.node-id.ftd" },
-        "2": { "name": "keyword.operator.constraint-arrow.ftd" }
+        "2": {
+          "name": "keyword.operator.constraint-arrow.ftd"
+        },
+        "3": {
+          "name": "support.type.property-name.ftd"
+        }
       }
     },
     "property": {
-      "match": "\\b(w|h|x|y|fill|stroke|font|corner|opacity|shadow|bg|layout|use|center_in|offset|gap|pad|scale|rotate|translate|ease|duration|cols)\\s*:",
+      "match": "\\b(w|h|width|height|x|y|fill|stroke|font|corner|opacity|shadow|bg|layout|use|center_in|offset|fill_parent|absolute|gap|pad|scale|rotate|translate|ease|duration|cols|text_align)\\s*:",
       "captures": {
         "1": { "name": "support.type.property-name.ftd" }
       }
@@ -65,11 +154,11 @@
       "name": "string.quoted.double.ftd"
     },
     "number": {
-      "match": "\\b\\d+(\\.\\d+)?\\b",
+      "match": "-?\\b\\d+(\\.\\d+)?\\b",
       "name": "constant.numeric.ftd"
     },
     "keywords": {
-      "match": "\\b(anim|column|row|grid|free|spring|linear|ease_in|ease_out|ease_in_out|canvas)\\b",
+      "match": "\\b(anim|clone|table|style|column|row|grid|free|spring|linear|ease_in|ease_out|ease_in_out|canvas|hover|press|enter)\\b",
       "name": "keyword.other.ftd"
     }
   }
