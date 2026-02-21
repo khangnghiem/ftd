@@ -44,10 +44,10 @@ fn hit_test_node(
         return None;
     }
 
-    if let Some(b) = bounds.get(&idx) {
-        if b.contains(px, py) {
-            return Some(node.id);
-        }
+    if let Some(b) = bounds.get(&idx)
+        && b.contains(px, py)
+    {
+        return Some(node.id);
     }
 
     None

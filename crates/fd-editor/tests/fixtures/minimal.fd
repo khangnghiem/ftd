@@ -1,0 +1,6 @@
+# Minimal FD document — single rect node
+
+rect @box {
+  w: 100 h: 50
+  fill: #FF0000
+}

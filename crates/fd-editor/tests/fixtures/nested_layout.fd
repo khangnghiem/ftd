@@ -1,0 +1,41 @@
+# Nested layout — exercises the layout solver with groups, columns, and constraints
+
+group @sidebar {
+  layout: column gap=8 pad=16
+
+  rect @nav_item_1 {
+    w: 200 h: 40
+    fill: #E0E0E0
+    corner: 4
+  }
+
+  rect @nav_item_2 {
+    w: 200 h: 40
+    fill: #E0E0E0
+    corner: 4
+  }
+
+  rect @nav_item_3 {
+    w: 200 h: 40
+    fill: #E0E0E0
+    corner: 4
+  }
+}
+
+group @main_content {
+  layout: column gap=12 pad=24
+
+  text @heading "Dashboard" {
+    font: "Inter" 700 28
+    fill: #1A1A2E
+  }
+
+  rect @card {
+    w: 400 h: 200
+    fill: #FFFFFF
+    corner: 12
+    stroke: #E0E0E0 1
+  }
+}
+
+@sidebar -> center_in: canvas

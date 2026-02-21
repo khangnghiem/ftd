@@ -1,0 +1,87 @@
+# FD v1
+# Constraint-based layout — demonstrates all positioning strategies
+
+# ─── Canvas-centered hero ────────────────────────────────────────────────
+
+group @hero {
+  layout: column gap=16 pad=40
+
+  ## "Hero section — demonstrates center_in constraint"
+
+  text @hero_title "Welcome to FD" { font: "Inter" 800 48; fill: #1A1A2E }
+  text @hero_sub "The token-efficient design format" {
+    font: "Inter" 18; fill: #6B7280
+  }
+
+  rect @hero_cta {
+    w: 200 h: 52
+    corner: 12
+    fill: #6C5CE7
+
+    text "Try It Now" { font: "Inter" 600 16; fill: #FFF }
+
+    anim :hover { fill: #5A4BD1; scale: 1.04; ease: spring 250ms }
+  }
+}
+
+# ─── Offset-positioned tooltip ───────────────────────────────────────────
+
+rect @tooltip_target {
+  w: 160 h: 48
+  corner: 8
+  fill: #F5F5F7
+  stroke: #E8E8EC 1
+  ## "Anchor element for tooltip"
+
+  text "Hover me" { font: "Inter" 500 14; fill: #333 }
+}
+
+rect @tooltip {
+  w: 200 h: 44
+  corner: 8
+  fill: #1A1A2E
+  ## "Tooltip — positioned via offset constraint"
+
+  text "I'm 20px right, 60px down" { font: "Inter" 13; fill: #FFF }
+
+  anim :enter { opacity: 1; ease: ease_out 300ms }
+}
+
+# ─── Fill-parent panel ───────────────────────────────────────────────────
+
+rect @full_width_bg {
+  w: 800 h: 120
+  fill: #F8F9FA
+  corner: 0
+  ## "Background that fills parent width with 24px padding"
+
+  group { layout: row gap=16 pad=24
+    text "This panel uses fill_parent with 24px inset" {
+      font: "Inter" 14; fill: #6B7280
+    }
+  }
+}
+
+# ─── Floating action button ─────────────────────────────────────────────
+
+rect @fab {
+  w: 56 h: 56
+  corner: 28
+  fill: #6C5CE7
+  bg: #6C5CE7 corner=28 shadow=(0,4,16,#6C5CE760)
+  ## "Floating action button — fixed bottom-right"
+  ## accept: "persists across scroll"
+
+  text "+" { font: "Inter" 700 24; fill: #FFF }
+
+  anim :hover { scale: 1.1; ease: spring 300ms }
+  anim :press { scale: 0.9; ease: spring 150ms }
+}
+
+# ─── Constraints ─────────────────────────────────────────────────────────
+
+@hero -> center_in: canvas
+@tooltip_target -> offset: @hero 0, 180
+@tooltip -> offset: @tooltip_target 20, 60
+@full_width_bg -> fill_parent: 24
+@fab -> offset: @hero 360, 300

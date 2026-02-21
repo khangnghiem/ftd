@@ -421,12 +421,12 @@ fn starts_with_child_node(input: &str) -> bool {
             if keyword == "text" && input.get(len..).is_some_and(|s| s.starts_with('_')) {
                 continue; // e.g. "text_align" is a property, not a text node
             }
-            if let Some(after) = input.get(len..) {
-                if after.starts_with(|c: char| {
+            if let Some(after) = input.get(len..)
+                && after.starts_with(|c: char| {
                     c == ' ' || c == '\t' || c == '@' || c == '{' || c == '"'
-                }) {
-                    return true;
-                }
+                })
+            {
+                return true;
             }
         }
     }

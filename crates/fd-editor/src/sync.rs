@@ -137,10 +137,10 @@ impl SyncEngine {
                 }
             }
             GraphMutation::SetText { id, content } => {
-                if let Some(node) = self.graph.get_by_id_mut(id) {
-                    if let NodeKind::Text { content: ref mut c } = node.kind {
-                        *c = content;
-                    }
+                if let Some(node) = self.graph.get_by_id_mut(id)
+                    && let NodeKind::Text { content: ref mut c } = node.kind
+                {
+                    *c = content;
                 }
             }
         }
