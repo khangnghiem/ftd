@@ -191,6 +191,32 @@ git rebase origin/main
 | `cargo clippy --workspace`   | ✅        |
 | `cargo fmt --all -- --check` | ✅        |
 
+### 📤 Publishing Protocol (MANDATORY)
+
+> [!IMPORTANT]
+> **Every release MUST publish to ALL registries. Never publish to just one.**
+
+| Package            | Registry            | Command                            |
+| ------------------ | ------------------- | ---------------------------------- |
+| **fd-vscode**      | VS Code Marketplace | `pnpm vsce publish`                |
+| **fd-vscode**      | Open VSX Registry   | `pnpm ovsx publish`                |
+| **fd-core**        | crates.io           | `cargo publish -p fd-core`         |
+| **fd-lsp**         | crates.io           | `cargo publish -p fd-lsp`          |
+| **tree-sitter-fd** | npm                 | `cd tree-sitter-fd && npm publish` |
+
+**Publish order** (dependencies first):
+
+```
+fd-core → fd-lsp → tree-sitter-fd → fd-vscode (Marketplace + Open VSX)
+```
+
+**Before publishing:**
+
+- [ ] All CI checks pass
+- [ ] Version bumped in all affected `Cargo.toml` / `package.json`
+- [ ] CHANGELOG updated
+- [ ] Git tag created: `v0.x.y`
+
 ### Development Flow
 
 ```
