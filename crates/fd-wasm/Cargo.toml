@@ -19,7 +19,6 @@ serde = { workspace = true }
 web-sys = { workspace = true, features = [
     "CanvasRenderingContext2d",
     "HtmlCanvasElement",
-    "TextMetrics",
     "console",
 ] }
 js-sys = { workspace = true }
