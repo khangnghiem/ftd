@@ -13,6 +13,10 @@ version = "0.1.0"
 edition = "2024"
 license = "MIT"
 authors = ["Khang Nghiêm"]
+repository = "https://github.com/khangnghiem/fast-draft"
+homepage = "https://github.com/khangnghiem/fast-draft"
+keywords = ["design", "canvas", "scene-graph", "lsp"]
+categories = ["graphics", "parser-implementations"]
 
 [workspace.dependencies]
 # Core
