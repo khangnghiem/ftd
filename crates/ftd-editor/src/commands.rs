@@ -112,11 +112,18 @@ fn compute_inverse(engine: &SyncEngine, mutation: &GraphMutation) -> GraphMutati
             }
         }
         GraphMutation::RemoveNode { id } => {
-            // Capture the node before removal for undo
-            if let Some(node) = engine.graph.get_by_id(*id) {
+            // Capture the node and its actual parent before removal for undo
+            if let Some(idx) = engine.graph.index_of(*id) {
+                let parent_id = engine
+                    .graph
+                    .parent_of(idx)
+                    .and_then(|pidx| engine.graph.graph.node_weight(pidx))
+                    .map(|n| n.id)
+                    .unwrap_or_else(|| NodeId::intern("root"));
+                let node = engine.graph.get_by_id(*id).unwrap().clone();
                 GraphMutation::AddNode {
-                    parent_id: NodeId::intern("root"), // TODO: capture actual parent
-                    node: Box::new(node.clone()),
+                    parent_id,
+                    node: Box::new(node),
                 }
             } else {
                 GraphMutation::RemoveNode { id: *id }
