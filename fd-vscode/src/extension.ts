@@ -174,6 +174,126 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       font-family: var(--vscode-font-family, 'Segoe UI', sans-serif);
       font-size: 14px;
     }
+    /* Annotation card overlay */
+    #annotation-card {
+      display: none;
+      position: absolute;
+      z-index: 100;
+      width: 280px;
+      background: var(--vscode-editorWidget-background, #1E1E2E);
+      border: 1px solid var(--vscode-editorWidget-border, #45475a);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: var(--vscode-font-family, 'Segoe UI', sans-serif);
+      font-size: 12px;
+      color: var(--vscode-foreground, #CDD6F4);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+    #annotation-card.visible { display: block; }
+    #annotation-card .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    #annotation-card .card-close {
+      cursor: pointer;
+      opacity: 0.6;
+      font-size: 16px;
+      background: none;
+      border: none;
+      color: inherit;
+    }
+    #annotation-card .card-close:hover { opacity: 1; }
+    #annotation-card .field-group {
+      margin-bottom: 8px;
+    }
+    #annotation-card .field-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--vscode-descriptionForeground, #6C7086);
+      margin-bottom: 3px;
+    }
+    #annotation-card textarea,
+    #annotation-card input[type="text"],
+    #annotation-card select {
+      width: 100%;
+      padding: 4px 6px;
+      border: 1px solid var(--vscode-input-border, #45475a);
+      border-radius: 4px;
+      background: var(--vscode-input-background, #313244);
+      color: var(--vscode-input-foreground, #CDD6F4);
+      font-family: inherit;
+      font-size: 12px;
+      resize: vertical;
+    }
+    #annotation-card textarea { min-height: 40px; }
+    #annotation-card .accept-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    #annotation-card .accept-item input[type="checkbox"] {
+      flex-shrink: 0;
+    }
+    #annotation-card .accept-item input[type="text"] {
+      flex: 1;
+    }
+    #annotation-card .add-btn {
+      cursor: pointer;
+      font-size: 11px;
+      color: var(--vscode-textLink-foreground, #89B4FA);
+      background: none;
+      border: none;
+      padding: 2px 0;
+    }
+    #annotation-card .add-btn:hover { text-decoration: underline; }
+    #annotation-card .status-row {
+      display: flex;
+      gap: 6px;
+    }
+    #annotation-card .status-row select { flex: 1; }
+    #annotation-card .tag-input {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    #annotation-card .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 10px;
+      background: var(--vscode-badge-background, #45475a);
+      color: var(--vscode-badge-foreground, #CDD6F4);
+    }
+    /* Context menu */
+    #context-menu {
+      display: none;
+      position: absolute;
+      z-index: 200;
+      background: var(--vscode-menu-background, #1E1E2E);
+      border: 1px solid var(--vscode-menu-border, #45475a);
+      border-radius: 6px;
+      padding: 4px 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      font-family: var(--vscode-font-family, 'Segoe UI', sans-serif);
+      font-size: 12px;
+      min-width: 160px;
+    }
+    #context-menu.visible { display: block; }
+    #context-menu .menu-item {
+      padding: 6px 14px;
+      cursor: pointer;
+      color: var(--vscode-menu-foreground, #CDD6F4);
+    }
+    #context-menu .menu-item:hover {
+      background: var(--vscode-menu-selectionBackground, #45475a);
+    }
   </style>
 </head>
 <body>
@@ -185,6 +305,48 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
   <div id="canvas-container">
     <canvas id="fd-canvas"></canvas>
     <div id="loading">Loading FD engine…</div>
+  </div>
+  <div id="annotation-card">
+    <div class="card-header">
+      <span id="card-title">Annotations</span>
+      <button class="card-close" id="card-close-btn">×</button>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Description</div>
+      <textarea id="ann-description" placeholder="What this node is/does…"></textarea>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Acceptance Criteria</div>
+      <div id="ann-accept-list"></div>
+      <button class="add-btn" id="ann-add-accept">+ Add criterion</button>
+    </div>
+    <div class="field-group status-row">
+      <div style="flex:1">
+        <div class="field-label">Status</div>
+        <select id="ann-status">
+          <option value="">None</option>
+          <option value="draft">Draft</option>
+          <option value="in_progress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+      <div style="flex:1">
+        <div class="field-label">Priority</div>
+        <select id="ann-priority">
+          <option value="">None</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Tags</div>
+      <input type="text" id="ann-tags" placeholder="comma-separated tags">
+    </div>
+  </div>
+  <div id="context-menu">
+    <div class="menu-item" id="ctx-add-annotation">📌 Add Annotation</div>
   </div>
 
   <script nonce="${nonce}">

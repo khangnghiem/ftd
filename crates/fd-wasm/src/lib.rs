@@ -6,6 +6,7 @@ mod render2d;
 
 use fd_core::id::NodeId;
 use fd_core::layout::Viewport;
+use fd_core::model::Annotation;
 use fd_editor::commands::CommandStack;
 use fd_editor::input::InputEvent;
 use fd_editor::sync::{GraphMutation, SyncEngine};
@@ -28,10 +29,6 @@ pub struct FdCanvas {
     height: f64,
     /// Suppress text-changed messages during programmatic updates.
     suppress_sync: bool,
-    /// Currently hovered node (for annotation tooltip).
-    hovered_node: Option<NodeId>,
-    /// Whether to show annotation overlays on all annotated nodes.
-    show_annotations: bool,
 }
 
 #[wasm_bindgen]
@@ -57,8 +54,6 @@ impl FdCanvas {
             width,
             height,
             suppress_sync: false,
-            hovered_node: None,
-            show_annotations: false,
         }
     }
 
@@ -80,7 +75,6 @@ impl FdCanvas {
     /// Render the scene to a Canvas2D context.
     pub fn render(&self, ctx: &CanvasRenderingContext2d) {
         let selected_id = self.select_tool.selected.map(|id| id.as_str().to_string());
-        let hovered_id = self.hovered_node.map(|id| id.as_str().to_string());
         render2d::render_scene(
             ctx,
             &self.engine.graph,
@@ -88,8 +82,6 @@ impl FdCanvas {
             self.width,
             self.height,
             selected_id.as_deref(),
-            hovered_id.as_deref(),
-            self.show_annotations,
         );
     }
 
@@ -118,11 +110,8 @@ impl FdCanvas {
 
     /// Handle pointer move event. Returns true if the graph changed.
     pub fn handle_pointer_move(&mut self, x: f32, y: f32, pressure: f32) -> bool {
-        // Track hover for annotation tooltip
-        self.hovered_node = self.hit_test(x, y);
-
         let event = InputEvent::from_pointer_move(x, y, pressure);
-        let hit = self.hovered_node;
+        let hit = self.hit_test(x, y);
         let mutations = match self.active_tool {
             ToolKind::Select => self.select_tool.handle(&event, hit),
             ToolKind::Rect => self.rect_tool.handle(&event, hit),
@@ -192,37 +181,59 @@ impl FdCanvas {
         !self.suppress_sync
     }
 
-    /// Toggle the annotation overlay on/off.
-    pub fn toggle_annotations(&mut self) {
-        self.show_annotations = !self.show_annotations;
+    // ─── Annotation APIs ─────────────────────────────────────────────────
+
+    /// Get annotations for a node as JSON array.
+    /// Returns `[]` if node not found or has no annotations.
+    pub fn get_annotations_json(&self, node_id: &str) -> String {
+        let id = NodeId::intern(node_id);
+        let annotations = self
+            .engine
+            .graph
+            .get_by_id(id)
+            .map(|n| &n.annotations)
+            .cloned()
+            .unwrap_or_default();
+        serde_json::to_string(&annotations).unwrap_or_else(|_| "[]".to_string())
     }
 
-    /// Set the annotation overlay visibility.
-    pub fn set_show_annotations(&mut self, show: bool) {
-        self.show_annotations = show;
-    }
-
-    /// Get whether annotations overlay is visible.
-    pub fn is_show_annotations(&self) -> bool {
-        self.show_annotations
-    }
-
-    /// Get annotations for the currently hovered node as JSON.
-    /// Returns "[]" if no node is hovered or node has no annotations.
-    pub fn get_hovered_annotations(&self) -> String {
-        let Some(hovered_id) = self.hovered_node else {
-            return "[]".to_string();
+    /// Set annotations for a node from a JSON array.
+    /// Returns `true` on success.
+    pub fn set_annotations_json(&mut self, node_id: &str, json: &str) -> bool {
+        let annotations: Vec<Annotation> = match serde_json::from_str(json) {
+            Ok(a) => a,
+            Err(_) => return false,
         };
-        let Some(node) = self.engine.graph.get_by_id(hovered_id) else {
-            return "[]".to_string();
-        };
-        if node.annotations.is_empty() {
-            return "[]".to_string();
+        let id = NodeId::intern(node_id);
+        let mutations = vec![GraphMutation::SetAnnotations { id, annotations }];
+        let changed = self.apply_mutations(mutations);
+        if changed {
+            self.engine.flush_to_text();
         }
-        match serde_json::to_string(&node.annotations) {
-            Ok(json) => json,
-            Err(_) => "[]".to_string(),
+        changed
+    }
+
+    /// Hit-test for annotation badge dots.
+    /// Returns the node ID if the point hits a badge, or empty string.
+    pub fn hit_test_badge(&self, x: f32, y: f32) -> String {
+        for idx in self.engine.graph.graph.node_indices() {
+            let node = &self.engine.graph.graph[idx];
+            if node.annotations.is_empty() {
+                continue;
+            }
+            if let Some(bounds) = self.engine.current_bounds().get(&idx) {
+                // Badge is at top-right corner + 2px
+                let cx = bounds.x + bounds.width + 2.0;
+                let cy = bounds.y - 2.0;
+                let radius = 7.0; // Slightly larger hit area than visual
+                let dx = x - cx;
+                let dy = y - cy;
+                if dx * dx + dy * dy <= radius * radius {
+                    return node.id.as_str().to_string();
+                }
+            }
         }
+        String::new()
     }
 }
 
@@ -325,6 +336,10 @@ fn collect_node_tree(graph: &fd_core::SceneGraph, idx: fd_core::NodeIndex) -> se
     }
     if !children.is_empty() {
         obj["children"] = serde_json::Value::Array(children);
+    }
+    if !node.annotations.is_empty() {
+        obj["annotations"] =
+            serde_json::to_value(&node.annotations).unwrap_or(serde_json::Value::Null);
     }
     obj
 }

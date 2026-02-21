@@ -148,6 +148,17 @@ fn compute_inverse(engine: &SyncEngine, mutation: &GraphMutation) -> GraphMutati
                 content: old_content,
             }
         }
+        GraphMutation::SetAnnotations { id, annotations: _ } => {
+            let old_annotations = engine
+                .graph
+                .get_by_id(*id)
+                .map(|n| n.annotations.clone())
+                .unwrap_or_default();
+            GraphMutation::SetAnnotations {
+                id: *id,
+                annotations: old_annotations,
+            }
+        }
     }
 }
 

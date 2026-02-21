@@ -143,6 +143,11 @@ impl SyncEngine {
                     *c = content;
                 }
             }
+            GraphMutation::SetAnnotations { id, annotations } => {
+                if let Some(node) = self.graph.get_by_id_mut(id) {
+                    node.annotations = annotations;
+                }
+            }
         }
 
         self.text_dirty = true;
@@ -232,6 +237,10 @@ pub enum GraphMutation {
         id: NodeId,
         content: String,
     },
+    SetAnnotations {
+        id: NodeId,
+        annotations: Vec<Annotation>,
+    },
 }
 
 #[cfg(test)]
@@ -319,5 +328,87 @@ rect @box {
             }
             _ => panic!("expected Rect"),
         }
+    }
+
+    #[test]
+    fn sync_set_annotations() {
+        let input = r#"
+rect @box {
+  w: 100
+  h: 50
+  ## "A test box"
+  ## status: draft
+}
+"#;
+        let viewport = Viewport {
+            width: 800.0,
+            height: 600.0,
+        };
+        let mut engine = SyncEngine::from_text(input, viewport).unwrap();
+
+        // Verify initial annotations
+        let node = engine.graph.get_by_id(NodeId::intern("box")).unwrap();
+        assert_eq!(node.annotations.len(), 2);
+
+        // Update annotations via mutation
+        engine.apply_mutation(GraphMutation::SetAnnotations {
+            id: NodeId::intern("box"),
+            annotations: vec![
+                Annotation::Description("Updated description".into()),
+                Annotation::Status("done".into()),
+                Annotation::Accept("all tests pass".into()),
+            ],
+        });
+        engine.flush_to_text();
+
+        // Verify graph updated
+        let node = engine.graph.get_by_id(NodeId::intern("box")).unwrap();
+        assert_eq!(node.annotations.len(), 3);
+        assert_eq!(
+            node.annotations[0],
+            Annotation::Description("Updated description".into())
+        );
+
+        // Verify text re-emitted with new ## lines
+        assert!(engine.text.contains("## \"Updated description\""));
+        assert!(engine.text.contains("## status: done"));
+        assert!(engine.text.contains("## accept: \"all tests pass\""));
+    }
+
+    #[test]
+    fn sync_annotations_roundtrip() {
+        let input = r#"
+rect @card {
+  w: 200
+  h: 100
+  ## "Card component"
+  ## priority: high
+}
+"#;
+        let viewport = Viewport {
+            width: 800.0,
+            height: 600.0,
+        };
+        let mut engine = SyncEngine::from_text(input, viewport).unwrap();
+
+        // Mutate annotations
+        engine.apply_mutation(GraphMutation::SetAnnotations {
+            id: NodeId::intern("card"),
+            annotations: vec![
+                Annotation::Description("Updated card".into()),
+                Annotation::Accept("renders correctly".into()),
+                Annotation::Status("in_progress".into()),
+            ],
+        });
+        let text = engine.current_text().to_string();
+
+        // Re-parse from text
+        let engine2 = SyncEngine::from_text(&text, viewport).unwrap();
+        let node = engine2.graph.get_by_id(NodeId::intern("card")).unwrap();
+        assert_eq!(node.annotations.len(), 3);
+        assert_eq!(
+            node.annotations[2],
+            Annotation::Status("in_progress".into())
+        );
     }
 }

@@ -6,11 +6,9 @@
 use fd_core::model::*;
 use fd_core::{NodeIndex, ResolvedBounds, SceneGraph};
 use std::collections::HashMap;
-use wasm_bindgen::JsValue;
 use web_sys::CanvasRenderingContext2d;
 
 /// Render the entire scene graph to a Canvas2D context.
-#[allow(clippy::too_many_arguments)]
 pub fn render_scene(
     ctx: &CanvasRenderingContext2d,
     graph: &SceneGraph,
@@ -18,8 +16,6 @@ pub fn render_scene(
     canvas_width: f64,
     canvas_height: f64,
     selected_id: Option<&str>,
-    hovered_id: Option<&str>,
-    show_annotations: bool,
 ) {
     // Clear canvas
     ctx.set_fill_style_str("#1E1E2E");
@@ -30,16 +26,6 @@ pub fn render_scene(
 
     // Paint nodes recursively from root
     render_node(ctx, graph, graph.root, bounds, selected_id);
-
-    // Draw annotation overlays (when toggled on)
-    if show_annotations {
-        draw_annotation_overlays(ctx, graph, graph.root, bounds);
-    }
-
-    // Draw tooltip for hovered node (on top of everything)
-    if let Some(hovered) = hovered_id {
-        draw_hover_tooltip(ctx, graph, graph.root, bounds, hovered, canvas_height);
-    }
 }
 
 fn render_node(
@@ -80,6 +66,11 @@ fn render_node(
     // Paint children
     for child_idx in graph.children(idx) {
         render_node(ctx, graph, child_idx, bounds, selected_id);
+    }
+
+    // Annotation badge (drawn after children so it's on top)
+    if !node.annotations.is_empty() && !matches!(node.kind, NodeKind::Root) {
+        draw_annotation_badge(ctx, node_bounds, &node.annotations);
     }
 
     // Selection overlay (drawn after children so it's on top)
@@ -262,238 +253,62 @@ fn draw_grid(ctx: &CanvasRenderingContext2d, width: f64, height: f64) {
     }
 }
 
-// ─── Annotation Display ──────────────────────────────────────────────────
+// ─── Annotation badge ────────────────────────────────────────────────────
 
-/// Format annotation lines for display.
-fn format_annotations(annotations: &[Annotation]) -> Vec<String> {
-    annotations
+/// Draw a colored dot at the top-right of annotated nodes.
+///
+/// Color encodes the first status found:
+///   - draft → red (#EF4444)
+///   - in_progress → yellow (#F59E0B)
+///   - done → green (#10B981)
+///   - no status → gray (#6B7280)
+fn draw_annotation_badge(
+    ctx: &CanvasRenderingContext2d,
+    b: &ResolvedBounds,
+    annotations: &[Annotation],
+) {
+    let count = annotations.len();
+    let radius = 5.0;
+    let cx = b.x as f64 + b.width as f64 + 2.0;
+    let cy = b.y as f64 - 2.0;
+
+    // Determine color from first Status annotation
+    let color = annotations
         .iter()
-        .map(|ann| match ann {
-            Annotation::Description(s) => format!("\u{1F4DD} {s}"),
-            Annotation::Accept(s) => format!("\u{2705} {s}"),
-            Annotation::Status(s) => format!("\u{1F7E1} {s}"),
-            Annotation::Priority(s) => format!("\u{1F534} {s}"),
-            Annotation::Tag(s) => format!("\u{1F3F7}\u{FE0F} {s}"),
-        })
-        .collect()
-}
-
-/// Find a node by ID string and return its index + annotations + bounds.
-fn find_annotated_node<'a>(
-    graph: &'a SceneGraph,
-    idx: NodeIndex,
-    target_id: &str,
-    bounds: &'a HashMap<NodeIndex, ResolvedBounds>,
-) -> Option<(NodeIndex, &'a SceneNode, &'a ResolvedBounds)> {
-    let node = &graph.graph[idx];
-    if node.id.as_str() == target_id
-        && !node.annotations.is_empty()
-        && let Some(b) = bounds.get(&idx)
-    {
-        return Some((idx, node, b));
-    }
-    for child_idx in graph.children(idx) {
-        if let Some(found) = find_annotated_node(graph, child_idx, target_id, bounds) {
-            return Some(found);
-        }
-    }
-    None
-}
-
-/// Draw a tooltip popup for the hovered node's annotations.
-fn draw_hover_tooltip(
-    ctx: &CanvasRenderingContext2d,
-    graph: &SceneGraph,
-    root: NodeIndex,
-    bounds: &HashMap<NodeIndex, ResolvedBounds>,
-    hovered_id: &str,
-    canvas_height: f64,
-) {
-    let Some((_idx, node, node_bounds)) = find_annotated_node(graph, root, hovered_id, bounds)
-    else {
-        return;
-    };
-
-    let lines = format_annotations(&node.annotations);
-    if lines.is_empty() {
-        return;
-    }
-
-    ctx.save();
-
-    // Measure text to size the tooltip
-    ctx.set_font("12px 'Inter', 'SF Pro', system-ui, sans-serif");
-    let line_height = 18.0;
-    let pad_x = 12.0;
-    let pad_y = 10.0;
-    let max_width = 300.0;
-
-    let mut tooltip_width: f64 = 0.0;
-    for line in &lines {
-        if let Ok(metrics) = ctx.measure_text(line) {
-            let w: f64 = metrics.width();
-            tooltip_width = tooltip_width.max(w);
-        }
-    }
-    tooltip_width = (tooltip_width + pad_x * 2.0).min(max_width);
-    let tooltip_height = lines.len() as f64 * line_height + pad_y * 2.0;
-
-    // Position: below the node, or above if near bottom
-    let gap = 8.0;
-    let nx = node_bounds.x as f64;
-    let ny = node_bounds.y as f64;
-    let nh = node_bounds.height as f64;
-
-    let ty = if ny + nh + gap + tooltip_height > canvas_height {
-        ny - tooltip_height - gap // above
-    } else {
-        ny + nh + gap // below
-    };
-    let tx = nx;
-
-    // Background
-    ctx.set_global_alpha(0.95);
-    ctx.set_fill_style_str("#1E1E2E");
-    rounded_rect_path(ctx, tx, ty, tooltip_width, tooltip_height, 8.0);
-    ctx.fill();
-
-    // Border
-    ctx.set_stroke_style_str("#3B3B5C");
-    ctx.set_line_width(1.0);
-    rounded_rect_path(ctx, tx, ty, tooltip_width, tooltip_height, 8.0);
-    ctx.stroke();
-
-    // Text
-    ctx.set_global_alpha(1.0);
-    ctx.set_fill_style_str("#E0E0F0");
-    ctx.set_text_baseline("top");
-    for (i, line) in lines.iter().enumerate() {
-        let _ = ctx.fill_text(line, tx + pad_x, ty + pad_y + i as f64 * line_height);
-    }
-
-    ctx.restore();
-}
-
-/// Draw annotation overlays on all annotated nodes.
-fn draw_annotation_overlays(
-    ctx: &CanvasRenderingContext2d,
-    graph: &SceneGraph,
-    idx: NodeIndex,
-    bounds: &HashMap<NodeIndex, ResolvedBounds>,
-) {
-    let node = &graph.graph[idx];
-    if !matches!(node.kind, NodeKind::Root)
-        && !node.annotations.is_empty()
-        && let Some(b) = bounds.get(&idx)
-    {
-        draw_node_annotation_overlay(ctx, node, b);
-    }
-    for child_idx in graph.children(idx) {
-        draw_annotation_overlays(ctx, graph, child_idx, bounds);
-    }
-}
-
-/// Draw the annotation overlay for a single node.
-fn draw_node_annotation_overlay(
-    ctx: &CanvasRenderingContext2d,
-    node: &SceneNode,
-    node_bounds: &ResolvedBounds,
-) {
-    let lines = format_annotations(&node.annotations);
-    if lines.is_empty() {
-        return;
-    }
-
-    ctx.save();
-
-    let nx = node_bounds.x as f64;
-    let ny = node_bounds.y as f64;
-    let nw = node_bounds.width as f64;
-
-    // Draw status badge (small colored dot on the node's top-right corner)
-    draw_status_badge(ctx, node, nx + nw - 4.0, ny - 4.0);
-
-    // Draw annotation box to the right of the node
-    let box_x = nx + nw + 16.0;
-    let box_y = ny;
-    let line_height = 16.0;
-    let pad_x = 10.0;
-    let pad_y = 8.0;
-
-    ctx.set_font("11px 'Inter', 'SF Pro', system-ui, sans-serif");
-
-    let mut box_width: f64 = 0.0;
-    for line in &lines {
-        if let Ok(metrics) = ctx.measure_text(line) {
-            let w: f64 = metrics.width();
-            box_width = box_width.max(w);
-        }
-    }
-    box_width = (box_width + pad_x * 2.0).min(260.0);
-    let box_height = lines.len() as f64 * line_height + pad_y * 2.0;
-
-    // Connector line (dotted)
-    ctx.set_stroke_style_str("rgba(100, 100, 160, 0.4)");
-    ctx.set_line_width(1.0);
-    let _ = ctx.set_line_dash(&js_sys::Array::of2(
-        &JsValue::from_f64(3.0),
-        &JsValue::from_f64(3.0),
-    ));
-    ctx.begin_path();
-    ctx.move_to(nx + nw, ny + 10.0);
-    ctx.line_to(box_x, box_y + 10.0);
-    ctx.stroke();
-    let _ = ctx.set_line_dash(&js_sys::Array::new());
-
-    // Background
-    ctx.set_global_alpha(0.85);
-    ctx.set_fill_style_str("#252540");
-    rounded_rect_path(ctx, box_x, box_y, box_width, box_height, 6.0);
-    ctx.fill();
-
-    // Border
-    ctx.set_stroke_style_str("rgba(100, 100, 160, 0.3)");
-    ctx.set_line_width(1.0);
-    rounded_rect_path(ctx, box_x, box_y, box_width, box_height, 6.0);
-    ctx.stroke();
-
-    // Text
-    ctx.set_global_alpha(1.0);
-    ctx.set_fill_style_str("#C0C0D8");
-    ctx.set_text_baseline("top");
-    for (i, line) in lines.iter().enumerate() {
-        let _ = ctx.fill_text(line, box_x + pad_x, box_y + pad_y + i as f64 * line_height);
-    }
-
-    ctx.restore();
-}
-
-/// Draw a small colored badge based on the node's status annotation.
-fn draw_status_badge(ctx: &CanvasRenderingContext2d, node: &SceneNode, x: f64, y: f64) {
-    let color = node
-        .annotations
-        .iter()
-        .find_map(|ann| match ann {
-            Annotation::Status(s) => Some(match s.as_str() {
-                "done" => "#4CAF50",
-                "in_progress" => "#FFC107",
-                "draft" => "#9E9E9E",
-                _ => "#9E9E9E",
-            }),
+        .find_map(|a| match a {
+            Annotation::Status(s) => Some(s.as_str()),
             _ => None,
         })
-        .unwrap_or("#7C7CBA");
+        .map(|s| match s {
+            "draft" => "#EF4444",
+            "in_progress" => "#F59E0B",
+            "done" => "#10B981",
+            _ => "#6B7280",
+        })
+        .unwrap_or("#6B7280");
 
     ctx.save();
+
+    // Draw dot
     ctx.set_fill_style_str(color);
     ctx.begin_path();
-    let _ = ctx.arc(x, y, 5.0, 0.0, std::f64::consts::TAU);
+    let _ = ctx.arc(cx, cy, radius, 0.0, std::f64::consts::TAU);
     ctx.fill();
 
     // White border for visibility
     ctx.set_stroke_style_str("#1E1E2E");
     ctx.set_line_width(1.5);
     ctx.stroke();
+
+    // Count label if > 1
+    if count > 1 {
+        ctx.set_font("bold 8px Inter, sans-serif");
+        ctx.set_fill_style_str("#FFFFFF");
+        ctx.set_text_baseline("middle");
+        ctx.set_text_align("center");
+        let _ = ctx.fill_text(&count.to_string(), cx, cy);
+    }
+
     ctx.restore();
 }
 
