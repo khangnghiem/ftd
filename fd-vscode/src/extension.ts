@@ -108,7 +108,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'none';
-    script-src 'nonce-${nonce}' ${webview.cspSource};
+    script-src 'nonce-${nonce}' 'wasm-unsafe-eval' ${webview.cspSource};
     style-src 'nonce-${nonce}';
     img-src ${webview.cspSource};
     connect-src ${webview.cspSource};
