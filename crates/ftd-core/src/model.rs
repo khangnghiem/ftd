@@ -412,6 +412,13 @@ impl SceneGraph {
             .collect()
     }
 
+    /// Get the parent of a node (if it has one).
+    pub fn parent_of(&self, idx: NodeIndex) -> Option<NodeIndex> {
+        self.graph
+            .neighbors_directed(idx, petgraph::Direction::Incoming)
+            .next()
+    }
+
     /// Define a named style.
     pub fn define_style(&mut self, name: NodeId, style: Style) {
         self.styles.insert(name, style);
