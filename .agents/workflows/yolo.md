@@ -7,8 +7,8 @@ description: Full pipeline - test, build, commit, PR, and merge in one shot
 > Runs the full pipeline automatically. Supports three modes:
 >
 > `/yolo local` — 🧪 Test → 🔨 Build → ✅ Verify Local **(STOP)**
-> `/yolo deploy` — 📝 Commit → 📝 PR → 🔀 Merge **(use after `/yolo local`)**
-> `/yolo` — 🧪 Test → 🔨 Build → 📝 Commit → 📝 PR → 🔀 Merge
+> `/yolo deploy` — 📝 Commit → 📝 PR → 🔀 Merge → 📦 Publish Extension **(use after `/yolo local`)**
+> `/yolo` — 🧪 Test → 🔨 Build → 📝 Commit → 📝 PR → 🔀 Merge → 📦 Publish Extension
 
 // turbo-all
 
@@ -87,10 +87,24 @@ description: Full pipeline - test, build, commit, PR, and merge in one shot
     git pull origin main
     ```
 
-12. Report PR URL and merge status to user.
+12. **Build & Publish VS Code extension** (if `fd-vscode/` was changed):
+
+    ```bash
+    cd fd-vscode && pnpm run compile
+    ```
+
+    Then publish to both registries:
+
+    ```bash
+    cd fd-vscode && pnpm vsce publish && pnpm ovsx publish
+    ```
+
+    > Skip publish if the change is local-only or version wasn't bumped.
+
+13. Report PR URL, merge status, and publish results to user.
 
 ---
 
 ## `/yolo` — Full Pipeline
 
-Runs **all steps 1–12** in sequence (local + deploy).
+Runs **all steps 1–13** in sequence (local + deploy).
