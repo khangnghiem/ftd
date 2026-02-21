@@ -3,10 +3,12 @@
 //! Built on `winnow` 0.7 for efficient, streaming parsing.
 //! Handles: comments, style definitions, node declarations
 //! (group, rect, ellipse, path, text), inline properties, animations,
-//! and top-level constraints.
+//! top-level constraints, clone/repeat operators, braceless leaf nodes,
+//! and property tables.
 
 use crate::id::NodeId;
 use crate::model::*;
+use std::collections::HashMap;
 use winnow::ascii::space1;
 use winnow::combinator::{alt, delimited, opt, preceded};
 use winnow::error::ContextError;
@@ -18,6 +20,8 @@ use winnow::token::{take_till, take_while};
 pub fn parse_document(input: &str) -> Result<SceneGraph, String> {
     let mut graph = SceneGraph::new();
     let mut rest = input;
+    // Store parsed nodes for clone lookups
+    let mut parsed_nodes: HashMap<NodeId, ParsedNode> = HashMap::new();
 
     skip_ws_and_comments(&mut rest);
 
@@ -27,6 +31,22 @@ pub fn parse_document(input: &str) -> Result<SceneGraph, String> {
                 .parse_next(&mut rest)
                 .map_err(|e| format!("Style parse error: {e}"))?;
             graph.define_style(name, style);
+        } else if rest.starts_with("table ") {
+            // Property table: batch node creation
+            let nodes =
+                parse_table_block(&mut rest).map_err(|e| format!("Table parse error: {e}"))?;
+            let root = graph.root;
+            for node_data in nodes {
+                parsed_nodes.insert(node_data.id, node_data.clone());
+                insert_node_recursive(&mut graph, root, node_data);
+            }
+        } else if starts_with_clone_line(rest) {
+            // Clone: @new_id = clone @source { overrides }
+            let node_data = parse_clone_line(&mut rest, &parsed_nodes)
+                .map_err(|e| format!("Clone parse error: {e}"))?;
+            let root = graph.root;
+            parsed_nodes.insert(node_data.id, node_data.clone());
+            insert_node_recursive(&mut graph, root, node_data);
         } else if rest.starts_with('@') {
             let (node_id, constraint) = parse_constraint_line
                 .parse_next(&mut rest)
@@ -39,6 +59,7 @@ pub fn parse_document(input: &str) -> Result<SceneGraph, String> {
                 .parse_next(&mut rest)
                 .map_err(|e| format!("Node parse error: {e}"))?;
             let root = graph.root;
+            parsed_nodes.insert(node_data.id, node_data.clone());
             insert_node_recursive(&mut graph, root, node_data);
         } else {
             // Skip unknown line
@@ -54,6 +75,20 @@ pub fn parse_document(input: &str) -> Result<SceneGraph, String> {
     Ok(graph)
 }
 
+/// Check if the current position is a clone line: `@id = clone @source`
+fn starts_with_clone_line(s: &str) -> bool {
+    if !s.starts_with('@') {
+        return false;
+    }
+    // Look for `= clone` after the @id
+    if let Some(eq_pos) = s.find('=') {
+        let after_eq = s[eq_pos + 1..].trim_start();
+        after_eq.starts_with("clone ")
+    } else {
+        false
+    }
+}
+
 fn starts_with_node_keyword(s: &str) -> bool {
     s.starts_with("group")
         || s.starts_with("rect")
@@ -63,7 +98,7 @@ fn starts_with_node_keyword(s: &str) -> bool {
 }
 
 /// Internal representation during parsing before inserting into graph.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct ParsedNode {
     id: NodeId,
     kind: NodeKind,
@@ -271,7 +306,9 @@ fn parse_node(input: &mut &str) -> ModalResult<ParsedNode> {
     };
 
     skip_space(input);
-    let _ = '{'.parse_next(input)?;
+
+    // Braceless leaf node: properties on same line, no `{`
+    let is_braceless = !input.starts_with('{');
 
     let mut style = Style::default();
     let mut use_styles = Vec::new();
@@ -282,28 +319,35 @@ fn parse_node(input: &mut &str) -> ModalResult<ParsedNode> {
     let mut height: Option<f32> = None;
     let mut layout = LayoutMode::Free;
 
-    skip_ws_and_comments(input);
+    if is_braceless {
+        // Parse inline properties until end of line
+        parse_inline_properties(input, &mut style, &mut use_styles, &mut width, &mut height)?;
+    } else {
+        let _ = '{'.parse_next(input)?;
 
-    while !input.starts_with('}') {
-        if starts_with_child_node(input) {
-            children.push(parse_node.parse_next(input)?);
-        } else if input.starts_with("anim") {
-            animations.push(parse_anim_block.parse_next(input)?);
-        } else {
-            parse_node_property(
-                input,
-                &mut style,
-                &mut use_styles,
-                &mut constraints,
-                &mut width,
-                &mut height,
-                &mut layout,
-            )?;
-        }
         skip_ws_and_comments(input);
-    }
 
-    let _ = '}'.parse_next(input)?;
+        while !input.starts_with('}') {
+            if starts_with_child_node(input) {
+                children.push(parse_node.parse_next(input)?);
+            } else if input.starts_with("anim") {
+                animations.push(parse_anim_block.parse_next(input)?);
+            } else {
+                parse_node_property(
+                    input,
+                    &mut style,
+                    &mut use_styles,
+                    &mut constraints,
+                    &mut width,
+                    &mut height,
+                    &mut layout,
+                )?;
+            }
+            skip_ws_and_comments(input);
+        }
+
+        let _ = '}'.parse_next(input)?;
+    }
 
     let kind = match kind_str {
         "group" => NodeKind::Group { layout },
@@ -333,6 +377,69 @@ fn parse_node(input: &mut &str) -> ModalResult<ParsedNode> {
         animations,
         children,
     })
+}
+
+/// Parse inline properties for braceless leaf nodes.
+/// Reads `key: value` pairs separated by spaces until end of line.
+fn parse_inline_properties(
+    input: &mut &str,
+    style: &mut Style,
+    use_styles: &mut Vec<NodeId>,
+    width: &mut Option<f32>,
+    height: &mut Option<f32>,
+) -> ModalResult<()> {
+    while !input.is_empty() && !input.starts_with('\n') {
+        skip_space(input);
+        if input.is_empty() || input.starts_with('\n') {
+            break;
+        }
+
+        let prop_name = match parse_identifier.parse_next(input) {
+            Ok(name) => name,
+            Err(_) => break,
+        };
+        skip_space(input);
+        if !input.starts_with(':') {
+            break;
+        }
+        let _ = ':'.parse_next(input)?;
+        skip_space(input);
+
+        match prop_name {
+            "w" | "width" => {
+                *width = Some(parse_number.parse_next(input)?);
+            }
+            "h" | "height" => {
+                *height = Some(parse_number.parse_next(input)?);
+            }
+            "fill" => {
+                style.fill = Some(Paint::Solid(parse_hex_color.parse_next(input)?));
+            }
+            "corner" => {
+                style.corner_radius = Some(parse_number.parse_next(input)?);
+            }
+            "opacity" => {
+                style.opacity = Some(parse_number.parse_next(input)?);
+            }
+            "use" => {
+                use_styles.push(parse_identifier.map(NodeId::intern).parse_next(input)?);
+            }
+            "font" => {
+                parse_font_value(input, style)?;
+            }
+            _ => {
+                // Skip unknown value until next space or newline
+                let _ = take_till::<_, _, ContextError>(0.., |c: char| c == ' ' || c == '\n')
+                    .parse_next(input);
+            }
+        }
+    }
+
+    // Consume the newline if present
+    if input.starts_with('\n') {
+        *input = &input[1..];
+    }
+    Ok(())
 }
 
 /// Check if the current position starts a child node keyword followed by
@@ -611,6 +718,292 @@ fn parse_constraint_line(input: &mut &str) -> ModalResult<(NodeId, Constraint)> 
         *input = &input[1..];
     }
     Ok((node_id, constraint))
+}
+
+// ─── Clone/repeat parser ─────────────────────────────────────────────────
+
+/// Parse a clone line: `@new_id = clone @source_id { overrides }`
+/// or `@new_id = clone @source_id` (no overrides).
+fn parse_clone_line(
+    input: &mut &str,
+    parsed_nodes: &HashMap<NodeId, ParsedNode>,
+) -> Result<ParsedNode, String> {
+    // Parse @new_id
+    let _ = input
+        .find('@')
+        .ok_or_else(|| "Expected @ in clone line".to_string())?;
+    let new_id = parse_node_id
+        .parse_next(input)
+        .map_err(|e| format!("clone id: {e}"))?;
+    skip_space(input);
+
+    // Parse `= clone`
+    if !input.starts_with('=') {
+        return Err("Expected '=' in clone line".to_string());
+    }
+    *input = &input[1..];
+    *input = input.trim_start();
+    if !input.starts_with("clone") {
+        return Err("Expected 'clone' keyword".to_string());
+    }
+    *input = &input[5..];
+    *input = input.trim_start();
+
+    // Parse @source_id
+    let source_id = parse_node_id
+        .parse_next(input)
+        .map_err(|e| format!("clone source: {e}"))?;
+
+    // Find source node
+    let source = parsed_nodes
+        .get(&source_id)
+        .ok_or_else(|| format!("Clone source @{} not found", source_id.as_str()))?;
+
+    // Deep clone the source
+    let mut cloned = clone_parsed_node(source, new_id);
+
+    // Parse optional overrides block
+    skip_space(input);
+    if input.starts_with('{') {
+        *input = &input[1..];
+        skip_ws_and_comments(input);
+
+        while !input.starts_with('}') {
+            if input.is_empty() {
+                return Err("Unclosed clone override block".to_string());
+            }
+            // Override: child text content by matching type
+            if starts_with_child_node(input) {
+                // Replace or add children
+                let child_node = parse_node
+                    .parse_next(input)
+                    .map_err(|e| format!("clone override child: {e}"))?;
+                // Try to replace existing child of same kind
+                let mut replaced = false;
+                for existing in &mut cloned.children {
+                    if std::mem::discriminant(&existing.kind)
+                        == std::mem::discriminant(&child_node.kind)
+                    {
+                        *existing = child_node.clone();
+                        replaced = true;
+                        break;
+                    }
+                }
+                if !replaced {
+                    cloned.children.push(child_node);
+                }
+            } else {
+                // Override inline properties
+                let mut dummy_constraints = Vec::new();
+                let mut width = match &cloned.kind {
+                    NodeKind::Rect { width, .. } => Some(*width),
+                    NodeKind::Ellipse { rx, .. } => Some(*rx),
+                    _ => None,
+                };
+                let mut height = match &cloned.kind {
+                    NodeKind::Rect { height, .. } => Some(*height),
+                    NodeKind::Ellipse { ry, .. } => Some(*ry),
+                    _ => None,
+                };
+                let mut layout = match &cloned.kind {
+                    NodeKind::Group { layout } => layout.clone(),
+                    _ => LayoutMode::Free,
+                };
+                parse_node_property(
+                    input,
+                    &mut cloned.style,
+                    &mut cloned.use_styles,
+                    &mut dummy_constraints,
+                    &mut width,
+                    &mut height,
+                    &mut layout,
+                )
+                .map_err(|e| format!("clone override prop: {e}"))?;
+
+                // Update kind dimensions if changed
+                match &mut cloned.kind {
+                    NodeKind::Rect {
+                        width: w,
+                        height: h,
+                    } => {
+                        if let Some(nw) = width {
+                            *w = nw;
+                        }
+                        if let Some(nh) = height {
+                            *h = nh;
+                        }
+                    }
+                    NodeKind::Ellipse { rx, ry } => {
+                        if let Some(nw) = width {
+                            *rx = nw;
+                        }
+                        if let Some(nh) = height {
+                            *ry = nh;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            skip_ws_and_comments(input);
+        }
+        *input = &input[1..]; // consume '}'
+    }
+
+    Ok(cloned)
+}
+
+/// Deep-clone a parsed node with a new ID.
+fn clone_parsed_node(source: &ParsedNode, new_id: NodeId) -> ParsedNode {
+    ParsedNode {
+        id: new_id,
+        kind: source.kind.clone(),
+        style: source.style.clone(),
+        use_styles: source.use_styles.clone(),
+        constraints: Vec::new(), // Don't clone constraints
+        animations: source.animations.clone(),
+        children: source.children.to_vec(),
+    }
+}
+
+// ─── Property table parser ───────────────────────────────────────────────
+
+/// Parse a property table block:
+/// ```text
+/// table rect {
+///   id       w    h   corner  fill
+///   btn_1    120  40  8       #6C5CE7
+///   btn_2    120  40  8       #E74C3C
+/// }
+/// ```
+fn parse_table_block(input: &mut &str) -> Result<Vec<ParsedNode>, String> {
+    // Consume "table"
+    if !input.starts_with("table ") {
+        return Err("Expected 'table' keyword".to_string());
+    }
+    *input = &input[6..];
+    *input = input.trim_start();
+
+    // Parse the node kind
+    let kind_str = parse_identifier
+        .parse_next(input)
+        .map_err(|e| format!("table kind: {e}"))?;
+
+    if !matches!(kind_str, "rect" | "ellipse" | "text" | "group" | "path") {
+        return Err(format!("Invalid table node kind: {kind_str}"));
+    }
+
+    *input = input.trim_start();
+    if !input.starts_with('{') {
+        return Err("Expected '{' after table kind".to_string());
+    }
+    *input = &input[1..];
+    skip_ws_and_comments(input);
+
+    // Parse header row (column names)
+    let header_line = take_line(input);
+    let columns: Vec<&str> = header_line.split_whitespace().collect();
+    if columns.is_empty() {
+        return Err("Table header row is empty".to_string());
+    }
+
+    let mut nodes = Vec::new();
+    skip_ws_and_comments(input);
+
+    // Parse data rows
+    while !input.starts_with('}') {
+        if input.is_empty() {
+            return Err("Unclosed table block".to_string());
+        }
+
+        let row_line = take_line(input);
+        let values: Vec<&str> = row_line.split_whitespace().collect();
+        if values.is_empty() {
+            skip_ws_and_comments(input);
+            continue;
+        }
+
+        let mut style = Style::default();
+        let mut use_styles = Vec::new();
+        let mut width: Option<f32> = None;
+        let mut height: Option<f32> = None;
+        let mut node_id = NodeId::anonymous();
+        let mut text_content = String::new();
+
+        for (i, col) in columns.iter().enumerate() {
+            let val = values.get(i).copied().unwrap_or("");
+            if val.is_empty() {
+                continue;
+            }
+            match *col {
+                "id" => node_id = NodeId::intern(val),
+                "w" | "width" => width = val.parse().ok(),
+                "h" | "height" => height = val.parse().ok(),
+                "corner" => style.corner_radius = val.parse().ok(),
+                "opacity" => style.opacity = val.parse().ok(),
+                "fill" => {
+                    if let Some(c) = Color::from_hex(val) {
+                        style.fill = Some(Paint::Solid(c));
+                    }
+                }
+                "use" => use_styles.push(NodeId::intern(val)),
+                "text" => text_content = val.replace('_', " "),
+                _ => {} // Ignore unknown columns
+            }
+        }
+
+        let kind = match kind_str {
+            "rect" => NodeKind::Rect {
+                width: width.unwrap_or(100.0),
+                height: height.unwrap_or(100.0),
+            },
+            "ellipse" => NodeKind::Ellipse {
+                rx: width.unwrap_or(50.0),
+                ry: height.unwrap_or(50.0),
+            },
+            "text" => NodeKind::Text {
+                content: text_content,
+            },
+            "group" => NodeKind::Group {
+                layout: LayoutMode::Free,
+            },
+            "path" => NodeKind::Path {
+                commands: Vec::new(),
+            },
+            _ => unreachable!(),
+        };
+
+        nodes.push(ParsedNode {
+            id: node_id,
+            kind,
+            style,
+            use_styles,
+            constraints: Vec::new(),
+            animations: Vec::new(),
+            children: Vec::new(),
+        });
+
+        skip_ws_and_comments(input);
+    }
+
+    // Consume closing '}'
+    if input.starts_with('}') {
+        *input = &input[1..];
+    }
+
+    Ok(nodes)
+}
+
+/// Take a line of text, advancing input past the newline.
+fn take_line<'a>(input: &mut &'a str) -> &'a str {
+    if let Some(pos) = input.find('\n') {
+        let line = &input[..pos];
+        *input = &input[pos + 1..];
+        line.trim()
+    } else {
+        let line = *input;
+        *input = "";
+        line.trim()
+    }
 }
 
 #[cfg(test)]

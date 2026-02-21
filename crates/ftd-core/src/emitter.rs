@@ -68,6 +68,47 @@ fn emit_style_block(out: &mut String, name: &NodeId, style: &Style, depth: usize
     out.push_str("}\n");
 }
 
+/// Check if a node is a "leaf" suitable for braceless single-line emission.
+fn is_braceless_leaf(graph: &SceneGraph, idx: NodeIndex) -> bool {
+    let node = &graph.graph[idx];
+    let has_children = !graph.children(idx).is_empty();
+    let has_animations = !node.animations.is_empty();
+
+    // Groups always need braces (layout + children)
+    if matches!(node.kind, NodeKind::Group { .. }) {
+        return false;
+    }
+
+    !has_children && !has_animations
+}
+
+/// Count the number of inline style properties set on a node.
+fn count_inline_props(node: &SceneNode) -> usize {
+    let mut count = 0;
+    if node.style.fill.is_some() {
+        count += 1;
+    }
+    if node.style.stroke.is_some() {
+        count += 1;
+    }
+    if node.style.corner_radius.is_some() {
+        count += 1;
+    }
+    if node.style.font.is_some() {
+        count += 1;
+    }
+    if node.style.opacity.is_some() {
+        count += 1;
+    }
+    count += node.use_styles.len();
+    // Count dimensions as properties too
+    match &node.kind {
+        NodeKind::Rect { .. } | NodeKind::Ellipse { .. } => count += 1, // w/h is 1 inline prop
+        _ => {}
+    }
+    count
+}
+
 fn emit_node(out: &mut String, graph: &SceneGraph, idx: NodeIndex, depth: usize) {
     let node = &graph.graph[idx];
 
@@ -83,6 +124,13 @@ fn emit_node(out: &mut String, graph: &SceneGraph, idx: NodeIndex, depth: usize)
         NodeKind::Text { content } => {
             write!(out, "text @{} \"{}\"", node.id.as_str(), content).unwrap();
         }
+    }
+
+    // Braceless leaf: emit properties inline on one line
+    if is_braceless_leaf(graph, idx) && count_inline_props(node) <= 3 {
+        emit_inline_props(out, node);
+        out.push('\n');
+        return;
     }
 
     out.push_str(" {\n");
@@ -181,6 +229,44 @@ fn emit_node(out: &mut String, graph: &SceneGraph, idx: NodeIndex, depth: usize)
 
     indent(out, depth);
     out.push_str("}\n");
+}
+
+/// Emit properties inline (for braceless leaf nodes).
+fn emit_inline_props(out: &mut String, node: &SceneNode) {
+    // Dimensions
+    match &node.kind {
+        NodeKind::Rect { width, height } => {
+            write!(out, " w: {} h: {}", format_num(*width), format_num(*height)).unwrap();
+        }
+        NodeKind::Ellipse { rx, ry } => {
+            write!(out, " w: {} h: {}", format_num(*rx), format_num(*ry)).unwrap();
+        }
+        _ => {}
+    }
+
+    for style_ref in &node.use_styles {
+        write!(out, " use: {}", style_ref.as_str()).unwrap();
+    }
+
+    if let Some(Paint::Solid(c)) = &node.style.fill {
+        write!(out, " fill: {}", c.to_hex()).unwrap();
+    }
+    if let Some(radius) = node.style.corner_radius {
+        write!(out, " corner: {}", format_num(radius)).unwrap();
+    }
+    if let Some(ref font) = node.style.font {
+        write!(
+            out,
+            " font: \"{}\" {} {}",
+            font.family,
+            font.weight,
+            format_num(font.size)
+        )
+        .unwrap();
+    }
+    if let Some(opacity) = node.style.opacity {
+        write!(out, " opacity: {}", format_num(opacity)).unwrap();
+    }
 }
 
 fn emit_paint_prop(out: &mut String, name: &str, paint: &Paint, depth: usize) {
@@ -454,5 +540,141 @@ rect @btn {
         assert!(graph2.styles.contains_key(&NodeId::intern("accent")));
         let btn = graph2.get_by_id(NodeId::intern("btn")).unwrap();
         assert_eq!(btn.use_styles.len(), 1);
+    }
+
+    #[test]
+    fn roundtrip_braceless_leaf() {
+        // A node with ≤3 inline props and no children/animations should
+        // emit as braceless, and re-parse correctly.
+        let input = "rect @divider w: 100 h: 2 fill: #CCC\n";
+        let graph = parse_document(input).expect("parse failed");
+        let output = emit_document(&graph);
+
+        // Emitted output should still be braceless (single-line)
+        let relevant_line = output
+            .lines()
+            .find(|l| l.contains("@divider"))
+            .expect("emitted output should contain @divider");
+        assert!(
+            !relevant_line.contains('{'),
+            "braceless leaf should not have braces: {relevant_line}"
+        );
+
+        // Re-parse should preserve values
+        let graph2 = parse_document(&output).expect("re-parse of braceless failed");
+        let node = graph2.get_by_id(NodeId::intern("divider")).unwrap();
+        match &node.kind {
+            NodeKind::Rect { width, height } => {
+                assert_eq!(*width, 100.0);
+                assert_eq!(*height, 2.0);
+            }
+            _ => panic!("expected Rect"),
+        }
+    }
+
+    #[test]
+    fn roundtrip_constraint() {
+        let input = r#"
+rect @box {
+  w: 100 h: 100
+  fill: #FF0000
+}
+
+@box -> center_in: canvas
+"#;
+        let graph = parse_document(input).unwrap();
+        let output = emit_document(&graph);
+        let graph2 = parse_document(&output).expect("re-parse of constraint failed");
+        let node = graph2.get_by_id(NodeId::intern("box")).unwrap();
+        assert_eq!(node.constraints.len(), 1);
+        match &node.constraints[0] {
+            Constraint::CenterIn(target) => assert_eq!(target.as_str(), "canvas"),
+            _ => panic!("expected CenterIn constraint"),
+        }
+    }
+
+    #[test]
+    fn roundtrip_opacity() {
+        let input = r#"
+rect @fade {
+  w: 100 h: 100
+  fill: #FF0000
+  opacity: 0.5
+}
+"#;
+        let graph = parse_document(input).unwrap();
+        let output = emit_document(&graph);
+        let graph2 = parse_document(&output).expect("re-parse of opacity failed");
+        let node = graph2.get_by_id(NodeId::intern("fade")).unwrap();
+        assert_eq!(node.style.opacity, Some(0.5));
+    }
+
+    #[test]
+    fn roundtrip_full_demo() {
+        // Round-trip the entire demo.ftd-like document to catch
+        // any interaction issues between features.
+        let input = r#"
+style base_text {
+  font: "Inter" 14
+  fill: #333333
+}
+
+style accent {
+  fill: #6C5CE7
+}
+
+group @login_form {
+  layout: column gap=16 pad=32
+
+  text @title "Welcome Back" {
+    use: base_text
+    font: "Inter" 600 24
+    fill: #1A1A2E
+  }
+
+  rect @email_field {
+    w: 280 h: 44
+    corner: 8
+    stroke: #DDDDDD 1
+  }
+
+  rect @login_btn {
+    w: 280 h: 48
+    corner: 10
+    use: accent
+
+    text @btn_label "Sign In" {
+      font: "Inter" 600 16
+      fill: #FFFFFF
+    }
+
+    anim :hover {
+      fill: #5A4BD1
+      scale: 1.02
+      ease: spring 300ms
+    }
+  }
+}
+
+@login_form -> center_in: canvas
+"#;
+        let graph = parse_document(input).unwrap();
+        let output = emit_document(&graph);
+        let graph2 = parse_document(&output).expect("re-parse of full demo failed");
+
+        // Verify all key nodes survived the round-trip
+        assert!(graph2.styles.contains_key(&NodeId::intern("base_text")));
+        assert!(graph2.styles.contains_key(&NodeId::intern("accent")));
+
+        let form_idx = graph2.index_of(NodeId::intern("login_form")).unwrap();
+        let children = graph2.children(form_idx);
+        assert_eq!(children.len(), 3, "form should have 3 children");
+
+        let btn = graph2.get_by_id(NodeId::intern("login_btn")).unwrap();
+        assert_eq!(btn.animations.len(), 1);
+        assert_eq!(btn.use_styles.len(), 1);
+
+        let form = graph2.get_by_id(NodeId::intern("login_form")).unwrap();
+        assert_eq!(form.constraints.len(), 1);
     }
 }
