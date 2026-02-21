@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.0] — 2026-02-21
+
+### Changed
+
+- Renamed extension from `ftd-vscode` to `fast-draft`
+- File extension changed from `.ftd` to `.fd`
+- Language ID changed from `ftd` to `fd`
+- All command prefixes changed from `ftd.*` to `fd.*`
+
 ## [0.1.0] — 2026-02-21
 
 ### Added
