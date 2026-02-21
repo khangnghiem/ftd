@@ -279,9 +279,10 @@ pub enum Constraint {
 }
 
 /// Group layout mode (for children arrangement).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub enum LayoutMode {
     /// Free / absolute positioning of children.
+    #[default]
     Free,
     /// Column (vertical stack).
     Column { gap: f32, pad: f32 },
@@ -289,12 +290,6 @@ pub enum LayoutMode {
     Row { gap: f32, pad: f32 },
     /// Grid layout.
     Grid { cols: u32, gap: f32, pad: f32 },
-}
-
-impl Default for LayoutMode {
-    fn default() -> Self {
-        Self::Free
-    }
 }
 
 // ─── Scene Graph Nodes ───────────────────────────────────────────────────

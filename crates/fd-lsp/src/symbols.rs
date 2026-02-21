@@ -14,23 +14,23 @@ pub fn compute_symbols(text: &str, graph: Option<&SceneGraph>) -> Vec<SymbolInfo
     // Style definitions
     for (i, line) in text.lines().enumerate() {
         let trimmed = line.trim();
-        if let Some(rest) = trimmed.strip_prefix("style ") {
-            if let Some(name) = rest.split_whitespace().next() {
-                symbols.push(SymbolInformation {
-                    name: format!("style {}", name),
-                    kind: SymbolKind::CLASS,
-                    location: Location {
-                        uri: Url::parse("file:///dummy").unwrap(),
-                        range: Range {
-                            start: Position::new(i as u32, 0),
-                            end: Position::new(i as u32, line.len() as u32),
-                        },
+        if let Some(rest) = trimmed.strip_prefix("style ")
+            && let Some(name) = rest.split_whitespace().next()
+        {
+            symbols.push(SymbolInformation {
+                name: format!("style {}", name),
+                kind: SymbolKind::CLASS,
+                location: Location {
+                    uri: Url::parse("file:///dummy").unwrap(),
+                    range: Range {
+                        start: Position::new(i as u32, 0),
+                        end: Position::new(i as u32, line.len() as u32),
                     },
-                    tags: None,
-                    deprecated: None,
-                    container_name: None,
-                });
-            }
+                },
+                tags: None,
+                deprecated: None,
+                container_name: None,
+            });
         }
     }
 
@@ -83,16 +83,16 @@ fn find_node_lines(text: &str) -> Vec<(String, usize)> {
     for (i, line) in text.lines().enumerate() {
         let trimmed = line.trim();
         for keyword in &node_keywords {
-            if trimmed.starts_with(keyword) {
-                if let Some(at_pos) = trimmed.find('@') {
-                    let after_at = &trimmed[at_pos + 1..];
-                    let id: String = after_at
-                        .chars()
-                        .take_while(|c| c.is_alphanumeric() || *c == '_')
-                        .collect();
-                    if !id.is_empty() && !id.starts_with("_anon_") {
-                        results.push((id, i));
-                    }
+            if trimmed.starts_with(keyword)
+                && let Some(at_pos) = trimmed.find('@')
+            {
+                let after_at = &trimmed[at_pos + 1..];
+                let id: String = after_at
+                    .chars()
+                    .take_while(|c| c.is_alphanumeric() || *c == '_')
+                    .collect();
+                if !id.is_empty() && !id.starts_with("_anon_") {
+                    results.push((id, i));
                 }
             }
         }

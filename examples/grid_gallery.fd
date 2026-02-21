@@ -1,0 +1,124 @@
+# FD v1
+# Grid layout — photo gallery with masonry-style cards
+
+style card_text { font: "Inter" 14; fill: #FFF }
+
+# ─── Gallery ─────────────────────────────────────────────────────────────
+
+group @gallery {
+  layout: column gap=24 pad=32
+
+  text @title "Photo Gallery" { font: "Inter" 700 32; fill: #1A1A2E }
+  text @subtitle "A grid layout showcase with hover interactions" {
+    font: "Inter" 16; fill: #6B7280
+  }
+
+  group @grid {
+    layout: grid cols=3 gap=16 pad=0
+
+    ## "Responsive image grid"
+    ## accept: "images lazy-load with blur-up"
+    ## tag: layout, grid
+
+    rect @photo_1 {
+      w: 260 h: 200
+      corner: 12
+      fill: #FF6B6B
+      ## "Sunset landscape"
+
+      text "Sunset" { use: card_text }
+
+      anim :hover { scale: 1.04; opacity: 0.9; ease: spring 300ms }
+    }
+
+    rect @photo_2 {
+      w: 260 h: 200
+      corner: 12
+      fill: #4ECDC4
+      ## "Ocean view"
+
+      text "Ocean" { use: card_text }
+
+      anim :hover { scale: 1.04; opacity: 0.9; ease: spring 300ms }
+    }
+
+    rect @photo_3 {
+      w: 260 h: 200
+      corner: 12
+      fill: #6C5CE7
+      ## "Mountain trail"
+
+      text "Mountain" { use: card_text }
+
+      anim :hover { scale: 1.04; opacity: 0.9; ease: spring 300ms }
+    }
+
+    rect @photo_4 {
+      w: 260 h: 200
+      corner: 12
+      fill: #FFE66D
+      ## "Desert dunes"
+
+      text "Desert" { font: "Inter" 14; fill: #333 }
+
+      anim :hover { scale: 1.04; opacity: 0.9; ease: spring 300ms }
+    }
+
+    rect @photo_5 {
+      w: 260 h: 200
+      corner: 12
+      fill: #A29BFE
+      ## "City skyline"
+
+      text "City" { use: card_text }
+
+      anim :hover { scale: 1.04; opacity: 0.9; ease: spring 300ms }
+    }
+
+    rect @photo_6 {
+      w: 260 h: 200
+      corner: 12
+      fill: #FD79A8
+      ## "Cherry blossoms"
+
+      text "Blossoms" { use: card_text }
+
+      anim :hover { scale: 1.04; opacity: 0.9; ease: spring 300ms }
+    }
+
+    rect @photo_7 {
+      w: 260 h: 200
+      corner: 12
+      fill: #00B894
+      ## "Forest canopy"
+
+      text "Forest" { use: card_text }
+
+      anim :hover { scale: 1.04; opacity: 0.9; ease: spring 300ms }
+    }
+
+    rect @photo_8 {
+      w: 260 h: 200
+      corner: 12
+      fill: #E17055
+      ## "Autumn leaves"
+
+      text "Autumn" { use: card_text }
+
+      anim :hover { scale: 1.04; opacity: 0.9; ease: spring 300ms }
+    }
+
+    rect @photo_9 {
+      w: 260 h: 200
+      corner: 12
+      fill: #74B9FF
+      ## "Starry night"
+
+      text "Stars" { use: card_text }
+
+      anim :hover { scale: 1.04; opacity: 0.9; ease: spring 300ms }
+    }
+  }
+}
+
+@gallery -> center_in: canvas

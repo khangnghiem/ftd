@@ -69,14 +69,14 @@ impl Tool for SelectTool {
                 vec![]
             }
             InputEvent::PointerMove { x, y, .. } => {
-                if self.dragging {
-                    if let Some(id) = self.selected {
-                        let dx = x - self.last_x;
-                        let dy = y - self.last_y;
-                        self.last_x = *x;
-                        self.last_y = *y;
-                        return vec![GraphMutation::MoveNode { id, dx, dy }];
-                    }
+                if self.dragging
+                    && let Some(id) = self.selected
+                {
+                    let dx = x - self.last_x;
+                    let dy = y - self.last_y;
+                    self.last_x = *x;
+                    self.last_y = *y;
+                    return vec![GraphMutation::MoveNode { id, dx, dy }];
                 }
                 vec![]
             }
@@ -142,16 +142,16 @@ impl Tool for RectTool {
                 }]
             }
             InputEvent::PointerMove { x, y, .. } => {
-                if self.drawing {
-                    if let Some(id) = self.current_id {
-                        let w = (x - self.start_x).abs();
-                        let h = (y - self.start_y).abs();
-                        return vec![GraphMutation::ResizeNode {
-                            id,
-                            width: w,
-                            height: h,
-                        }];
-                    }
+                if self.drawing
+                    && let Some(id) = self.current_id
+                {
+                    let w = (x - self.start_x).abs();
+                    let h = (y - self.start_y).abs();
+                    return vec![GraphMutation::ResizeNode {
+                        id,
+                        width: w,
+                        height: h,
+                    }];
                 }
                 vec![]
             }

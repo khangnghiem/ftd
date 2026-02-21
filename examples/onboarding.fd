@@ -1,0 +1,104 @@
+# FD v1
+# Onboarding wizard — multi-step with progress and illustrations
+
+style step_title { font: "Inter" 700 28; fill: #1A1A2E }
+style step_desc { font: "Inter" 16; fill: #6B7280 }
+
+# ─── Wizard container ───────────────────────────────────────────────────
+
+group @wizard {
+  layout: column gap=0 pad=0
+
+  ## "Onboarding wizard — 4-step flow"
+  ## accept: "skip button on every step"
+  ## accept: "progress dots show current step"
+  ## accept: "swipe gestures on mobile"
+  ## status: in_progress
+  ## priority: high
+  ## tag: onboarding, ux, retention
+
+  # ─── Step content ────────────────────────────────────────────────
+
+  rect @step_card {
+    w: 480 h: 520
+    corner: 24
+    fill: #FFF
+    bg: #FFF corner=24 shadow=(0,8,40,#0002)
+
+    group { layout: column gap=24 pad=40
+
+      # Illustration area
+      rect @illustration {
+        w: 400 h: 240
+        corner: 16
+        fill: #F0EDFC
+        ## "Step illustration — animated SVG"
+        ## accept: "subtle loop animation"
+
+        # Abstract shapes as illustration
+        ellipse @shape_1 {
+          w: 80 h: 80
+          fill: #6C5CE740
+          anim :enter { scale: 1; opacity: 1; ease: spring 800ms }
+        }
+
+        rect @shape_2 {
+          w: 100 h: 60
+          corner: 12
+          fill: #A29BFE40
+          anim :enter { opacity: 1; ease: ease_out 600ms }
+        }
+
+        ellipse @shape_3 {
+          w: 60 h: 60
+          fill: #00B89440
+          anim :enter { scale: 1; opacity: 1; ease: spring 1000ms }
+        }
+      }
+
+      # Step text
+      text @s_title "Create your first draft" { use: step_title }
+      text @s_desc "Start with a blank canvas or choose from our templates to kickstart your design." {
+        use: step_desc
+      }
+
+      # Progress dots
+      group @dots {
+        layout: row gap=8 pad=0
+
+        ellipse @dot_1 { w: 10 h: 10; fill: #6C5CE7 }
+        ellipse @dot_2 { w: 10 h: 10; fill: #E8E8EC }
+        ellipse @dot_3 { w: 10 h: 10; fill: #E8E8EC }
+        ellipse @dot_4 { w: 10 h: 10; fill: #E8E8EC }
+      }
+
+      # Buttons
+      group @buttons {
+        layout: row gap=12 pad=0
+
+        rect @btn_skip {
+          w: 100 h: 48
+          corner: 10
+
+          text "Skip" { font: "Inter" 500 15; fill: #999 }
+
+          anim :hover { fill: #F5F5F7; ease: ease_out 150ms }
+        }
+
+        rect @btn_next {
+          w: 280 h: 48
+          corner: 10
+          fill: #6C5CE7
+          bg: #6C5CE7 corner=10 shadow=(0,4,16,#6C5CE740)
+
+          text "Next" { font: "Inter" 600 15; fill: #FFF }
+
+          anim :hover { fill: #5A4BD1; scale: 1.03; ease: spring 200ms }
+          anim :press { scale: 0.96; ease: ease_out 100ms }
+        }
+      }
+    }
+  }
+}
+
+@wizard -> center_in: canvas
