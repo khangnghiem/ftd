@@ -215,21 +215,64 @@ impl Tool for PenTool {
             InputEvent::PointerMove { x, y, .. } => {
                 if self.drawing {
                     self.points.push((*x, *y));
-                    // TODO: Convert accumulated points to smooth path commands
-                    // and update the node. For now, just collect points.
                 }
                 vec![]
             }
             InputEvent::PointerUp { .. } => {
+                if !self.drawing {
+                    return vec![];
+                }
                 self.drawing = false;
-                // TODO: Finalize path — simplify points, create bezier curves
+
+                let mut mutations = Vec::new();
+
+                if let Some(id) = self.current_id.take() {
+                    // Build finalized path commands from accumulated points
+                    let commands = build_path_commands(&self.points);
+                    let mut node = SceneNode::new(id, NodeKind::Path { commands });
+                    node.style.stroke = Some(Stroke {
+                        paint: Paint::Solid(Color::from_hex("#333333").expect("hardcoded color")),
+                        width: 2.0,
+                        ..Stroke::default()
+                    });
+
+                    // Remove placeholder and add finalized node
+                    mutations.push(GraphMutation::RemoveNode { id });
+                    mutations.push(GraphMutation::AddNode {
+                        parent_id: NodeId::intern("root"),
+                        node: Box::new(node),
+                    });
+                }
+
                 self.points.clear();
-                self.current_id = None;
-                vec![]
+                mutations
             }
             _ => vec![],
         }
     }
+}
+
+/// Build path commands from a sequence of points.
+/// Uses `MoveTo` for the first point and `LineTo` for subsequent ones.
+/// Points too close together (< 2px apart) are skipped to reduce noise.
+fn build_path_commands(points: &[(f32, f32)]) -> Vec<PathCmd> {
+    if points.is_empty() {
+        return vec![];
+    }
+
+    let mut commands = vec![PathCmd::MoveTo(points[0].0, points[0].1)];
+    let mut last = points[0];
+
+    for &(x, y) in &points[1..] {
+        let dist_sq = (x - last.0).powi(2) + (y - last.1).powi(2);
+        if dist_sq < 4.0 {
+            continue; // Skip points too close (< 2px)
+        }
+        commands.push(PathCmd::LineTo(x, y));
+        last = (x, y);
+    }
+
+    commands
 }
 
 #[cfg(test)]
@@ -272,5 +315,154 @@ mod tests {
             }
             _ => panic!("expected MoveNode"),
         }
+    }
+
+    #[test]
+    fn select_tool_deselect() {
+        let mut tool = SelectTool::new();
+        let target = NodeId::intern("box2");
+
+        // Press on a node to select
+        tool.handle(
+            &InputEvent::PointerDown {
+                x: 50.0,
+                y: 50.0,
+                pressure: 1.0,
+            },
+            Some(target),
+        );
+        assert_eq!(tool.selected, Some(target));
+
+        // Press on empty space to deselect
+        tool.handle(
+            &InputEvent::PointerDown {
+                x: 300.0,
+                y: 300.0,
+                pressure: 1.0,
+            },
+            None,
+        );
+        assert_eq!(tool.selected, None);
+    }
+
+    #[test]
+    fn rect_tool_draw() {
+        let mut tool = RectTool::new();
+
+        // Start drawing
+        let mutations = tool.handle(
+            &InputEvent::PointerDown {
+                x: 10.0,
+                y: 10.0,
+                pressure: 1.0,
+            },
+            None,
+        );
+        assert_eq!(mutations.len(), 1);
+        match &mutations[0] {
+            GraphMutation::AddNode { node, .. } => {
+                assert!(matches!(node.kind, NodeKind::Rect { .. }));
+            }
+            _ => panic!("expected AddNode"),
+        }
+
+        // Drag to resize
+        let mutations = tool.handle(
+            &InputEvent::PointerMove {
+                x: 110.0,
+                y: 60.0,
+                pressure: 1.0,
+            },
+            None,
+        );
+        assert_eq!(mutations.len(), 1);
+        match &mutations[0] {
+            GraphMutation::ResizeNode { width, height, .. } => {
+                assert_eq!(*width, 100.0);
+                assert_eq!(*height, 50.0);
+            }
+            _ => panic!("expected ResizeNode"),
+        }
+
+        // Release
+        let mutations = tool.handle(&InputEvent::PointerUp { x: 110.0, y: 60.0 }, None);
+        assert!(mutations.is_empty());
+    }
+
+    #[test]
+    fn pen_tool_draw() {
+        let mut tool = PenTool::new();
+
+        // Start drawing
+        let mutations = tool.handle(
+            &InputEvent::PointerDown {
+                x: 0.0,
+                y: 0.0,
+                pressure: 1.0,
+            },
+            None,
+        );
+        assert_eq!(mutations.len(), 1, "PointerDown should add a path node");
+
+        // Accumulate points
+        tool.handle(
+            &InputEvent::PointerMove {
+                x: 50.0,
+                y: 25.0,
+                pressure: 1.0,
+            },
+            None,
+        );
+        tool.handle(
+            &InputEvent::PointerMove {
+                x: 100.0,
+                y: 50.0,
+                pressure: 1.0,
+            },
+            None,
+        );
+
+        // Release — should finalize path
+        let mutations = tool.handle(&InputEvent::PointerUp { x: 100.0, y: 50.0 }, None);
+        assert_eq!(
+            mutations.len(),
+            2,
+            "PointerUp should remove placeholder and add finalized"
+        );
+
+        // First mutation: remove placeholder
+        assert!(matches!(&mutations[0], GraphMutation::RemoveNode { .. }));
+
+        // Second mutation: add final path with commands
+        match &mutations[1] {
+            GraphMutation::AddNode { node, .. } => {
+                if let NodeKind::Path { commands } = &node.kind {
+                    assert!(commands.len() >= 2, "path should have MoveTo + LineTo(s)");
+                    assert!(
+                        matches!(commands[0], PathCmd::MoveTo(0.0, 0.0)),
+                        "first command should be MoveTo"
+                    );
+                } else {
+                    panic!("expected Path node");
+                }
+                // Should have a stroke style
+                assert!(node.style.stroke.is_some(), "pen path should have stroke");
+            }
+            _ => panic!("expected AddNode"),
+        }
+    }
+
+    #[test]
+    fn build_path_commands_filters_close_points() {
+        let points = vec![
+            (0.0, 0.0),
+            (0.5, 0.5), // too close, should be skipped
+            (10.0, 10.0),
+            (10.1, 10.1), // too close, should be skipped
+            (50.0, 50.0),
+        ];
+
+        let cmds = build_path_commands(&points);
+        assert_eq!(cmds.len(), 3); // MoveTo + 2 LineTo (skipped 2 close points)
     }
 }
