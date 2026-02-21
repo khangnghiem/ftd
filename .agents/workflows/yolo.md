@@ -1,12 +1,20 @@
 ---
-description: Full pipeline - test, build, commit, and PR in one shot
+description: Full pipeline - test, build, commit, PR, and merge in one shot
 ---
 
 # Yolo Workflow
 
-> For small, confident changes. Runs the full pipeline automatically.
+> Runs the full pipeline automatically. Supports three modes:
+>
+> `/yolo local` — 🧪 Test → 🔨 Build → ✅ Verify Local **(STOP)**
+> `/yolo deploy` — 📝 Commit → 📝 PR → 🔀 Merge **(use after `/yolo local`)**
+> `/yolo` — 🧪 Test → 🔨 Build → 📝 Commit → 📝 PR → 🔀 Merge
 
 // turbo-all
+
+---
+
+## `/yolo local` — Verify Only
 
 1. **Lint**:
 
@@ -26,36 +34,63 @@ description: Full pipeline - test, build, commit, and PR in one shot
    cargo test --workspace
    ```
 
-4. **Check branch** (never commit to main):
+4. **Report** results to user. **STOP HERE.**
+
+---
+
+## `/yolo deploy` — Commit + PR + Merge
+
+> Use this after `/yolo local` has passed.
+
+5. **Check branch** (never commit to main):
 
    ```bash
    git branch --show-current
    ```
 
-5. If on `main`, create a feature branch:
+6. If on `main`, create a feature branch:
 
    ```bash
    git checkout -b feat/<descriptive-name>
    ```
 
-6. **Stage and commit**:
+7. **Stage and commit**:
 
    ```bash
    git add -A
    git commit -m "<type>(<scope>): <description>"
    ```
 
-7. **Push**:
+8. **Push**:
 
    ```bash
    git push -u origin HEAD
    ```
 
-8. **Create PR** using GitKraken MCP:
+9. **Create PR** using GitKraken MCP:
    - `provider`: github
    - `source_branch`: current branch
    - `target_branch`: main
    - Title in conventional format
    - Body summarizing changes + test results
 
-9. Report PR URL to user.
+10. **Merge PR** and clean up:
+
+    ```bash
+    gh pr merge <PR_NUMBER> --merge --delete-branch
+    ```
+
+11. **Sync main**:
+
+    ```bash
+    git checkout main
+    git pull origin main
+    ```
+
+12. Report PR URL and merge status to user.
+
+---
+
+## `/yolo` — Full Pipeline
+
+Runs **all steps 1–12** in sequence (local + deploy).
