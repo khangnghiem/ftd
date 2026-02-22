@@ -2,7 +2,7 @@
   "name": "fast-draft",
   "displayName": "Fast Draft",
   "description": "Syntax highlighting, live parser validation, and interactive canvas editor for .fd (Fast Draft) files",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "publisher": "KhangNghiem",
   "license": "MIT",
   "icon": "icon.png",
@@ -69,12 +69,14 @@
           "enum": [
             "gemini-free",
             "gemini",
-            "openai"
+            "openai",
+            "ollama"
           ],
           "enumDescriptions": [
             "Gemini free tier (rate-limited, no key needed)",
             "Gemini with your own API key",
-            "OpenAI with your own API key"
+            "OpenAI with your own API key",
+            "Ollama (Local, completely free, requires Ollama running on localhost:11434)"
           ],
           "description": "AI provider for the Refine feature"
         },

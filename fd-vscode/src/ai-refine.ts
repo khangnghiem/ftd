@@ -10,7 +10,7 @@ import * as vscode from "vscode";
 // ─── Types ───────────────────────────────────────────────────────────────
 
 interface AiConfig {
-  provider: "gemini-free" | "gemini" | "openai";
+  provider: "gemini-free" | "gemini" | "openai" | "ollama";
   apiKey: string;
 }
 
@@ -130,6 +130,43 @@ async function callOpenAi(prompt: string, apiKey: string): Promise<string> {
   return text.trim();
 }
 
+async function callOllama(prompt: string): Promise<string> {
+  const url = "http://localhost:11434/api/generate";
+
+  const body = {
+    // Default to a common fast model. Could be made configurable later.
+    model: "llama3.2",
+    prompt: prompt,
+    stream: false,
+    options: {
+      temperature: 0.3,
+    }
+  };
+
+  let response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    throw new Error("Could not connect to Ollama. Make sure Ollama is running on localhost:11434.");
+  }
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Ollama API error (${response.status}): ${errorText}`);
+  }
+
+  const data = (await response.json()) as { response?: string };
+  if (!data?.response) {
+    throw new Error("Ollama returned empty response");
+  }
+
+  return data.response.trim();
+}
+
 // ─── Main Entry Point ────────────────────────────────────────────────────
 
 /**
@@ -154,13 +191,17 @@ export async function refineSelectedNodes(
     let refined: string;
 
     switch (config.provider) {
-      case "gemini-free":
-        refined = await callGemini(
-          prompt,
-          config.apiKey || getFreeTierKey(),
-          "gemini-2.0-flash"
-        );
+      case "gemini-free": {
+        const key = config.apiKey || getFreeTierKey();
+        if (!key) {
+          return {
+            refinedText: fdText,
+            error: "Gemini requires an API key even for the free tier. Get a FREE key at https://aistudio.google.com/ and set 'fd.ai.apiKey' in VS Code settings."
+          };
+        }
+        refined = await callGemini(prompt, key, "gemini-2.0-flash");
         break;
+      }
 
       case "gemini":
         if (!config.apiKey) {
@@ -180,6 +221,10 @@ export async function refineSelectedNodes(
           };
         }
         refined = await callOpenAi(prompt, config.apiKey);
+        break;
+
+      case "ollama":
+        refined = await callOllama(prompt);
         break;
 
       default:
