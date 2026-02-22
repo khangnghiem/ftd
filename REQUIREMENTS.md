@@ -45,7 +45,7 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R3.10**: Apple Pencil Pro squeeze: Toggle between last two tools
 - **R3.11**: Per-tool cursor feedback (crosshair for drawing, text cursor for text, default for select)
 - **R3.12**: Annotation pins: Visual badge dots on annotated nodes with inline edit card
-- **R3.13**: Light/dark theme toggle — canvas defaults to light mode with a toolbar toggle button; preference persists across sessions via VS Code state
+- **R3.13**: Light/dark theme toggle — canvas defaults to light mode with a toolbar toggle button (🌙 in light → switch to dark, ☀️ in dark → switch to light); preference persists across sessions via VS Code state
 
 ### R4: AI Editing (Text)
 
