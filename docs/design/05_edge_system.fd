@@ -1,5 +1,9 @@
 # FD v1
-# Edge System — connection types, arrows, curves, and flow animations (R1.10-R1.12)
+
+style desc_text {
+  fill: #6B7280
+  font: "Inter" 400 12
+}
 
 style screen {
   fill: #FFFFFF
@@ -11,44 +15,272 @@ style screen_label {
   font: "Inter" 700 16
 }
 
-style desc_text {
-  fill: #6B7280
-  font: "Inter" 400 12
+rect @dashboard_screen {
+  ## "Main dashboard"
+  ## status: in_progress
+  w: 160 h: 100
+  use: screen
+  fill: #FFFFFF
+  stroke: #10B981 2
+  corner: 14
+  text @_anon_89 "Dashboard" {
+    use: screen_label
+  }
 }
 
-# ─── Title ───────────────────────────────────────────────────────────────
+rect @login_screen {
+  ## "Login screen"
+  ## status: done
+  w: 160 h: 100
+  use: screen
+  fill: #FFFFFF
+  stroke: #6C5CE7 2
+  corner: 14
+  text @_anon_88 "Login" {
+    use: screen_label
+  }
+}
 
-text @title "Edge System" {
-  font: "Inter" 800 32
+text @sec4_title "Annotated Edge Example" {
   fill: #1A1A2E
+  font: "Inter" 700 22
 }
 
-text @subtitle "R1.10-R1.12: Connections, arrows, curves, and flow animations" {
-  font: "Inter" 400 16
-  fill: #6B7280
+rect @flow_dash_dst {
+  ## "Pipeline stage 2"
+  w: 140 h: 80
+  fill: #EF4444
+  corner: 14
+  text @_anon_87 "Deploy Step" {
+    fill: #FFFFFF
+    font: "Inter" 600 14
+  }
 }
 
-# ─── Section 1: Arrow variants ──────────────────────────────────────────
+rect @flow_dash_src {
+  ## "Pipeline stage 1"
+  w: 140 h: 80
+  fill: #F59E0B
+  corner: 14
+  text @_anon_86 "Build Step" {
+    fill: #FFFFFF
+    font: "Inter" 600 14
+  }
+}
 
-text @sec1_title "Arrow Variants" { font: "Inter" 700 22; fill: #1A1A2E }
+rect @flow_pulse_dst {
+  ## "Data destination"
+  w: 140 h: 80
+  fill: #00B894
+  corner: 14
+  text @_anon_85 "Client App" {
+    fill: #FFFFFF
+    font: "Inter" 600 14
+  }
+}
 
-rect @arrow_none_from {
-  ## "Source node for arrow: none"
-  w: 120 h: 64
+rect @flow_pulse_src {
+  ## "Data source node"
+  w: 140 h: 80
+  fill: #6C5CE7
+  corner: 14
+  text @_anon_84 "API Server" {
+    fill: #FFFFFF
+    font: "Inter" 600 14
+  }
+}
+
+text @sec3_title "Flow Animations" {
+  fill: #1A1A2E
+  font: "Inter" 700 22
+}
+
+rect @curve_step_b {
+  w: 100 h: 56
   use: screen
   stroke: #E8E8EC 1
-  bg: #FFF corner=14 shadow=(0,2,8,#0001)
-  text "A" { use: screen_label }
+  text @_anon_83 "Dst" {
+    use: screen_label
+    font: "Inter" 600 13
+  }
+}
+
+rect @curve_step_a {
+  w: 100 h: 56
+  use: screen
+  stroke: #E8E8EC 1
+  text @_anon_82 "Src" {
+    use: screen_label
+    font: "Inter" 600 13
+  }
+}
+
+rect @curve_smooth_b {
+  w: 100 h: 56
+  use: screen
+  stroke: #E8E8EC 1
+  text @_anon_81 "Dst" {
+    use: screen_label
+    font: "Inter" 600 13
+  }
+}
+
+rect @curve_smooth_a {
+  w: 100 h: 56
+  use: screen
+  stroke: #E8E8EC 1
+  text @_anon_80 "Src" {
+    use: screen_label
+    font: "Inter" 600 13
+  }
+}
+
+rect @curve_straight_b {
+  w: 100 h: 56
+  use: screen
+  stroke: #E8E8EC 1
+  text @_anon_79 "Dst" {
+    use: screen_label
+    font: "Inter" 600 13
+  }
+}
+
+rect @curve_straight_a {
+  w: 100 h: 56
+  use: screen
+  stroke: #E8E8EC 1
+  text @_anon_78 "Src" {
+    use: screen_label
+    font: "Inter" 600 13
+  }
+}
+
+text @sec2_title "Curve Kinds" {
+  fill: #1A1A2E
+  font: "Inter" 700 22
+}
+
+rect @arrow_both_to {
+  w: 120 h: 64
+  use: screen
+  fill: #FFFFFF
+  stroke: #E8E8EC 1
+  corner: 14
+  text @_anon_77 "F" {
+    use: screen_label
+  }
+}
+
+rect @arrow_both_from {
+  w: 120 h: 64
+  use: screen
+  fill: #FFFFFF
+  stroke: #E8E8EC 1
+  corner: 14
+  text @_anon_76 "E" {
+    use: screen_label
+  }
+}
+
+rect @arrow_end_to {
+  w: 120 h: 64
+  use: screen
+  fill: #FFFFFF
+  stroke: #E8E8EC 1
+  corner: 14
+  text @_anon_75 "D" {
+    use: screen_label
+  }
+}
+
+rect @arrow_end_from {
+  w: 120 h: 64
+  use: screen
+  fill: #FFFFFF
+  stroke: #E8E8EC 1
+  corner: 14
+  text @_anon_74 "C" {
+    use: screen_label
+  }
 }
 
 rect @arrow_none_to {
   w: 120 h: 64
   use: screen
+  fill: #FFFFFF
   stroke: #E8E8EC 1
-  bg: #FFF corner=14 shadow=(0,2,8,#0001)
-  text "B" { use: screen_label }
+  corner: 14
+  text @_anon_73 "B" {
+    use: screen_label
+  }
 }
 
+rect @arrow_none_from {
+  ## "Source node for arrow: none"
+  w: 120 h: 64
+  use: screen
+  fill: #FFFFFF
+  stroke: #E8E8EC 1
+  corner: 14
+  text @_anon_72 "A" {
+    use: screen_label
+  }
+}
+
+text @sec1_title "Arrow Variants" {
+  fill: #1A1A2E
+  font: "Inter" 700 22
+}
+
+text @subtitle "R1.10-R1.12: Connections, arrows, curves, and flow animations" {
+  fill: #6B7280
+  font: "Inter" 400 16
+}
+
+text @title "Edge System" {
+  fill: #1A1A2E
+  font: "Inter" 800 32
+}
+
+@title -> center_in: canvas
+@subtitle -> offset: @title 0, 50
+@sec1_title -> offset: @subtitle 0, 80
+@arrow_none_from -> offset: @sec1_title 0, 50
+@arrow_none_to -> offset: @arrow_none_from 200, 0
+@arrow_end_from -> offset: @arrow_none_from 0, 100
+@arrow_end_from -> absolute: 79.45, 279.98
+@arrow_end_to -> offset: @arrow_end_from 200, 0
+@arrow_both_from -> offset: @arrow_end_from 0, 100
+@arrow_both_from -> absolute: 79.45, 279.98
+@arrow_both_to -> offset: @arrow_both_from 200, 0
+@sec2_title -> offset: @sec1_title 500, 0
+@curve_straight_a -> offset: @sec2_title 0, 50
+@_anon_78 -> absolute: 50.7, 18.71
+@curve_straight_b -> offset: @curve_straight_a 200, 0
+@curve_smooth_a -> offset: @curve_straight_a 0, 100
+@curve_smooth_b -> offset: @curve_smooth_a 200, 0
+@curve_step_a -> offset: @curve_smooth_a 0, 100
+@curve_step_b -> offset: @curve_step_a 200, 0
+@sec3_title -> offset: @arrow_both_from 0, 140
+@sec3_title -> absolute: 79.45, 319.98
+@flow_pulse_src -> offset: @sec3_title 0, 50
+@flow_pulse_src -> absolute: 337.84, 27.88
+@_anon_84 -> absolute: 60.85, 50.16
+@flow_pulse_dst -> offset: @flow_pulse_src 260, 0
+@_anon_85 -> absolute: 192.66, 81.99
+@flow_dash_src -> offset: @flow_pulse_src 0, 120
+@flow_dash_src -> absolute: 228.77, 171.53
+@_anon_86 -> absolute: 378.64, 81.35
+@flow_dash_dst -> offset: @flow_dash_src 260, 0
+@flow_dash_dst -> absolute: 558.84, 112.6
+@_anon_87 -> absolute: 200.41, 35.74
+@sec4_title -> offset: @sec3_title 500, 0
+@login_screen -> offset: @sec4_title 0, 50
+@login_screen -> absolute: 483.75, 378.66
+@_anon_88 -> absolute: 377.81, 233.27
+@dashboard_screen -> offset: @login_screen 280, 0
+@dashboard_screen -> absolute: 530.31, 290.25
+@_anon_89 -> absolute: 592.88, 131.7
 edge @edge_no_arrow {
   ## "arrow: none — no arrowheads"
   from: @arrow_none_from
@@ -56,23 +288,6 @@ edge @edge_no_arrow {
   label: "none"
   stroke: #6B7280 2
 }
-
-rect @arrow_end_from {
-  w: 120 h: 64
-  use: screen
-  stroke: #E8E8EC 1
-  bg: #FFF corner=14 shadow=(0,2,8,#0001)
-  text "C" { use: screen_label }
-}
-
-rect @arrow_end_to {
-  w: 120 h: 64
-  use: screen
-  stroke: #E8E8EC 1
-  bg: #FFF corner=14 shadow=(0,2,8,#0001)
-  text "D" { use: screen_label }
-}
-
 edge @edge_end_arrow {
   ## "arrow: end — standard directional arrow"
   from: @arrow_end_from
@@ -81,23 +296,6 @@ edge @edge_end_arrow {
   stroke: #6C5CE7 2
   arrow: end
 }
-
-rect @arrow_both_from {
-  w: 120 h: 64
-  use: screen
-  stroke: #E8E8EC 1
-  bg: #FFF corner=14 shadow=(0,2,8,#0001)
-  text "E" { use: screen_label }
-}
-
-rect @arrow_both_to {
-  w: 120 h: 64
-  use: screen
-  stroke: #E8E8EC 1
-  bg: #FFF corner=14 shadow=(0,2,8,#0001)
-  text "F" { use: screen_label }
-}
-
 edge @edge_both_arrow {
   ## "arrow: both — bidirectional relationship"
   from: @arrow_both_from
@@ -106,25 +304,6 @@ edge @edge_both_arrow {
   stroke: #10B981 2
   arrow: both
 }
-
-# ─── Section 2: Curve kinds ──────────────────────────────────────────────
-
-text @sec2_title "Curve Kinds" { font: "Inter" 700 22; fill: #1A1A2E }
-
-rect @curve_straight_a {
-  w: 100 h: 56
-  use: screen
-  stroke: #E8E8EC 1
-  text "Src" { use: screen_label; font: "Inter" 600 13 }
-}
-
-rect @curve_straight_b {
-  w: 100 h: 56
-  use: screen
-  stroke: #E8E8EC 1
-  text "Dst" { use: screen_label; font: "Inter" 600 13 }
-}
-
 edge @edge_straight {
   ## "curve: straight — direct line (default)"
   from: @curve_straight_a
@@ -133,21 +312,6 @@ edge @edge_straight {
   stroke: #6B7280 2
   arrow: end
 }
-
-rect @curve_smooth_a {
-  w: 100 h: 56
-  use: screen
-  stroke: #E8E8EC 1
-  text "Src" { use: screen_label; font: "Inter" 600 13 }
-}
-
-rect @curve_smooth_b {
-  w: 100 h: 56
-  use: screen
-  stroke: #E8E8EC 1
-  text "Dst" { use: screen_label; font: "Inter" 600 13 }
-}
-
 edge @edge_smooth {
   ## "curve: smooth — bezier curve"
   from: @curve_smooth_a
@@ -157,21 +321,6 @@ edge @edge_smooth {
   arrow: end
   curve: smooth
 }
-
-rect @curve_step_a {
-  w: 100 h: 56
-  use: screen
-  stroke: #E8E8EC 1
-  text "Src" { use: screen_label; font: "Inter" 600 13 }
-}
-
-rect @curve_step_b {
-  w: 100 h: 56
-  use: screen
-  stroke: #E8E8EC 1
-  text "Dst" { use: screen_label; font: "Inter" 600 13 }
-}
-
 edge @edge_step {
   ## "curve: step — right-angle routing"
   from: @curve_step_a
@@ -181,29 +330,6 @@ edge @edge_step {
   arrow: end
   curve: step
 }
-
-# ─── Section 3: Flow animations ─────────────────────────────────────────
-
-text @sec3_title "Flow Animations" { font: "Inter" 700 22; fill: #1A1A2E }
-
-rect @flow_pulse_src {
-  ## "Data source node"
-  w: 140 h: 80
-  fill: #6C5CE7
-  corner: 14
-  bg: #6C5CE7 corner=14 shadow=(0,4,16,#6C5CE740)
-  text "API Server" { font: "Inter" 600 14; fill: #FFF }
-}
-
-rect @flow_pulse_dst {
-  ## "Data destination"
-  w: 140 h: 80
-  fill: #00B894
-  corner: 14
-  bg: #00B894 corner=14 shadow=(0,4,16,#00B89440)
-  text "Client App" { font: "Inter" 600 14; fill: #FFF }
-}
-
 edge @edge_pulse_flow {
   ## "R1.12: flow: pulse — traveling dot showing data direction"
   ## accept: "dot moves from source to destination on loop"
@@ -215,25 +341,6 @@ edge @edge_pulse_flow {
   curve: smooth
   flow: pulse 1200ms
 }
-
-rect @flow_dash_src {
-  ## "Pipeline stage 1"
-  w: 140 h: 80
-  fill: #F59E0B
-  corner: 14
-  bg: #F59E0B corner=14 shadow=(0,4,16,#F59E0B40)
-  text "Build Step" { font: "Inter" 600 14; fill: #FFF }
-}
-
-rect @flow_dash_dst {
-  ## "Pipeline stage 2"
-  w: 140 h: 80
-  fill: #EF4444
-  corner: 14
-  bg: #EF4444 corner=14 shadow=(0,4,16,#EF444440)
-  text "Deploy Step" { font: "Inter" 600 14; fill: #FFF }
-}
-
 edge @edge_dash_flow {
   ## "R1.12: flow: dash — marching dashes for pipeline visualization"
   ## accept: "dashes animate along edge path continuously"
@@ -245,31 +352,6 @@ edge @edge_dash_flow {
   curve: smooth
   flow: dash 800ms
 }
-
-# ─── Section 4: Edge with annotations ───────────────────────────────────
-
-text @sec4_title "Annotated Edge Example" { font: "Inter" 700 22; fill: #1A1A2E }
-
-rect @login_screen {
-  ## "Login screen"
-  ## status: done
-  w: 160 h: 100
-  use: screen
-  stroke: #6C5CE7 2
-  bg: #FFF corner=14 shadow=(0,2,12,#6C5CE710)
-  text "Login" { use: screen_label }
-}
-
-rect @dashboard_screen {
-  ## "Main dashboard"
-  ## status: in_progress
-  w: 160 h: 100
-  use: screen
-  stroke: #10B981 2
-  bg: #FFF corner=14 shadow=(0,2,12,#10B98110)
-  text "Dashboard" { use: screen_label }
-}
-
 edge @login_to_dash {
   ## "Authentication flow — happy path"
   ## accept: "complete within 3s including API call"
@@ -288,38 +370,3 @@ edge @login_to_dash {
     ease: ease_out 200ms
   }
 }
-
-# ─── Layout ─────────────────────────────────────────────────────────────
-
-@title -> center_in: canvas
-@subtitle -> offset: @title 0, 50
-
-# Arrow variants
-@sec1_title -> offset: @subtitle 0, 80
-@arrow_none_from -> offset: @sec1_title 0, 50
-@arrow_none_to -> offset: @arrow_none_from 200, 0
-@arrow_end_from -> offset: @arrow_none_from 0, 100
-@arrow_end_to -> offset: @arrow_end_from 200, 0
-@arrow_both_from -> offset: @arrow_end_from 0, 100
-@arrow_both_to -> offset: @arrow_both_from 200, 0
-
-# Curve kinds
-@sec2_title -> offset: @sec1_title 500, 0
-@curve_straight_a -> offset: @sec2_title 0, 50
-@curve_straight_b -> offset: @curve_straight_a 200, 0
-@curve_smooth_a -> offset: @curve_straight_a 0, 100
-@curve_smooth_b -> offset: @curve_smooth_a 200, 0
-@curve_step_a -> offset: @curve_smooth_a 0, 100
-@curve_step_b -> offset: @curve_step_a 200, 0
-
-# Flow animations
-@sec3_title -> offset: @arrow_both_from 0, 140
-@flow_pulse_src -> offset: @sec3_title 0, 50
-@flow_pulse_dst -> offset: @flow_pulse_src 260, 0
-@flow_dash_src -> offset: @flow_pulse_src 0, 120
-@flow_dash_dst -> offset: @flow_dash_src 260, 0
-
-# Annotated edge
-@sec4_title -> offset: @sec3_title 500, 0
-@login_screen -> offset: @sec4_title 0, 50
-@dashboard_screen -> offset: @login_screen 280, 0
