@@ -87,6 +87,7 @@ pub fn render_scene(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn render_node(
     ctx: &CanvasRenderingContext2d,
     graph: &SceneGraph,

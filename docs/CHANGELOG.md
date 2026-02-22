@@ -88,3 +88,32 @@
 - [ ] **R6.2**: Desktop app via Tauri (future)
 - [ ] **R6.3**: Mobile app (future)
 - [ ] **R6.4**: Web app (future)
+
+## Test Matrix
+
+<!-- Maps each requirement to its test functions. If a row is empty, the requirement lacks test coverage. -->
+
+| Requirement | Test Functions                                                    | Coverage                    |
+| ----------- | ----------------------------------------------------------------- | --------------------------- |
+| R1.1–R1.8   | `parser::tests::parse_*`, `emitter::tests::emit_*`, `roundtrip_*` | ✅ 42 tests                 |
+| R1.9        | `emit_annotations_*`, `roundtrip_preserves_annotations`           | ✅                          |
+| R1.10       | `parse_edge_*`, `emit_edge_*`, `roundtrip_edge_*`                 | ✅                          |
+| R1.11       | `emit_edge_with_trigger_anim`, `roundtrip_edge_hover_anim`        | ✅                          |
+| R1.12       | `emit_edge_flow_*`, `roundtrip_edge_flow_*`                       | ✅                          |
+| R1.13       | `emit_generic_node`, `roundtrip_generic_*`                        | ✅                          |
+| R1.14       | `parse_import`, `emit_import`, `roundtrip_import`                 | ✅                          |
+| R1.15       | `emit_bg_shorthand`, `roundtrip_bg_shorthand`                     | ✅                          |
+| R1.16       | `roundtrip_comment_*`                                             | ✅                          |
+| R2.1–R2.4   | `sync::tests::sync_*`, `bidi_sync::*`                             | ⚠️ 5 unit + 2 integration   |
+| R3.1        | `tools::tests::select_tool_*`                                     | ⚠️ 3 tests, missing marquee |
+| R3.2        | `tools::tests::select_tool_drag`, `select_tool_shift_drag_*`      | ⚠️ Missing resize           |
+| R3.3        | `tools::tests::rect_tool_*`, `ellipse_tool_*`                     | ⚠️ Missing text tool test   |
+| R3.4        | _(none)_                                                          | ❌ No pen tool tests        |
+| R3.5        | _(future)_                                                        | —                           |
+| R3.6        | _(JS-only, no test)_                                              | ❌                          |
+| R3.7        | `commands::tests::*`, `undo_redo::*`                              | ✅ 5 unit + 4 integration   |
+| R3.8–R3.14  | _(JS-only, no test)_                                              | ❌                          |
+| R3.15–R3.23 | _(not yet implemented)_                                           | —                           |
+| R4.1–R4.6   | Covered by R1/R2 tests                                            | ✅                          |
+| R4.7–R4.11  | _(extension-side, no test)_                                       | ❌                          |
+| R5.1–R5.8   | `hit::tests::*`, `resolve::tests::*`                              | ⚠️ 6 tests                  |
