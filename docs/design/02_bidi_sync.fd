@@ -1,20 +1,4 @@
 # FD v1
-# Bidirectional Sync — data flow between text, graph, and canvas (R2.x)
-
-style label {
-  fill: #1A1A2E
-  font: "Inter" 600 14
-}
-
-style desc {
-  fill: #6B7280
-  font: "Inter" 400 12
-}
-
-style box_primary {
-  fill: #6C5CE7
-  corner: 16
-}
 
 style box_green {
   fill: #10B981
@@ -26,36 +10,85 @@ style box_orange {
   corner: 16
 }
 
-# ─── Title ───────────────────────────────────────────────────────────────
-
-text @title "Bidirectional Sync Architecture" {
-  font: "Inter" 800 32
-  fill: #1A1A2E
+style box_primary {
+  fill: #6C5CE7
+  corner: 16
 }
 
-text @subtitle "R2: Text ↔ SceneGraph ↔ Canvas — all edits funnel through one graph" {
-  font: "Inter" 400 16
+style desc {
   fill: #6B7280
+  font: "Inter" 400 12
 }
 
-# ─── The three layers ───────────────────────────────────────────────────
+style label {
+  fill: #1A1A2E
+  font: "Inter" 600 14
+}
 
-rect @fd_text {
-  ## "FD Text — the .fd source file"
-  ## accept: "line-oriented, git-friendly diffs"
-  ## status: done
-  ## tag: core
-  w: 260 h: 140
-  use: box_primary
-  bg: #6C5CE7 corner=16 shadow=(0,4,20,#6C5CE740)
+rect @_anon_30 {
+  w: 100 h: 80
+  fill: #CCCCD9
+}
 
-  group { layout: column gap=8 pad=24
-    text "📝 .fd Text" { font: "Inter" 700 18; fill: #FFF }
-    text "Human + AI editable" { font: "Inter" 400 13; fill: #E0DDFF }
-    text "Parser → SceneGraph" { font: "Inter" 400 13; fill: #E0DDFF }
+group @perf_badges {
+  ## "Non-functional requirements for sync latency"
+  layout: row gap=16 pad=0
+  rect @badge_roundtrip {
+    w: 200 h: 48
+    fill: #FEF3C7
+    corner: 24
+    text @_anon_29 "Round-trip: <16ms" {
+      fill: #D97706
+      font: "Inter" 600 13
+    }
   }
+  rect @badge_render {
+    w: 160 h: 48
+    fill: #D1FAE5
+    corner: 24
+    text @_anon_28 "Render: <16ms" {
+      fill: #059669
+      font: "Inter" 600 13
+    }
+  }
+  rect @badge_parse {
+    w: 160 h: 48
+    fill: #F0EDFC
+    corner: 24
+    text @_anon_27 "Parse: <16ms" {
+      fill: #6C5CE7
+      font: "Inter" 600 13
+    }
+  }
+}
 
-  anim :hover { scale: 1.04; ease: spring 300ms }
+rect @canvas {
+  ## "Canvas — GPU-rendered interactive view"
+  ## accept: "R5.1: Vello + wgpu, 60 FPS"
+  ## status: done
+  w: 260 h: 140
+  use: box_orange
+  fill: #F59E0B
+  corner: 16
+  group @_anon_23 {
+    layout: column gap=8 pad=24
+    text @_anon_26 "Visual drag/draw tools" {
+      fill: #FEF3C7
+      font: "Inter" 400 13
+    }
+    text @_anon_25 "Vello + wgpu GPU render" {
+      fill: #FEF3C7
+      font: "Inter" 400 13
+    }
+    text @_anon_24 "🎨 Canvas" {
+      fill: #FFFFFF
+      font: "Inter" 700 18
+    }
+  }
+  anim :hover {
+    scale: 1.04
+    ease: spring 300ms
+  }
 }
 
 rect @scene_graph {
@@ -65,36 +98,77 @@ rect @scene_graph {
   ## priority: high
   w: 260 h: 140
   use: box_green
-  bg: #10B981 corner=16 shadow=(0,4,20,#10B98140)
-
-  group { layout: column gap=8 pad=24
-    text "🌐 SceneGraph" { font: "Inter" 700 18; fill: #FFF }
-    text "DAG (petgraph)" { font: "Inter" 400 13; fill: #D1FAE5 }
-    text "Single source of truth" { font: "Inter" 400 13; fill: #D1FAE5 }
+  fill: #10B981
+  corner: 16
+  group @_anon_19 {
+    layout: column gap=8 pad=24
+    text @_anon_22 "Single source of truth" {
+      fill: #D1FAE5
+      font: "Inter" 400 13
+    }
+    text @_anon_21 "DAG (petgraph)" {
+      fill: #D1FAE5
+      font: "Inter" 400 13
+    }
+    text @_anon_20 "🌐 SceneGraph" {
+      fill: #FFFFFF
+      font: "Inter" 700 18
+    }
   }
-
-  anim :hover { scale: 1.04; ease: spring 300ms }
+  anim :hover {
+    scale: 1.04
+    ease: spring 300ms
+  }
 }
 
-rect @canvas {
-  ## "Canvas — GPU-rendered interactive view"
-  ## accept: "R5.1: Vello + wgpu, 60 FPS"
+rect @fd_text {
+  ## "FD Text — the .fd source file"
+  ## accept: "line-oriented, git-friendly diffs"
   ## status: done
+  ## tag: core
   w: 260 h: 140
-  use: box_orange
-  bg: #F59E0B corner=16 shadow=(0,4,20,#F59E0B40)
-
-  group { layout: column gap=8 pad=24
-    text "🎨 Canvas" { font: "Inter" 700 18; fill: #FFF }
-    text "Vello + wgpu GPU render" { font: "Inter" 400 13; fill: #FEF3C7 }
-    text "Visual drag/draw tools" { font: "Inter" 400 13; fill: #FEF3C7 }
+  use: box_primary
+  fill: #6C5CE7
+  corner: 16
+  group @_anon_15 {
+    layout: column gap=8 pad=24
+    text @_anon_18 "Parser → SceneGraph" {
+      fill: #E0DDFF
+      font: "Inter" 400 13
+    }
+    text @_anon_17 "Human + AI editable" {
+      fill: #E0DDFF
+      font: "Inter" 400 13
+    }
+    text @_anon_16 "📝 .fd Text" {
+      fill: #FFFFFF
+      font: "Inter" 700 18
+    }
   }
-
-  anim :hover { scale: 1.04; ease: spring 300ms }
+  anim :hover {
+    scale: 1.04
+    ease: spring 300ms
+  }
 }
 
-# ─── Sync edges ──────────────────────────────────────────────────────────
+text @subtitle "R2: Text ↔ SceneGraph ↔ Canvas — all edits funnel through one graph" {
+  fill: #6B7280
+  font: "Inter" 400 16
+}
 
+text @title "Bidirectional Sync Architecture" {
+  fill: #1A1A2E
+  font: "Inter" 800 32
+}
+
+@title -> center_in: canvas
+@subtitle -> offset: @title 0, 50
+@fd_text -> offset: @subtitle 0, 80
+@fd_text -> absolute: 86.04, 588.07
+@scene_graph -> offset: @fd_text 320, 0
+@canvas -> offset: @scene_graph 320, 0
+@perf_badges -> offset: @fd_text 160, 220
+@_anon_30 -> absolute: 275, 335.92
 edge @text_to_graph {
   ## "R2.2: Text → Canvas: source edits re-render in <16ms"
   ## accept: "incremental re-parse, not full document"
@@ -105,7 +179,6 @@ edge @text_to_graph {
   arrow: end
   curve: smooth
 }
-
 edge @graph_to_text {
   ## "R2.1: Canvas → Text: visual edits update source in <16ms"
   from: @scene_graph
@@ -115,7 +188,6 @@ edge @graph_to_text {
   arrow: end
   curve: smooth
 }
-
 edge @graph_to_canvas {
   ## "Layout solver resolves constraints → absolute coords"
   from: @scene_graph
@@ -125,7 +197,6 @@ edge @graph_to_canvas {
   arrow: end
   curve: smooth
 }
-
 edge @canvas_to_graph {
   ## "User interactions (drag, resize) mutate graph directly"
   from: @canvas
@@ -135,40 +206,3 @@ edge @canvas_to_graph {
   arrow: end
   curve: smooth
 }
-
-# ─── Performance requirements ────────────────────────────────────────────
-
-group @perf_badges {
-  ## "Non-functional requirements for sync latency"
-  layout: row gap=16 pad=0
-
-  rect @badge_parse {
-    w: 160 h: 48
-    fill: #F0EDFC
-    corner: 24
-    text "Parse: <16ms" { font: "Inter" 600 13; fill: #6C5CE7 }
-  }
-
-  rect @badge_render {
-    w: 160 h: 48
-    fill: #D1FAE5
-    corner: 24
-    text "Render: <16ms" { font: "Inter" 600 13; fill: #059669 }
-  }
-
-  rect @badge_roundtrip {
-    w: 200 h: 48
-    fill: #FEF3C7
-    corner: 24
-    text "Round-trip: <16ms" { font: "Inter" 600 13; fill: #D97706 }
-  }
-}
-
-# ─── Layout ─────────────────────────────────────────────────────────────
-
-@title -> center_in: canvas
-@subtitle -> offset: @title 0, 50
-@fd_text -> offset: @subtitle 0, 80
-@scene_graph -> offset: @fd_text 320, 0
-@canvas -> offset: @scene_graph 320, 0
-@perf_badges -> offset: @fd_text 160, 220
