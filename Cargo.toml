@@ -36,6 +36,7 @@ winnow = "0.7"
 vello = "0.4"
 wgpu = "24"
 peniko = "0.3"
+kurbo = "0.11"
 
 # WASM
 wasm-bindgen = "0.2"

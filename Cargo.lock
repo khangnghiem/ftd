@@ -349,6 +349,7 @@ name = "fd-render"
 version = "0.1.0"
 dependencies = [
  "fd-core",
+ "kurbo",
  "log",
  "peniko 0.3.2",
  "pretty_assertions",

@@ -11,6 +11,7 @@ fd-core = { path = "../fd-core" }
 vello = { workspace = true }
 wgpu = { workspace = true }
 peniko = { workspace = true }
+kurbo = { workspace = true }
 log = { workspace = true }
 
 [dev-dependencies]
