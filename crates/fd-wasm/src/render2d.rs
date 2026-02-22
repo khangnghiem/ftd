@@ -67,7 +67,16 @@ pub fn render_scene(
     draw_grid(ctx, canvas_width, canvas_height, theme);
 
     // Paint nodes recursively from root
-    render_node(ctx, graph, graph.root, bounds, selected_ids, theme, hovered_id, pressed_id);
+    render_node(
+        ctx,
+        graph,
+        graph.root,
+        bounds,
+        selected_ids,
+        theme,
+        hovered_id,
+        pressed_id,
+    );
 
     // Draw edges between nodes
     draw_edges(ctx, graph, bounds, time_ms, hovered_id, pressed_id);
@@ -134,7 +143,16 @@ fn render_node(
 
     // Paint children
     for child_idx in graph.children(idx) {
-        render_node(ctx, graph, child_idx, bounds, selected_ids, theme, hovered_id, pressed_id);
+        render_node(
+            ctx,
+            graph,
+            child_idx,
+            bounds,
+            selected_ids,
+            theme,
+            hovered_id,
+            pressed_id,
+        );
     }
 
     // Annotation badge (drawn after children so it's on top)

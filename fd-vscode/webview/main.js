@@ -233,7 +233,7 @@ function setupPointerEvents() {
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) - panX;
     const y = (e.clientY - rect.top) - panY;
-    const changed = fdCanvas.handle_pointer_up(
+    const resultJson = fdCanvas.handle_pointer_up(
       x,
       y,
       e.shiftKey,
@@ -241,9 +241,14 @@ function setupPointerEvents() {
       e.altKey,
       e.metaKey
     );
-    if (changed) {
+    const result = JSON.parse(resultJson);
+    if (result.changed) {
       render();
       syncTextToExtension();
+    }
+    // Auto-switch toolbar/cursor when tool changes (e.g. after drawing)
+    if (result.toolSwitched) {
+      updateToolbarActive(result.tool);
     }
     canvas.releasePointerCapture(e.pointerId);
     // Update properties panel after interaction ends
@@ -792,7 +797,7 @@ function setupContextMenu() {
     const selectedId = fdCanvas.get_selected_id();
     // Try to find node under pointer via selecting
     fdCanvas.handle_pointer_down(x, y, 1.0);
-    fdCanvas.handle_pointer_up(x, y);
+    fdCanvas.handle_pointer_up(x, y, false, false, false, false);
     const hitId = fdCanvas.get_selected_id();
     render();
 
@@ -1084,12 +1089,47 @@ function openInlineEditor(nodeId, propKey, currentValue) {
 
 // ─── Drag & Drop ─────────────────────────────────────────────────────────
 
+/** Default dimensions for shapes when dropped from palette. */
+const DEFAULT_SHAPE_SIZES = { rect: [100, 80], ellipse: [100, 80], text: [80, 24] };
+
 function setupDragAndDrop() {
-  // Palette items
+  // Palette items — create custom drag images sized to default node dimensions
   document.querySelectorAll(".palette-item[data-shape]").forEach((item) => {
     item.addEventListener("dragstart", (e) => {
-      e.dataTransfer.setData("text/plain", item.getAttribute("data-shape"));
+      const shape = item.getAttribute("data-shape");
+      e.dataTransfer.setData("text/plain", shape);
       e.dataTransfer.effectAllowed = "copy";
+
+      // Build an offscreen drag ghost at default node size
+      const [w, h] = DEFAULT_SHAPE_SIZES[shape] || [100, 80];
+      const ghost = document.createElement("canvas");
+      ghost.width = w;
+      ghost.height = h;
+      const gc = ghost.getContext("2d");
+      gc.fillStyle = "rgba(200, 200, 215, 0.6)";
+      gc.strokeStyle = "rgba(100, 100, 120, 0.8)";
+      gc.lineWidth = 1.5;
+      if (shape === "ellipse") {
+        gc.beginPath();
+        gc.ellipse(w / 2, h / 2, w / 2 - 1, h / 2 - 1, 0, 0, Math.PI * 2);
+        gc.fill();
+        gc.stroke();
+      } else if (shape === "text") {
+        gc.font = "14px -apple-system, BlinkMacSystemFont, sans-serif";
+        gc.fillStyle = "rgba(80, 80, 90, 0.9)";
+        gc.fillText("Text", 8, h / 2 + 5);
+      } else {
+        gc.beginPath();
+        gc.roundRect(1, 1, w - 2, h - 2, 6);
+        gc.fill();
+        gc.stroke();
+      }
+      ghost.style.position = "absolute";
+      ghost.style.top = "-9999px";
+      document.body.appendChild(ghost);
+      e.dataTransfer.setDragImage(ghost, w / 2, h / 2);
+      // Clean up after drag starts
+      requestAnimationFrame(() => ghost.remove());
     });
   });
 
