@@ -18,6 +18,13 @@ let FdCanvas = null;
 /** @type {any} */
 let fdCanvas = null;
 
+/** Canvas pan offset (JS-side, applied via ctx.translate) */
+let panX = 0;
+let panY = 0;
+let panStartX = 0;
+let panStartY = 0;
+let panDragging = false;
+
 /** @type {CanvasRenderingContext2D | null} */
 let ctx = null;
 
@@ -103,7 +110,11 @@ async function main() {
 
 function render() {
   if (!fdCanvas || !ctx) return;
+  const dpr = window.devicePixelRatio || 1;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, panX * dpr, panY * dpr);
   fdCanvas.render(ctx);
+  ctx.restore();
 }
 
 // ─── Pointer Events ──────────────────────────────────────────────────────
@@ -114,11 +125,26 @@ function setupPointerEvents() {
   canvas.addEventListener("pointerdown", (e) => {
     if (!fdCanvas) return;
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const rawX = e.clientX - rect.left;
+    const rawY = e.clientY - rect.top;
+
+    // Middle-click or Space+click → start pan drag
+    if (e.button === 1 || isPanning) {
+      panDragging = true;
+      panStartX = e.clientX - panX;
+      panStartY = e.clientY - panY;
+      canvas.style.cursor = "grabbing";
+      canvas.setPointerCapture(e.pointerId);
+      e.preventDefault();
+      return;
+    }
+
+    // Adjust for pan offset
+    const x = rawX - panX;
+    const y = rawY - panY;
 
     // Check if clicking an annotation badge
-    const badgeHit = fdCanvas.hit_test_badge(x, y);
+    const badgeHit = fdCanvas.hit_test_badge(rawX, rawY);
     if (badgeHit) {
       openAnnotationCard(badgeHit, e.clientX, e.clientY);
       return;
@@ -143,9 +169,18 @@ function setupPointerEvents() {
 
   canvas.addEventListener("pointermove", (e) => {
     if (!fdCanvas) return;
+
+    // Pan drag in progress
+    if (panDragging) {
+      panX = e.clientX - panStartX;
+      panY = e.clientY - panStartY;
+      render();
+      return;
+    }
+
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) - panX;
+    const y = (e.clientY - rect.top) - panY;
     const changed = fdCanvas.handle_pointer_move(
       x,
       y,
@@ -160,9 +195,18 @@ function setupPointerEvents() {
 
   canvas.addEventListener("pointerup", (e) => {
     if (!fdCanvas) return;
+
+    // End pan drag
+    if (panDragging) {
+      panDragging = false;
+      canvas.style.cursor = isPanning ? "grab" : "";
+      canvas.releasePointerCapture(e.pointerId);
+      return;
+    }
+
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) - panX;
+    const y = (e.clientY - rect.top) - panY;
     const changed = fdCanvas.handle_pointer_up(
       x,
       y,
@@ -179,6 +223,14 @@ function setupPointerEvents() {
     // Update properties panel after interaction ends
     updatePropertiesPanel();
   });
+
+  // ── Wheel / Trackpad scroll → pan ──
+  canvas.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    panX -= e.deltaX;
+    panY -= e.deltaY;
+    render();
+  }, { passive: false });
 }
 
 // ─── Resize ──────────────────────────────────────────────────────────────
