@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.11] — 2026-02-22
+
+### Fixed
+
+- **Gradient fill roundtrip**: `fill: linear(...)` and `fill: radial(...)` were emitted correctly but couldn't be re-parsed (parser only accepted solid hex). Both `parse_node_property` and `parse_style_block` now use `parse_paint()` which handles all three paint types.
+- **Radial gradient stop parsing**: first gradient stop in `radial(...)` form no longer requires a leading comma (was silently producing empty stop lists).
+- **Shadow roundtrip**: shadow was parsed correctly but never emitted, so it was silently dropped after the first `emit_document`. Fixed emitter to write `shadow: (ox,oy,blur,#COLOR)` and parser to read it back.
+- Added 5 new roundtrip tests: `roundtrip_linear_gradient_fill`, `roundtrip_radial_gradient_fill`, `roundtrip_shadow`, `roundtrip_path_kind`, `roundtrip_gradient_in_named_style`.
+
+## [0.6.10] — 2026-02-22
+
+### Added
+
+- **Real path rendering**: `NodeKind::Path` now renders via proper Canvas2D path commands (`moveTo`, `lineTo`, `quadraticCurveTo`, `bezierCurveTo`, `closePath`) from all `PathCmd` variants. Previously just showed a dashed placeholder rect.
+- **Gradient fills in canvas**: `LinearGradient` and `RadialGradient` paint types now create real `CanvasGradient` objects. Linear uses bounding-box + angle math; radial is centered in the bounding box.
+- **Drop shadows in canvas**: `Style.shadow` (blur, offset_x, offset_y, color) is applied via Canvas2D shadow properties before fill, cleared after so stroke is unaffected.
+
 ## [0.6.6] — 2026-02-22
 
 ### Added
