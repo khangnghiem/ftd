@@ -89,6 +89,7 @@ async function main() {
     setupDragAndDrop();
     setupHelpButton();
     setupApplePencilPro();
+    setupThemeToggle();
 
     // Tell extension we're ready
     vscode.postMessage({ type: "ready" });
@@ -923,6 +924,43 @@ function setupHelpButton() {
   }
 }
 
-// ─── Start ───────────────────────────────────────────────────────────────
+// ─── Theme Toggle ─────────────────────────────────────────────────────────────
+
+let isDarkTheme = false;
+
+function setupThemeToggle() {
+  const btn = document.getElementById("theme-toggle-btn");
+  if (!btn) return;
+
+  // Restore persisted theme
+  const savedState = vscode.getState();
+  if (savedState && savedState.darkTheme) {
+    isDarkTheme = true;
+    applyTheme(true);
+  }
+
+  btn.addEventListener("click", () => {
+    isDarkTheme = !isDarkTheme;
+    applyTheme(isDarkTheme);
+    vscode.setState({ ...(vscode.getState() || {}), darkTheme: isDarkTheme });
+  });
+}
+
+function applyTheme(isDark) {
+  const btn = document.getElementById("theme-toggle-btn");
+  if (isDark) {
+    document.body.classList.add("dark-theme");
+    if (btn) btn.textContent = "🌙";
+  } else {
+    document.body.classList.remove("dark-theme");
+    if (btn) btn.textContent = "☀️";
+  }
+  if (fdCanvas) {
+    fdCanvas.set_theme(isDark);
+    render();
+  }
+}
+
+// ─── Start ───────────────────────────────────────────────────────────────────
 
 main();

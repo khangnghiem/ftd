@@ -162,13 +162,19 @@ text @title "Bidirectional Sync Architecture" {
 }
 
 @title -> center_in: canvas
+@title -> absolute: 423.87, 649.43
 @subtitle -> offset: @title 0, 50
 @fd_text -> offset: @subtitle 0, 80
-@fd_text -> absolute: 86.04, 588.07
+@fd_text -> absolute: 187.45, 473.29
 @scene_graph -> offset: @fd_text 320, 0
+@scene_graph -> absolute: 106.64, 203.98
 @canvas -> offset: @scene_graph 320, 0
+@canvas -> absolute: 449.99, 166.35
 @perf_badges -> offset: @fd_text 160, 220
-@_anon_30 -> absolute: 275, 335.92
+@perf_badges -> absolute: 387.91, 231.75
+@badge_roundtrip -> absolute: 623.94, 719.44
+@_anon_29 -> absolute: 694.32, 234.5
+@_anon_30 -> absolute: 694.77, 460.38
 edge @text_to_graph {
   ## "R2.2: Text → Canvas: source edits re-render in <16ms"
   ## accept: "incremental re-parse, not full document"

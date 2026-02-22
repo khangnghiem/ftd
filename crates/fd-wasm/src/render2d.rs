@@ -8,6 +8,42 @@ use fd_core::{NodeIndex, ResolvedBounds, SceneGraph};
 use std::collections::HashMap;
 use web_sys::CanvasRenderingContext2d;
 
+/// Theme-dependent colors for the canvas renderer.
+pub struct CanvasTheme {
+    pub bg: &'static str,
+    pub grid: &'static str,
+    pub badge_border: &'static str,
+    pub placeholder_border: &'static str,
+    pub placeholder_bg: &'static str,
+    pub placeholder_text: &'static str,
+}
+
+impl CanvasTheme {
+    /// Light theme — white background, subtle gray grid.
+    pub fn light() -> Self {
+        Self {
+            bg: "#F8F9FA",
+            grid: "rgba(0, 0, 0, 0.06)",
+            badge_border: "#F8F9FA",
+            placeholder_border: "#9CA3AF",
+            placeholder_bg: "rgba(156, 163, 175, 0.08)",
+            placeholder_text: "#6B7280",
+        }
+    }
+
+    /// Dark theme — Catppuccin Mocha.
+    pub fn dark() -> Self {
+        Self {
+            bg: "#1E1E2E",
+            grid: "rgba(255, 255, 255, 0.05)",
+            badge_border: "#1E1E2E",
+            placeholder_border: "#6B7280",
+            placeholder_bg: "rgba(107, 114, 128, 0.08)",
+            placeholder_text: "#9CA3AF",
+        }
+    }
+}
+
 /// Render the entire scene graph to a Canvas2D context.
 pub fn render_scene(
     ctx: &CanvasRenderingContext2d,
@@ -16,16 +52,17 @@ pub fn render_scene(
     canvas_width: f64,
     canvas_height: f64,
     selected_id: Option<&str>,
+    theme: &CanvasTheme,
 ) {
     // Clear canvas
-    ctx.set_fill_style_str("#1E1E2E");
+    ctx.set_fill_style_str(theme.bg);
     ctx.fill_rect(0.0, 0.0, canvas_width, canvas_height);
 
     // Draw grid dots
-    draw_grid(ctx, canvas_width, canvas_height);
+    draw_grid(ctx, canvas_width, canvas_height, theme);
 
     // Paint nodes recursively from root
-    render_node(ctx, graph, graph.root, bounds, selected_id);
+    render_node(ctx, graph, graph.root, bounds, selected_id, theme);
 
     // Draw edges between nodes
     draw_edges(ctx, graph, bounds);
@@ -37,6 +74,7 @@ fn render_node(
     idx: NodeIndex,
     bounds: &HashMap<NodeIndex, ResolvedBounds>,
     selected_id: Option<&str>,
+    theme: &CanvasTheme,
 ) {
     let node = &graph.graph[idx];
     let node_bounds = match bounds.get(&idx) {
@@ -50,7 +88,7 @@ fn render_node(
     match &node.kind {
         NodeKind::Root => {}
         NodeKind::Generic => {
-            draw_generic_placeholder(ctx, node_bounds, node.id.as_str());
+            draw_generic_placeholder(ctx, node_bounds, node.id.as_str(), theme);
         }
         NodeKind::Rect { .. } => {
             draw_rect(ctx, node_bounds, &style, is_selected);
@@ -71,12 +109,12 @@ fn render_node(
 
     // Paint children
     for child_idx in graph.children(idx) {
-        render_node(ctx, graph, child_idx, bounds, selected_id);
+        render_node(ctx, graph, child_idx, bounds, selected_id, theme);
     }
 
     // Annotation badge (drawn after children so it's on top)
     if !node.annotations.is_empty() && !matches!(node.kind, NodeKind::Root) {
-        draw_annotation_badge(ctx, node_bounds, &node.annotations);
+        draw_annotation_badge(ctx, node_bounds, &node.annotations, theme);
     }
 
     // Selection overlay (drawn after children so it's on top)
@@ -223,12 +261,17 @@ fn draw_path_placeholder(ctx: &CanvasRenderingContext2d, b: &ResolvedBounds, sty
 }
 
 /// Draw a generic placeholder node — dashed border with @id label.
-fn draw_generic_placeholder(ctx: &CanvasRenderingContext2d, b: &ResolvedBounds, id: &str) {
+fn draw_generic_placeholder(
+    ctx: &CanvasRenderingContext2d,
+    b: &ResolvedBounds,
+    id: &str,
+    theme: &CanvasTheme,
+) {
     let (x, y, w, h) = (b.x as f64, b.y as f64, b.width as f64, b.height as f64);
     ctx.save();
 
     // Dashed border
-    ctx.set_stroke_style_str("#6B7280");
+    ctx.set_stroke_style_str(theme.placeholder_border);
     ctx.set_line_width(1.0);
     let _ = ctx.set_line_dash(&js_sys::Array::of2(
         &wasm_bindgen::JsValue::from_f64(4.0),
@@ -238,12 +281,12 @@ fn draw_generic_placeholder(ctx: &CanvasRenderingContext2d, b: &ResolvedBounds, 
     ctx.stroke();
 
     // Background fill (subtle)
-    ctx.set_fill_style_str("rgba(107, 114, 128, 0.08)");
+    ctx.set_fill_style_str(theme.placeholder_bg);
     ctx.fill();
 
     // @id label centered
     ctx.set_font("11px Inter, system-ui, sans-serif");
-    ctx.set_fill_style_str("#9CA3AF");
+    ctx.set_fill_style_str(theme.placeholder_text);
     ctx.set_text_align("center");
     ctx.set_text_baseline("middle");
     let label = format!("@{}", id);
@@ -275,8 +318,8 @@ fn draw_selection_handles(ctx: &CanvasRenderingContext2d, b: &ResolvedBounds) {
     }
 }
 
-fn draw_grid(ctx: &CanvasRenderingContext2d, width: f64, height: f64) {
-    ctx.set_fill_style_str("rgba(255, 255, 255, 0.05)");
+fn draw_grid(ctx: &CanvasRenderingContext2d, width: f64, height: f64, theme: &CanvasTheme) {
+    ctx.set_fill_style_str(theme.grid);
     let spacing = 20.0;
     let mut x = 0.0;
     while x < width {
@@ -302,6 +345,7 @@ fn draw_annotation_badge(
     ctx: &CanvasRenderingContext2d,
     b: &ResolvedBounds,
     annotations: &[Annotation],
+    theme: &CanvasTheme,
 ) {
     let count = annotations.len();
     let radius = 5.0;
@@ -331,8 +375,8 @@ fn draw_annotation_badge(
     let _ = ctx.arc(cx, cy, radius, 0.0, std::f64::consts::TAU);
     ctx.fill();
 
-    // White border for visibility
-    ctx.set_stroke_style_str("#1E1E2E");
+    // Border matches canvas background for visibility
+    ctx.set_stroke_style_str(theme.badge_border);
     ctx.set_line_width(1.5);
     ctx.stroke();
 

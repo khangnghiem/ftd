@@ -2,7 +2,7 @@
   "name": "fast-draft",
   "displayName": "Fast Draft",
   "description": "Syntax highlighting, live parser validation, and interactive canvas editor for .fd (Fast Draft) files",
-  "version": "0.5.9",
+  "version": "0.6.0",
   "publisher": "KhangNghiem",
   "license": "MIT",
   "icon": "icon.png",
@@ -131,6 +131,19 @@
           "type": "string",
           "default": "google/gemini-2.0-flash-exp:free",
           "description": "OpenRouter model to use (e.g. google/gemini-2.0-flash-exp:free, anthropic/claude-3.5-sonnet)"
+        },
+        "fd.canvas.defaultTheme": {
+          "type": "string",
+          "default": "light",
+          "enum": [
+            "light",
+            "dark"
+          ],
+          "enumDescriptions": [
+            "Light canvas background (default)",
+            "Dark canvas background (Catppuccin Mocha)"
+          ],
+          "description": "Default theme for the FD canvas editor"
         }
       }
     },
