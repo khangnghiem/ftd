@@ -51,13 +51,18 @@ Before modifying ANY file:
 
 ### 🔀 Git Workflow (MANDATORY)
 
-| Rule                     | Description                                             |
-| ------------------------ | ------------------------------------------------------- |
-| **Never commit to main** | All changes go through feature branches                 |
-| **Branch naming**        | `feat/`, `fix/`, `refactor/`, `test/`, `docs/` prefixes |
-| **PR required**          | All merges via Pull Request                             |
-| **CI must pass**         | Never force-push or bypass checks                       |
-| **Sync before branch**   | Always `git fetch origin main` before creating branches |
+| Rule                     | Description                                                     |
+| ------------------------ | --------------------------------------------------------------- |
+| **Never commit to main** | All changes go through feature branches                         |
+| **Branch naming**        | `feat/`, `fix/`, `refactor/`, `test/`, `docs/` prefixes         |
+| **PR required**          | All merges via Pull Request                                     |
+| **CI must pass**         | Never force-push or bypass checks                               |
+| **Sync before branch**   | Always `git fetch origin main` before creating branches         |
+| **Never commit secrets** | `.env`, tokens, passwords, and API keys must NEVER be committed |
+
+> [!CAUTION]
+> **NEVER stage or commit `.env`, `.env.*`, or any file containing secrets, tokens, or API keys.**
+> These are always git-ignored. If accidentally staged, run `git rm --cached .env` immediately.
 
 **Branch Flow:**
 

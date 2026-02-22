@@ -40,6 +40,9 @@ let annotationCardNodeId = null;
 /** Node ID from right-click context menu */
 let contextMenuNodeId = null;
 
+/** Current view mode: "design" | "spec" */
+let viewMode = "design";
+
 // ─── Initialization ──────────────────────────────────────────────────────
 
 async function main() {
@@ -90,6 +93,7 @@ async function main() {
     setupPointerEvents();
     setupResizeObserver(container);
     setupToolbar();
+    setupViewToggle();
     setupAnnotationCard();
     setupContextMenu();
     setupPropertiesPanel();
@@ -293,6 +297,7 @@ window.addEventListener("message", (event) => {
       fdCanvas.set_text(message.text);
       render();
       suppressTextSync = false;
+      if (viewMode === "spec") refreshSpecView();
       break;
     }
     case "selectNode": {
@@ -312,6 +317,10 @@ window.addEventListener("message", (event) => {
           btn.getAttribute("data-tool") === message.tool
         );
       });
+      break;
+    }
+    case "setViewMode": {
+      setViewMode(message.mode);
       break;
     }
   }
@@ -1087,6 +1096,266 @@ function setupDragAndDrop() {
       updatePropertiesPanel();
     }
   });
+}
+
+// ─── View Mode Toggle ────────────────────────────────────────────────────
+
+function setupViewToggle() {
+  document.getElementById("view-design")?.addEventListener("click", () => setViewMode("design"));
+  document.getElementById("view-spec")?.addEventListener("click", () => setViewMode("spec"));
+}
+
+function setViewMode(mode) {
+  viewMode = mode;
+  const canvas = document.getElementById("fd-canvas");
+  const overlay = document.getElementById("spec-overlay");
+  const isSpec = mode === "spec";
+
+  document.getElementById("view-design")?.classList.toggle("active", !isSpec);
+  document.getElementById("view-spec")?.classList.toggle("active", isSpec);
+
+  if (canvas) canvas.style.display = isSpec ? "none" : "";
+  if (overlay) overlay.style.display = isSpec ? "" : "none";
+
+  // Show/hide tool buttons that don't apply in spec view
+  document.querySelectorAll(".tool-btn[data-tool]").forEach((btn) => {
+    btn.style.display = isSpec ? "none" : "";
+  });
+  document.querySelectorAll(".tool-sep").forEach((sep) => {
+    sep.style.display = isSpec ? "none" : "";
+  });
+  // Hide shape palette and properties panel in spec view
+  const palette = document.getElementById("shape-palette");
+  const props = document.getElementById("props-panel");
+  if (palette) palette.style.display = isSpec ? "none" : "";
+  if (props) props.style.display = isSpec ? "none" : "";
+
+  if (isSpec) refreshSpecView();
+}
+
+function refreshSpecView() {
+  const overlay = document.getElementById("spec-overlay");
+  if (!overlay || !fdCanvas) return;
+  const source = fdCanvas.get_text();
+  overlay.innerHTML = buildSpecView(source);
+}
+
+// ─── Spec View Parser (client-side) ──────────────────────────────────────
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/**
+ * Parse .fd source and render a spec HTML string showing only
+ * node/edge IDs and their ## annotations (requirements, ACs, status, etc).
+ */
+function buildSpecView(source) {
+  const lines = source.split("\n");
+  let html = "";
+  let pendingAnnotations = [];
+  let currentNodeId = "";
+  let currentNodeKind = "";
+  let insideNode = false;
+  let braceDepth = 0;
+
+  // Collect edges
+  const edges = [];
+  let currentEdge = null;
+  let insideEdge = false;
+
+  // Also collect ALL nodes (for Design View node list in spec)
+  const allNodes = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    const openBraces = (trimmed.match(/\{/g) || []).length;
+    const closeBraces = (trimmed.match(/\}/g) || []).length;
+
+    // Regular comment — skip
+    if (trimmed.startsWith("#") && !trimmed.startsWith("##")) continue;
+
+    // Annotation line
+    if (trimmed.startsWith("##")) {
+      const ann = parseSpecAnnotation(trimmed);
+      if (ann) {
+        if (insideEdge && currentEdge) {
+          currentEdge.annotations.push(ann);
+        } else {
+          pendingAnnotations.push(ann);
+        }
+      }
+      continue;
+    }
+
+    // Edge block
+    const edgeMatch = trimmed.match(/^edge\s+@(\w+)\s*\{/);
+    if (edgeMatch) {
+      insideEdge = true;
+      currentEdge = { id: edgeMatch[1], from: "", to: "", label: "", annotations: [] };
+      braceDepth += openBraces - closeBraces;
+      continue;
+    }
+
+    if (insideEdge && currentEdge) {
+      const fromMatch = trimmed.match(/^from:\s*@(\w+)/);
+      const toMatch = trimmed.match(/^to:\s*@(\w+)/);
+      const labelMatch = trimmed.match(/^label:\s*"([^"]*)"/);
+      if (fromMatch) currentEdge.from = fromMatch[1];
+      if (toMatch) currentEdge.to = toMatch[1];
+      if (labelMatch) currentEdge.label = labelMatch[1];
+      braceDepth += openBraces - closeBraces;
+      if (trimmed === "}") {
+        insideEdge = false;
+        if (currentEdge.from && currentEdge.to) edges.push(currentEdge);
+        currentEdge = null;
+      }
+      continue;
+    }
+
+    // Closing brace
+    if (trimmed === "}") {
+      braceDepth -= 1;
+      if (insideNode) {
+        if (currentNodeId) {
+          allNodes.push({ id: currentNodeId, kind: currentNodeKind, annotations: pendingAnnotations });
+          if (pendingAnnotations.length > 0) {
+            html += renderSpecNode(currentNodeId, currentNodeKind, pendingAnnotations);
+          }
+          pendingAnnotations = [];
+          currentNodeId = "";
+          currentNodeKind = "";
+        }
+        insideNode = braceDepth > 0;
+      }
+      continue;
+    }
+
+    // Typed node: rect @foo { / group @foo {
+    const nodeMatch = trimmed.match(
+      /^(group|rect|ellipse|path|text)\s+@(\w+)(?:\s+"[^"]*")?\s*\{?/
+    );
+    if (nodeMatch) {
+      if (currentNodeId && pendingAnnotations.length > 0) {
+        allNodes.push({ id: currentNodeId, kind: currentNodeKind, annotations: pendingAnnotations });
+        html += renderSpecNode(currentNodeId, currentNodeKind, pendingAnnotations);
+        pendingAnnotations = [];
+      }
+      currentNodeKind = nodeMatch[1];
+      currentNodeId = nodeMatch[2];
+      insideNode = true;
+      if (trimmed.endsWith("{")) braceDepth += 1;
+      continue;
+    }
+
+    // Generic node: @foo {
+    const genericMatch = trimmed.match(/^@(\w+)\s*\{/);
+    if (genericMatch) {
+      if (currentNodeId && pendingAnnotations.length > 0) {
+        allNodes.push({ id: currentNodeId, kind: currentNodeKind, annotations: pendingAnnotations });
+        html += renderSpecNode(currentNodeId, currentNodeKind, pendingAnnotations);
+        pendingAnnotations = [];
+      }
+      currentNodeKind = "spec";
+      currentNodeId = genericMatch[1];
+      insideNode = true;
+      braceDepth += 1;
+      continue;
+    }
+
+    braceDepth += openBraces - closeBraces;
+  }
+
+  // Flush last node
+  if (currentNodeId && pendingAnnotations.length > 0) {
+    allNodes.push({ id: currentNodeId, kind: currentNodeKind, annotations: pendingAnnotations });
+    html += renderSpecNode(currentNodeId, currentNodeKind, pendingAnnotations);
+  }
+
+  // Nodes with no annotations — show as a compact list
+  const annotatedIds = new Set(allNodes.filter(n => n.annotations.length > 0).map(n => n.id));
+  const unannotated = allNodes.filter(n => n.annotations.length === 0);
+  if (unannotated.length > 0) {
+    html += `<div class="spec-section-header">Nodes without annotations</div>`;
+    html += `<div class="spec-node-list">`;
+    for (const n of unannotated) {
+      html += `<span class="spec-node-chip"><span class="spec-chip-kind">${escapeHtml(n.kind)}</span> @${escapeHtml(n.id)}</span>`;
+    }
+    html += `</div>`;
+  }
+
+  // Edges
+  if (edges.length > 0) {
+    html += `<div class="spec-section-header">Flows &amp; Edges</div>`;
+    for (const edge of edges) {
+      html += `<div class="spec-edge">`;
+      html += `<span class="edge-arrow"><strong>@${escapeHtml(edge.from)}</strong> → <strong>@${escapeHtml(edge.to)}</strong></span>`;
+      if (edge.label) html += ` <span class="edge-label">— ${escapeHtml(edge.label)}</span>`;
+      for (const ann of edge.annotations) {
+        if (ann.type === "description") {
+          html += `<div class="spec-description">${escapeHtml(ann.value)}</div>`;
+        }
+      }
+      html += `</div>`;
+    }
+  }
+
+  if (!html) return `<div class="spec-empty">No nodes found in this document.</div>`;
+  return html;
+}
+
+function parseSpecAnnotation(line) {
+  const trimmed = line.replace(/^##\s*/, "");
+  const acceptMatch = trimmed.match(/^accept:\s*"([^"]*)"/);
+  if (acceptMatch) return { type: "accept", value: acceptMatch[1] };
+  const statusMatch = trimmed.match(/^status:\s*(\S+)/);
+  if (statusMatch) return { type: "status", value: statusMatch[1] };
+  const priorityMatch = trimmed.match(/^priority:\s*(\S+)/);
+  if (priorityMatch) return { type: "priority", value: priorityMatch[1] };
+  const tagMatch = trimmed.match(/^tag:\s*(.+)/);
+  if (tagMatch) return { type: "tag", value: tagMatch[1].trim() };
+  const descMatch = trimmed.match(/^"([^"]*)"/);
+  if (descMatch) return { type: "description", value: descMatch[1] };
+  return null;
+}
+
+function renderSpecNode(id, kind, annotations) {
+  const isGeneric = kind === "spec" || kind === "";
+  let h = `<div class="spec-node${isGeneric ? " generic" : ""}">`;
+  h += `<div class="spec-node-header">`;
+  h += `<span class="spec-node-id">@${escapeHtml(id)}</span>`;
+  h += `<span class="spec-kind-badge${isGeneric ? " spec" : ""}">${escapeHtml(kind || "spec")}</span>`;
+  h += `</div>`;
+
+  const descriptions = annotations.filter((a) => a.type === "description");
+  const accepts = annotations.filter((a) => a.type === "accept");
+  const statuses = annotations.filter((a) => a.type === "status");
+  const priorities = annotations.filter((a) => a.type === "priority");
+  const tags = annotations.filter((a) => a.type === "tag");
+
+  for (const d of descriptions) h += `<div class="spec-description">${escapeHtml(d.value)}</div>`;
+  for (const a of accepts) h += `<div class="spec-accept-item">${escapeHtml(a.value)}</div>`;
+
+  if (statuses.length || priorities.length || tags.length) {
+    h += `<div class="spec-meta-row">`;
+    for (const s of statuses) h += `<span class="spec-badge status-${escapeHtml(s.value)}">${escapeHtml(s.value)}</span>`;
+    for (const p of priorities) h += `<span class="spec-badge priority-${escapeHtml(p.value)}">${escapeHtml(p.value)}</span>`;
+    for (const t of tags) {
+      for (const tag of t.value.split(",")) {
+        h += `<span class="spec-badge tag">${escapeHtml(tag.trim())}</span>`;
+      }
+    }
+    h += `</div>`;
+  }
+
+  h += `</div>`;
+  return h;
 }
 
 // ─── Help Button ─────────────────────────────────────────────────────────

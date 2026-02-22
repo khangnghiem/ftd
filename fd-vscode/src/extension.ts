@@ -11,6 +11,10 @@ import { refineSelectedNodes, findAnonNodeIds } from "./ai-refine";
  */
 class FdEditorProvider implements vscode.CustomTextEditorProvider {
   public static readonly viewType = "fd.canvas";
+  /** The most recently focused canvas webview panel, for command routing. */
+  public static activePanel: vscode.WebviewPanel | undefined;
+  /** Current view mode of the active panel. */
+  public static activeViewMode: "design" | "spec" = "design";
 
   constructor(private readonly context: vscode.ExtensionContext) { }
 
@@ -103,8 +107,20 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
         }
       );
 
+    // Track active panel for command routing
+    webviewPanel.onDidChangeViewState((e) => {
+      if (e.webviewPanel.active) {
+        FdEditorProvider.activePanel = webviewPanel;
+      } else if (FdEditorProvider.activePanel === webviewPanel) {
+        FdEditorProvider.activePanel = undefined;
+      }
+    });
+
     // Cleanup
     webviewPanel.onDidDispose(() => {
+      if (FdEditorProvider.activePanel === webviewPanel) {
+        FdEditorProvider.activePanel = undefined;
+      }
       changeDocumentSubscription.dispose();
       cursorSubscription.dispose();
     });
@@ -351,6 +367,175 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       background: var(--fd-border);
       margin: 0 5px;
       opacity: 0.6;
+    }
+
+    /* ── View Toggle (Design | Spec segmented control) ── */
+    .view-toggle {
+      display: flex;
+      gap: 1px;
+      background: var(--fd-segment-bg);
+      border-radius: var(--fd-radius-sm);
+      padding: 2px;
+      margin-left: 4px;
+    }
+    .view-btn {
+      padding: 3px 10px;
+      border: none;
+      background: transparent;
+      color: var(--fd-text-secondary);
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 500;
+      font-family: inherit;
+      transition: all 0.15s ease;
+      letter-spacing: -0.01em;
+    }
+    .view-btn:hover { color: var(--fd-text); }
+    .view-btn.active {
+      background: var(--fd-segment-active);
+      color: var(--fd-text);
+      box-shadow: var(--fd-segment-shadow);
+      font-weight: 600;
+    }
+
+    /* ── Spec Overlay ── */
+    #spec-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      overflow-y: auto;
+      padding: 20px 24px;
+      background: var(--fd-bg);
+      color: var(--fd-text);
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    .spec-node {
+      margin-bottom: 12px;
+      padding: 12px 16px;
+      background: var(--fd-surface);
+      border: 0.5px solid var(--fd-border);
+      border-left: 3px solid var(--fd-accent);
+      border-radius: var(--fd-radius-sm);
+    }
+    .spec-node.generic { border-left-color: #BF5AF2; }
+    .spec-node-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .spec-node-id {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--fd-text);
+      letter-spacing: -0.02em;
+    }
+    .spec-kind-badge {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: var(--fd-accent-dim);
+      color: var(--fd-accent);
+    }
+    .spec-kind-badge.spec {
+      background: rgba(191, 90, 242, 0.1);
+      color: #BF5AF2;
+    }
+    .spec-description {
+      color: var(--fd-text-secondary);
+      font-style: italic;
+      margin: 3px 0;
+    }
+    .spec-accept-item {
+      color: var(--fd-text);
+      font-size: 12px;
+      margin: 2px 0;
+      padding-left: 14px;
+      position: relative;
+    }
+    .spec-accept-item::before {
+      content: '☐';
+      position: absolute;
+      left: 0;
+      color: var(--fd-accent);
+    }
+    .spec-meta-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .spec-badge {
+      display: inline-block;
+      padding: 1px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .spec-badge.status-draft   { background: rgba(142,142,147,0.15); color: var(--fd-text-secondary); }
+    .spec-badge.status-in_progress { background: rgba(255,159,10,0.15); color: #FF9F0A; }
+    .spec-badge.status-done    { background: rgba(52,199,89,0.15); color: #34C759; }
+    .spec-badge.priority-high  { background: rgba(255,59,48,0.15); color: #FF3B30; }
+    .spec-badge.priority-medium { background: rgba(255,159,10,0.15); color: #FF9F0A; }
+    .spec-badge.priority-low   { background: rgba(52,199,89,0.15); color: #34C759; }
+    .spec-badge.tag            { background: var(--fd-accent-dim); color: var(--fd-accent); }
+    .spec-section-header {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--fd-text-tertiary);
+      font-weight: 600;
+      margin: 18px 0 8px;
+    }
+    .spec-node-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .spec-node-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      background: var(--fd-surface);
+      border: 0.5px solid var(--fd-border);
+      border-radius: 20px;
+      font-size: 11px;
+      color: var(--fd-text-secondary);
+    }
+    .spec-chip-kind {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--fd-text-tertiary);
+    }
+    .spec-edge {
+      margin: 6px 0;
+      padding: 10px 14px;
+      background: var(--fd-surface);
+      border: 0.5px solid var(--fd-border);
+      border-left: 3px solid #34C759;
+      border-radius: var(--fd-radius-sm);
+      font-size: 12px;
+      color: var(--fd-text);
+    }
+    .edge-arrow { font-weight: 500; }
+    .edge-label { color: var(--fd-text-secondary); font-style: italic; }
+    .spec-empty {
+      color: var(--fd-text-tertiary);
+      font-style: italic;
+      text-align: center;
+      padding: 48px 0;
+      font-size: 14px;
     }
 
     /* ── Theme Toggle (Apple pill) ── */
@@ -816,8 +1001,13 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
     <button class="tool-btn" data-tool="pen"><span class="tool-icon">✎</span>Pen<span class="tool-key">P</span></button>
     <button class="tool-btn" data-tool="text"><span class="tool-icon">T</span>Text<span class="tool-key">T</span></button>
     <div class="tool-sep"></div>
-    <button class="tool-btn" id="ai-refine-btn" title="AI Refine selected node (rename + restyle)">✨ Refine</button>
-    <button class="tool-btn" id="ai-refine-all-btn" title="AI Refine all anonymous nodes">✨ All</button>
+    <button class="tool-btn" id="ai-refine-btn" title="AI Refine selected node (rename + restyle)">&#x2728; Refine</button>
+    <button class="tool-btn" id="ai-refine-all-btn" title="AI Refine all anonymous nodes">&#x2728; All</button>
+    <div class="tool-sep"></div>
+    <div class="view-toggle" id="view-toggle">
+      <button class="view-btn active" id="view-design" title="Design View — full canvas">Design</button>
+      <button class="view-btn" id="view-spec" title="Spec View — requirements and structure">Spec</button>
+    </div>
     <div class="tool-sep"></div>
     <button class="tool-btn" id="theme-toggle-btn" title="Toggle light/dark canvas theme">🌙</button>
     <button class="tool-btn" id="tool-help-btn" title="Keyboard shortcuts">?</button>
@@ -830,6 +1020,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       <div class="palette-item" draggable="true" data-shape="text">T<span class="palette-label">Text</span></div>
     </div>
     <canvas id="fd-canvas" class="tool-select"></canvas>
+    <div id="spec-overlay"></div>
     <div id="loading">Loading FD engine…</div>
     <!-- Properties Panel (Apple-style) -->
     <div id="props-panel">
@@ -1065,8 +1256,6 @@ class FdDiagnosticsProvider {
     const text = document.getText();
     const diagnostics: vscode.Diagnostic[] = [];
 
-    // Simple regex-based validation (works without WASM)
-    // Check for common issues
     const lines = text.split("\n");
     let braceDepth = 0;
 
@@ -1074,16 +1263,13 @@ class FdDiagnosticsProvider {
       const line = lines[i];
       const trimmed = line.trim();
 
-      // Skip comments
       if (trimmed.startsWith("#")) continue;
 
-      // Track brace depth
       for (const ch of trimmed) {
         if (ch === "{") braceDepth++;
         if (ch === "}") braceDepth--;
       }
 
-      // Unmatched closing brace
       if (braceDepth < 0) {
         diagnostics.push(
           new vscode.Diagnostic(
@@ -1095,11 +1281,10 @@ class FdDiagnosticsProvider {
         braceDepth = 0;
       }
 
-      // Check for invalid hex colors
       const hexMatch = trimmed.match(/#[0-9A-Fa-f]+\b/g);
       if (hexMatch) {
         for (const hex of hexMatch) {
-          const len = hex.length - 1; // minus the #
+          const len = hex.length - 1;
           if (![3, 4, 6, 8].includes(len)) {
             const col = line.indexOf(hex);
             diagnostics.push(
@@ -1114,7 +1299,6 @@ class FdDiagnosticsProvider {
       }
     }
 
-    // Unclosed braces at end of file
     if (braceDepth > 0) {
       const lastLine = lines.length - 1;
       diagnostics.push(
@@ -2021,6 +2205,20 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand("fd.showSpecView", () => {
       FdSpecViewPanel.show(context);
+    })
+  );
+
+  // Register view mode toggle command (Design ↔ Spec in canvas toolbar)
+  context.subscriptions.push(
+    vscode.commands.registerCommand("fd.toggleViewMode", () => {
+      const panel = FdEditorProvider.activePanel;
+      if (!panel) {
+        vscode.window.showInformationMessage("Open an FD canvas editor first.");
+        return;
+      }
+      const next = FdEditorProvider.activeViewMode === "design" ? "spec" : "design";
+      FdEditorProvider.activeViewMode = next;
+      panel.webview.postMessage({ type: "setViewMode", mode: next });
     })
   );
 

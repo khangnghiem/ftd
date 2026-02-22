@@ -115,8 +115,8 @@ fn render_node(
         NodeKind::Group { .. } => {
             draw_group_bg(ctx, node_bounds, &style);
         }
-        NodeKind::Path { .. } => {
-            draw_path_placeholder(ctx, node_bounds, &style);
+        NodeKind::Path { commands } => {
+            draw_path(ctx, node_bounds, commands, &style, is_selected);
         }
     }
 
@@ -144,12 +144,13 @@ fn draw_rect(ctx: &CanvasRenderingContext2d, b: &ResolvedBounds, style: &Style, 
 
     ctx.save();
     apply_opacity(ctx, style);
+    apply_shadow(ctx, style);
 
     // Fill
-    let fill_color = resolve_fill_color(style);
-    ctx.set_fill_style_str(&fill_color);
     rounded_rect_path(ctx, x, y, w, h, radius);
+    apply_fill(ctx, style, x, y, w, h);
     ctx.fill();
+    clear_shadow(ctx);
 
     // Stroke
     if let Some(ref stroke) = style.stroke {
@@ -184,12 +185,13 @@ fn draw_ellipse(
 
     ctx.save();
     apply_opacity(ctx, style);
+    apply_shadow(ctx, style);
 
-    let fill_color = resolve_fill_color(style);
-    ctx.set_fill_style_str(&fill_color);
     ctx.begin_path();
     let _ = ctx.ellipse(cx, cy, rx, ry, 0.0, 0.0, std::f64::consts::TAU);
+    apply_fill(ctx, style, cx - rx, cy - ry, rx * 2.0, ry * 2.0);
     ctx.fill();
+    clear_shadow(ctx);
 
     if let Some(ref stroke) = style.stroke {
         let stroke_color = resolve_paint_color(&stroke.paint);
@@ -304,18 +306,73 @@ fn draw_group_bg(ctx: &CanvasRenderingContext2d, b: &ResolvedBounds, style: &Sty
     ctx.restore();
 }
 
-fn draw_path_placeholder(ctx: &CanvasRenderingContext2d, b: &ResolvedBounds, style: &Style) {
-    // Placeholder: draw a dashed rect outline
-    let (x, y, w, h) = (b.x as f64, b.y as f64, b.width as f64, b.height as f64);
+/// Draw a freehand path from its PathCmd commands.
+fn draw_path(
+    ctx: &CanvasRenderingContext2d,
+    b: &ResolvedBounds,
+    commands: &[PathCmd],
+    style: &Style,
+    is_selected: bool,
+) {
+    if commands.is_empty() {
+        return;
+    }
+
+    let dx = b.x as f64;
+    let dy = b.y as f64;
+    let (w, h) = (b.width as f64, b.height as f64);
+
     ctx.save();
     apply_opacity(ctx, style);
-    ctx.set_stroke_style_str(&resolve_fill_color(style));
-    ctx.set_line_width(1.0);
-    let _ = ctx.set_line_dash(&js_sys::Array::of2(
-        &wasm_bindgen::JsValue::from_f64(4.0),
-        &wasm_bindgen::JsValue::from_f64(4.0),
-    ));
-    ctx.stroke_rect(x, y, w, h);
+    apply_shadow(ctx, style);
+
+    ctx.begin_path();
+    for cmd in commands {
+        match *cmd {
+            PathCmd::MoveTo(x, y) => ctx.move_to(dx + x as f64, dy + y as f64),
+            PathCmd::LineTo(x, y) => ctx.line_to(dx + x as f64, dy + y as f64),
+            PathCmd::QuadTo(cx, cy, ex, ey) => ctx.quadratic_curve_to(
+                dx + cx as f64,
+                dy + cy as f64,
+                dx + ex as f64,
+                dy + ey as f64,
+            ),
+            PathCmd::CubicTo(c1x, c1y, c2x, c2y, ex, ey) => ctx.bezier_curve_to(
+                dx + c1x as f64,
+                dy + c1y as f64,
+                dx + c2x as f64,
+                dy + c2y as f64,
+                dx + ex as f64,
+                dy + ey as f64,
+            ),
+            PathCmd::Close => ctx.close_path(),
+        }
+    }
+
+    // Fill
+    if style.fill.is_some() {
+        apply_fill(ctx, style, dx, dy, w, h);
+        ctx.fill();
+    }
+    clear_shadow(ctx);
+
+    // Stroke
+    let stroke_color = style
+        .stroke
+        .as_ref()
+        .map(|s| resolve_paint_color(&s.paint))
+        .unwrap_or_else(|| "#5E5CE6".to_string());
+    let stroke_width = style.stroke.as_ref().map_or(1.5, |s| s.width as f64);
+    ctx.set_stroke_style_str(&stroke_color);
+    ctx.set_line_width(stroke_width);
+    ctx.stroke();
+
+    if is_selected {
+        ctx.set_stroke_style_str("#4FC3F7");
+        ctx.set_line_width(2.0);
+        ctx.stroke();
+    }
+
     ctx.restore();
 }
 
@@ -613,6 +670,66 @@ fn rounded_rect_path(ctx: &CanvasRenderingContext2d, x: f64, y: f64, w: f64, h: 
     ctx.line_to(x, y + r);
     ctx.arc_to(x, y, x + r, y, r).unwrap_or(());
     ctx.close_path();
+}
+
+/// Set the fill style — creates a CanvasGradient for gradient paints.
+fn apply_fill(ctx: &CanvasRenderingContext2d, style: &Style, x: f64, y: f64, w: f64, h: f64) {
+    match &style.fill {
+        Some(Paint::LinearGradient { angle, stops }) => {
+            let rad = (*angle as f64).to_radians();
+            let (sin_a, cos_a) = (rad.sin(), rad.cos());
+            let cx = x + w / 2.0;
+            let cy = y + h / 2.0;
+            let len = (w * cos_a.abs() + h * sin_a.abs()) / 2.0;
+            let (x0, y0) = (cx - len * cos_a, cy - len * sin_a);
+            let (x1, y1) = (cx + len * cos_a, cy + len * sin_a);
+            let grad = ctx.create_linear_gradient(x0, y0, x1, y1);
+            for stop in stops {
+                let _ = grad.add_color_stop(stop.offset, &stop.color.to_hex());
+            }
+            ctx.set_fill_style_canvas_gradient(&grad);
+        }
+        Some(Paint::RadialGradient { stops }) => {
+            let cx = x + w / 2.0;
+            let cy = y + h / 2.0;
+            let r = w.min(h) / 2.0;
+            match ctx.create_radial_gradient(cx, cy, 0.0, cx, cy, r) {
+                Ok(grad) => {
+                    for stop in stops {
+                        let _ = grad.add_color_stop(stop.offset, &stop.color.to_hex());
+                    }
+                    ctx.set_fill_style_canvas_gradient(&grad);
+                }
+                Err(_) => {
+                    let fallback = stops
+                        .first()
+                        .map(|s| s.color.to_hex())
+                        .unwrap_or_else(|| "#CCC".to_string());
+                    ctx.set_fill_style_str(&fallback);
+                }
+            }
+        }
+        Some(Paint::Solid(c)) => ctx.set_fill_style_str(&c.to_hex()),
+        None => ctx.set_fill_style_str("#CCCCCC"),
+    }
+}
+
+/// Apply CSS drop-shadow from Style.shadow.
+fn apply_shadow(ctx: &CanvasRenderingContext2d, style: &Style) {
+    if let Some(ref shadow) = style.shadow {
+        ctx.set_shadow_blur(shadow.blur as f64);
+        ctx.set_shadow_offset_x(shadow.offset_x as f64);
+        ctx.set_shadow_offset_y(shadow.offset_y as f64);
+        ctx.set_shadow_color(&shadow.color.to_hex());
+    }
+}
+
+/// Clear shadow after fill so stroke doesn't inherit it.
+fn clear_shadow(ctx: &CanvasRenderingContext2d) {
+    ctx.set_shadow_blur(0.0);
+    ctx.set_shadow_offset_x(0.0);
+    ctx.set_shadow_offset_y(0.0);
+    ctx.set_shadow_color("transparent");
 }
 
 fn resolve_fill_color(style: &Style) -> String {
