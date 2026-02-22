@@ -12,6 +12,7 @@ use fd_editor::input::{InputEvent, Modifiers};
 use fd_editor::shortcuts::{ShortcutAction, ShortcutMap};
 use fd_editor::sync::{GraphMutation, SyncEngine};
 use fd_editor::tools::{EllipseTool, PenTool, RectTool, SelectTool, TextTool, Tool, ToolKind};
+use fd_render::hit::hit_test_rect;
 use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
 
@@ -87,7 +88,12 @@ impl FdCanvas {
 
     /// Render the scene to a Canvas2D context.
     pub fn render(&self, ctx: &CanvasRenderingContext2d) {
-        let selected_id = self.select_tool.selected.map(|id| id.as_str().to_string());
+        let selected_ids: Vec<String> = self
+            .select_tool
+            .selected
+            .iter()
+            .map(|id| id.as_str().to_string())
+            .collect();
         let theme = if self.dark_mode {
             render2d::CanvasTheme::dark()
         } else {
@@ -99,8 +105,9 @@ impl FdCanvas {
             self.engine.current_bounds(),
             self.width,
             self.height,
-            selected_id.as_deref(),
+            &selected_ids,
             &theme,
+            self.select_tool.marquee_rect,
         );
     }
 
@@ -147,7 +154,9 @@ impl FdCanvas {
             ToolKind::Pen => self.pen_tool.handle(&event, hit),
             ToolKind::Text => self.text_tool.handle(&event, hit),
         };
-        self.apply_mutations(mutations)
+        let changed = self.apply_mutations(mutations);
+        // Marquee start also counts as a visual change (need re-render)
+        changed || self.select_tool.marquee_start.is_some()
     }
 
     /// Handle pointer move event. Returns true if the graph changed.
@@ -177,7 +186,9 @@ impl FdCanvas {
             ToolKind::Pen => self.pen_tool.handle(&event, hit),
             ToolKind::Text => self.text_tool.handle(&event, hit),
         };
-        self.apply_mutations(mutations)
+        let changed = self.apply_mutations(mutations);
+        // Marquee drag also counts as visual change
+        changed || self.select_tool.marquee_rect.is_some()
     }
 
     /// Handle pointer up event. Returns true if the graph changed.
@@ -196,6 +207,36 @@ impl FdCanvas {
             alt,
             meta,
         };
+
+        // Finalize marquee selection before handling pointer-up
+        let marquee_changed = if let Some((rx, ry, rw, rh)) = self.select_tool.marquee_rect {
+            if rw > 2.0 || rh > 2.0 {
+                let hits = hit_test_rect(
+                    &self.engine.graph,
+                    self.engine.current_bounds(),
+                    rx,
+                    ry,
+                    rw,
+                    rh,
+                );
+                if mods.shift {
+                    // Shift: add to existing selection
+                    for id in hits {
+                        if !self.select_tool.selected.contains(&id) {
+                            self.select_tool.selected.push(id);
+                        }
+                    }
+                } else {
+                    self.select_tool.selected = hits;
+                }
+            }
+            self.select_tool.marquee_start = None;
+            self.select_tool.marquee_rect = None;
+            true
+        } else {
+            false
+        };
+
         let event = InputEvent::from_pointer_up(x, y, mods);
         let mutations = match self.active_tool {
             ToolKind::Select => self.select_tool.handle(&event, None),
@@ -209,7 +250,7 @@ impl FdCanvas {
         if changed {
             self.engine.flush_to_text();
         }
-        changed
+        changed || marquee_changed
     }
 
     /// Switch the active tool, remembering the previous one.
@@ -234,23 +275,35 @@ impl FdCanvas {
     }
 
     /// Get the currently selected node ID, or empty string if none.
+    /// Returns the first selected node for backward compatibility.
     pub fn get_selected_id(&self) -> String {
         self.select_tool
-            .selected
+            .first_selected()
             .map(|id| id.as_str().to_string())
             .unwrap_or_default()
+    }
+
+    /// Get all selected node IDs as a JSON array.
+    pub fn get_selected_ids(&self) -> String {
+        let ids: Vec<String> = self
+            .select_tool
+            .selected
+            .iter()
+            .map(|id| id.as_str().to_string())
+            .collect();
+        serde_json::to_string(&ids).unwrap_or_else(|_| "[]".to_string())
     }
 
     /// Select a node by its ID (e.g. from text editor cursor).
     /// Returns `true` if the node was found and selected.
     pub fn select_by_id(&mut self, node_id: &str) -> bool {
         if node_id.is_empty() {
-            self.select_tool.selected = None;
+            self.select_tool.selected.clear();
             return true;
         }
         let id = NodeId::intern(node_id);
         if self.engine.graph.get_by_id(id).is_some() {
-            self.select_tool.selected = Some(id);
+            self.select_tool.selected = vec![id];
             true
         } else {
             false
@@ -332,28 +385,31 @@ impl FdCanvas {
         tool_kind_to_name(self.active_tool).to_string()
     }
 
-    /// Delete the currently selected node. Returns true if a node was deleted.
+    /// Delete the currently selected node(s). Returns true if any was deleted.
     pub fn delete_selected(&mut self) -> bool {
-        let id = match self.select_tool.selected {
-            Some(id) => id,
-            None => return false,
-        };
-        let mutation = GraphMutation::RemoveNode { id };
-        let changed = self.apply_mutations(vec![mutation]);
+        if self.select_tool.selected.is_empty() {
+            return false;
+        }
+        let ids: Vec<NodeId> = self.select_tool.selected.clone();
+        let mutations: Vec<GraphMutation> = ids
+            .iter()
+            .map(|id| GraphMutation::RemoveNode { id: *id })
+            .collect();
+        let changed = self.apply_mutations(mutations);
         if changed {
-            self.select_tool.selected = None;
+            self.select_tool.selected.clear();
             self.engine.flush_to_text();
         }
         changed
     }
 
-    /// Duplicate the currently selected node. Returns true if duplicated.
+    /// Duplicate the currently selected node(s). Returns true if duplicated.
     pub fn duplicate_selected(&mut self) -> bool {
-        let id = match self.select_tool.selected {
+        let first_id = match self.select_tool.first_selected() {
             Some(id) => id,
             None => return false,
         };
-        let original = match self.engine.graph.get_by_id(id) {
+        let original = match self.engine.graph.get_by_id(first_id) {
             Some(node) => node.clone(),
             None => return false,
         };
@@ -362,7 +418,7 @@ impl FdCanvas {
         cloned.id = new_id;
         // Offset the duplicate 20px right and down from the original
         cloned.constraints.push(fd_core::model::Constraint::Offset {
-            from: id,
+            from: first_id,
             dx: 20.0,
             dy: 20.0,
         });
@@ -373,7 +429,7 @@ impl FdCanvas {
         };
         let changed = self.apply_mutations(vec![mutation]);
         if changed {
-            self.select_tool.selected = Some(new_id);
+            self.select_tool.selected = vec![new_id];
             self.engine.flush_to_text();
         }
         changed
@@ -439,7 +495,7 @@ impl FdCanvas {
     /// Get properties of the currently selected node as JSON.
     /// Returns `{}` if no node is selected.
     pub fn get_selected_node_props(&self) -> String {
-        let id = match self.select_tool.selected {
+        let id = match self.select_tool.first_selected() {
             Some(id) => id,
             None => return "{}".to_string(),
         };
@@ -532,7 +588,7 @@ impl FdCanvas {
     /// Set a property on the currently selected node.
     /// Returns `true` if the property was set.
     pub fn set_node_prop(&mut self, key: &str, value: &str) -> bool {
-        let id = match self.select_tool.selected {
+        let id = match self.select_tool.first_selected() {
             Some(id) => id,
             None => return false,
         };
@@ -681,7 +737,7 @@ impl FdCanvas {
         };
         let changed = self.apply_mutations(vec![mutation]);
         if changed {
-            self.select_tool.selected = Some(id);
+            self.select_tool.selected = vec![id];
             self.engine.flush_to_text();
         }
         changed
@@ -745,7 +801,7 @@ impl FdCanvas {
             // Screenbrush: ⌘Delete = clear selected
             ShortcutAction::ClearAll => (self.delete_selected(), false),
             ShortcutAction::Deselect => {
-                self.select_tool.selected = None;
+                self.select_tool.selected.clear();
                 (false, false)
             }
 

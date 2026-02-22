@@ -53,6 +53,46 @@ fn hit_test_node(
     None
 }
 
+/// Find all non-root nodes whose bounds intersect the given rectangle.
+/// Used for marquee (box) selection.
+pub fn hit_test_rect(
+    graph: &SceneGraph,
+    bounds: &HashMap<NodeIndex, ResolvedBounds>,
+    rx: f32,
+    ry: f32,
+    rw: f32,
+    rh: f32,
+) -> Vec<NodeId> {
+    let mut result = Vec::new();
+    collect_intersecting(graph, graph.root, bounds, rx, ry, rw, rh, &mut result);
+    result
+}
+
+#[allow(clippy::too_many_arguments)]
+fn collect_intersecting(
+    graph: &SceneGraph,
+    idx: NodeIndex,
+    bounds: &HashMap<NodeIndex, ResolvedBounds>,
+    rx: f32,
+    ry: f32,
+    rw: f32,
+    rh: f32,
+    out: &mut Vec<NodeId>,
+) {
+    let node = &graph.graph[idx];
+
+    if !matches!(node.kind, NodeKind::Root)
+        && let Some(b) = bounds.get(&idx)
+        && b.intersects_rect(rx, ry, rw, rh)
+    {
+        out.push(node.id);
+    }
+
+    for child_idx in graph.children(idx) {
+        collect_intersecting(graph, child_idx, bounds, rx, ry, rw, rh, out);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
