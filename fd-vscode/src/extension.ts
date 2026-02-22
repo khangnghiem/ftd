@@ -205,10 +205,55 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
     font-src ${webview.cspSource};
   ">
   <style nonce="${nonce}">
+    /* ── Theme tokens ────────────── */
+    :root {
+      --fd-bg: #F8F9FA;
+      --fd-toolbar-bg: #EBEDF0;
+      --fd-border: #D1D5DB;
+      --fd-surface: rgba(255, 255, 255, 0.85);
+      --fd-surface-hover: rgba(0, 0, 0, 0.04);
+      --fd-text: #1F2937;
+      --fd-text-muted: #6B7280;
+      --fd-text-dim: #9CA3AF;
+      --fd-input-bg: rgba(0, 0, 0, 0.03);
+      --fd-input-border: rgba(0, 0, 0, 0.1);
+      --fd-accent: #3B82F6;
+      --fd-accent-fg: #FFFFFF;
+      --fd-accent-dim: rgba(59, 130, 246, 0.15);
+      --fd-accent-border: rgba(59, 130, 246, 0.4);
+      --fd-slider-bg: rgba(0, 0, 0, 0.1);
+      --fd-slider-thumb-border: rgba(255, 255, 255, 0.8);
+      --fd-overlay-bg: rgba(0, 0, 0, 0.3);
+      --fd-key-border: rgba(0, 0, 0, 0.12);
+      --fd-key-bg: rgba(0, 0, 0, 0.03);
+      --fd-shadow: rgba(0, 0, 0, 0.15);
+    }
+    body.dark-theme {
+      --fd-bg: #1E1E2E;
+      --fd-toolbar-bg: #181825;
+      --fd-border: #313244;
+      --fd-surface: rgba(30, 30, 46, 0.85);
+      --fd-surface-hover: rgba(255, 255, 255, 0.06);
+      --fd-text: #CDD6F4;
+      --fd-text-muted: #6C7086;
+      --fd-text-dim: #A6ADC8;
+      --fd-input-bg: rgba(255, 255, 255, 0.04);
+      --fd-input-border: rgba(255, 255, 255, 0.08);
+      --fd-accent: #89B4FA;
+      --fd-accent-fg: #1E1E2E;
+      --fd-accent-dim: rgba(137, 180, 250, 0.15);
+      --fd-accent-border: rgba(137, 180, 250, 0.4);
+      --fd-slider-bg: rgba(255, 255, 255, 0.1);
+      --fd-slider-thumb-border: rgba(30, 30, 46, 0.8);
+      --fd-overlay-bg: rgba(0, 0, 0, 0.6);
+      --fd-key-border: rgba(255, 255, 255, 0.1);
+      --fd-key-bg: rgba(255, 255, 255, 0.04);
+      --fd-shadow: rgba(0, 0, 0, 0.4);
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; overflow: hidden; }
     body {
-      background: var(--vscode-editor-background, #1E1E2E);
+      background: var(--fd-bg);
       display: flex;
       flex-direction: column;
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
@@ -218,8 +263,8 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       display: flex;
       gap: 2px;
       padding: 5px 10px;
-      background: var(--vscode-editorGroupHeader-tabsBackground, #181825);
-      border-bottom: 1px solid var(--vscode-editorGroupHeader-tabsBorder, #313244);
+      background: var(--fd-toolbar-bg);
+      border-bottom: 1px solid var(--fd-border);
       flex-shrink: 0;
       align-items: center;
     }
@@ -227,7 +272,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       padding: 5px 10px;
       border: 1px solid transparent;
       background: transparent;
-      color: var(--vscode-button-secondaryForeground, #CDD6F4);
+      color: var(--fd-text);
       border-radius: 6px;
       cursor: pointer;
       font-size: 12px;
@@ -238,11 +283,11 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       gap: 4px;
     }
     .tool-btn:hover {
-      background: rgba(255,255,255,0.06);
+      background: var(--fd-surface-hover);
     }
     .tool-btn.active {
-      background: var(--vscode-button-background, #89B4FA);
-      color: var(--vscode-button-foreground, #1E1E2E);
+      background: var(--fd-accent);
+      color: var(--fd-accent-fg);
       border-color: transparent;
     }
     .tool-icon { font-size: 14px; }
@@ -250,7 +295,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       font-size: 9px;
       opacity: 0.5;
       padding: 1px 3px;
-      border: 1px solid rgba(255,255,255,0.15);
+      border: 1px solid var(--fd-input-border);
       border-radius: 3px;
       font-family: var(--vscode-editor-font-family, monospace);
     }
@@ -261,7 +306,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
     .tool-sep {
       width: 1px;
       height: 18px;
-      background: var(--vscode-editorGroupHeader-tabsBorder, #313244);
+      background: var(--fd-border);
       margin: 0 4px;
     }
     #tool-help-btn {
@@ -270,7 +315,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       font-size: 12px;
     }
     #status {
-      color: var(--vscode-descriptionForeground, #6C7086);
+      color: var(--fd-text-muted);
       font-size: 11px;
       margin-left: 8px;
     }
@@ -291,7 +336,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--vscode-descriptionForeground, #6C7086);
+      color: var(--fd-text-muted);
       font-size: 14px;
     }
     /* ── Cursor per tool ─────────── */
@@ -304,12 +349,12 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
     #props-panel {
       width: 0;
       overflow: hidden;
-      background: rgba(30, 30, 46, 0.85);
+      background: var(--fd-surface);
       backdrop-filter: blur(20px) saturate(180%);
       -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border-left: 1px solid rgba(255,255,255,0.08);
+      border-left: 1px solid var(--fd-input-border);
       font-size: 11px;
-      color: var(--vscode-foreground, #CDD6F4);
+      color: var(--fd-text);
       transition: width 0.2s ease;
       flex-shrink: 0;
       overflow-y: auto;
@@ -324,7 +369,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
     .props-title {
       font-size: 12px;
       font-weight: 600;
-      color: var(--vscode-foreground, #CDD6F4);
+      color: var(--fd-text);
       margin-bottom: 12px;
       display: flex;
       align-items: center;
@@ -336,8 +381,8 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       letter-spacing: 0.6px;
       padding: 2px 6px;
       border-radius: 4px;
-      background: rgba(137, 180, 250, 0.15);
-      color: #89B4FA;
+      background: var(--fd-accent-dim);
+      color: var(--fd-accent);
       font-weight: 500;
     }
     .props-section {
@@ -347,7 +392,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.6px;
-      color: var(--vscode-descriptionForeground, #6C7086);
+      color: var(--fd-text-muted);
       margin-bottom: 6px;
       font-weight: 500;
     }
@@ -368,22 +413,22 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       font-size: 9px;
       text-transform: uppercase;
       letter-spacing: 0.4px;
-      color: var(--vscode-descriptionForeground, #6C7086);
+      color: var(--fd-text-muted);
     }
     .props-field input,
     .props-field select {
       padding: 4px 6px;
-      border: 1px solid rgba(255,255,255,0.08);
+      border: 1px solid var(--fd-input-border);
       border-radius: 5px;
-      background: rgba(255,255,255,0.04);
-      color: var(--vscode-input-foreground, #CDD6F4);
+      background: var(--fd-input-bg);
+      color: var(--fd-text);
       font-family: var(--vscode-editor-font-family, monospace);
       font-size: 11px;
       outline: none;
       transition: border-color 0.15s ease;
     }
     .props-field input:focus {
-      border-color: rgba(137, 180, 250, 0.4);
+      border-color: var(--fd-accent-border);
     }
     .props-field input[type="color"] {
       height: 28px;
@@ -399,7 +444,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       flex: 1;
       height: 4px;
       -webkit-appearance: none;
-      background: rgba(255,255,255,0.1);
+      background: var(--fd-slider-bg);
       border-radius: 2px;
       outline: none;
     }
@@ -407,13 +452,13 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       -webkit-appearance: none;
       width: 14px; height: 14px;
       border-radius: 50%;
-      background: #89B4FA;
+      background: var(--fd-accent);
       cursor: pointer;
-      border: 2px solid rgba(30,30,46,0.8);
+      border: 2px solid var(--fd-slider-thumb-border);
     }
     .props-slider .slider-val {
       font-size: 10px;
-      color: var(--vscode-descriptionForeground, #A6ADC8);
+      color: var(--fd-text-dim);
       min-width: 28px;
       text-align: right;
       font-family: var(--vscode-editor-font-family, monospace);
@@ -428,10 +473,10 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       flex-direction: column;
       gap: 4px;
       z-index: 50;
-      background: rgba(30, 30, 46, 0.75);
+      background: var(--fd-surface);
       backdrop-filter: blur(16px) saturate(180%);
       -webkit-backdrop-filter: blur(16px) saturate(180%);
-      border: 1px solid rgba(255,255,255,0.08);
+      border: 1px solid var(--fd-input-border);
       border-radius: 10px;
       padding: 6px;
     }
@@ -443,13 +488,13 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       justify-content: center;
       border-radius: 7px;
       cursor: grab;
-      color: var(--vscode-foreground, #CDD6F4);
+      color: var(--fd-text);
       font-size: 18px;
       transition: all 0.15s ease;
       user-select: none;
     }
     .palette-item:hover {
-      background: rgba(255,255,255,0.08);
+      background: var(--fd-surface-hover);
     }
     .palette-item:active {
       cursor: grabbing;
@@ -459,7 +504,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       display: none;
       position: absolute;
       left: 48px;
-      background: rgba(30,30,46,0.9);
+      background: var(--fd-surface);
       padding: 3px 8px;
       border-radius: 5px;
       font-size: 11px;
@@ -475,15 +520,15 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       position: absolute;
       z-index: 100;
       width: 280px;
-      background: rgba(30, 30, 46, 0.9);
+      background: var(--fd-surface);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,0.08);
+      border: 1px solid var(--fd-input-border);
       border-radius: 10px;
       padding: 12px;
       font-size: 12px;
-      color: var(--vscode-foreground, #CDD6F4);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      color: var(--fd-text);
+      box-shadow: 0 8px 32px var(--fd-shadow);
     }
     #annotation-card.visible { display: block; }
     #annotation-card .card-header {
@@ -508,7 +553,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: var(--vscode-descriptionForeground, #6C7086);
+      color: var(--fd-text-muted);
       margin-bottom: 3px;
     }
     #annotation-card textarea,
@@ -516,10 +561,10 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
     #annotation-card select {
       width: 100%;
       padding: 4px 6px;
-      border: 1px solid rgba(255,255,255,0.08);
+      border: 1px solid var(--fd-input-border);
       border-radius: 5px;
-      background: rgba(255,255,255,0.04);
-      color: var(--vscode-input-foreground, #CDD6F4);
+      background: var(--fd-input-bg);
+      color: var(--fd-text);
       font-family: inherit;
       font-size: 12px;
       resize: vertical;
@@ -535,7 +580,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
     #annotation-card .add-btn {
       cursor: pointer;
       font-size: 11px;
-      color: #89B4FA;
+      color: var(--fd-accent);
       background: none;
       border: none;
       padding: 2px 0;
@@ -551,12 +596,12 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       display: none;
       position: absolute;
       z-index: 200;
-      background: rgba(30, 30, 46, 0.9);
+      background: var(--fd-surface);
       backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,0.08);
+      border: 1px solid var(--fd-input-border);
       border-radius: 8px;
       padding: 4px 0;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      box-shadow: 0 8px 24px var(--fd-shadow);
       font-size: 12px;
       min-width: 160px;
     }
@@ -564,11 +609,11 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
     #context-menu .menu-item {
       padding: 6px 14px;
       cursor: pointer;
-      color: var(--vscode-menu-foreground, #CDD6F4);
+      color: var(--fd-text);
       transition: background 0.1s ease;
     }
     #context-menu .menu-item:hover {
-      background: rgba(255,255,255,0.06);
+      background: var(--fd-surface-hover);
     }
     /* ── Shortcut help overlay ──── */
     #shortcut-help {
@@ -576,29 +621,29 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       position: absolute;
       inset: 0;
       z-index: 300;
-      background: rgba(0,0,0,0.6);
+      background: var(--fd-overlay-bg);
       backdrop-filter: blur(4px);
       align-items: center;
       justify-content: center;
     }
     #shortcut-help.visible { display: flex; }
     .help-panel {
-      background: rgba(30, 30, 46, 0.95);
+      background: var(--fd-surface);
       backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,255,255,0.08);
+      border: 1px solid var(--fd-input-border);
       border-radius: 14px;
       width: 560px;
       max-height: 80vh;
       overflow-y: auto;
-      box-shadow: 0 16px 48px rgba(0,0,0,0.5);
-      color: var(--vscode-foreground, #CDD6F4);
+      box-shadow: 0 16px 48px var(--fd-shadow);
+      color: var(--fd-text);
     }
     .help-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 14px 18px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
+      border-bottom: 1px solid var(--fd-input-border);
     }
     .help-header h3 { font-size: 15px; font-weight: 600; margin: 0; }
     .help-close {
@@ -621,7 +666,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.8px;
-      color: var(--vscode-descriptionForeground, #6C7086);
+      color: var(--fd-text-muted);
       margin: 0 0 6px;
     }
     .help-section dl { margin: 0; padding: 0; }
@@ -633,13 +678,13 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       font-size: 12px;
     }
     .help-row dt { width: 80px; text-align: right; }
-    .help-row dd { margin: 0; color: var(--vscode-descriptionForeground, #A6ADC8); }
+    .help-row dd { margin: 0; color: var(--fd-text-dim); }
     kbd {
       display: inline-block;
       padding: 1px 5px;
-      border: 1px solid rgba(255,255,255,0.1);
+      border: 1px solid var(--fd-key-border);
       border-radius: 4px;
-      background: rgba(255,255,255,0.04);
+      background: var(--fd-key-bg);
       font-family: var(--vscode-editor-font-family, monospace);
       font-size: 11px;
       line-height: 1.4;
@@ -648,8 +693,8 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       text-align: center;
       padding: 8px;
       font-size: 11px;
-      color: var(--vscode-descriptionForeground, #6C7086);
-      border-top: 1px solid rgba(255,255,255,0.06);
+      color: var(--fd-text-muted);
+      border-top: 1px solid var(--fd-input-border);
     }
   </style>
 </head>
@@ -664,6 +709,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
     <button class="tool-btn" id="ai-refine-btn" title="AI Refine selected node (rename + restyle)">✨ Refine</button>
     <button class="tool-btn" id="ai-refine-all-btn" title="AI Refine all anonymous nodes">✨ All</button>
     <div class="tool-sep"></div>
+    <button class="tool-btn" id="theme-toggle-btn" title="Toggle light/dark theme">☀️</button>
     <button class="tool-btn" id="tool-help-btn">?</button>
     <span id="status">Loading WASM…</span>
   </div>

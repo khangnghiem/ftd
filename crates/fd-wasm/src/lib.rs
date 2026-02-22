@@ -35,6 +35,8 @@ pub struct FdCanvas {
     height: f64,
     /// Suppress text-changed messages during programmatic updates.
     suppress_sync: bool,
+    /// Dark mode flag — `false` = light (default), `true` = dark.
+    dark_mode: bool,
 }
 
 #[wasm_bindgen]
@@ -64,6 +66,7 @@ impl FdCanvas {
             width,
             height,
             suppress_sync: false,
+            dark_mode: false,
         }
     }
 
@@ -85,6 +88,11 @@ impl FdCanvas {
     /// Render the scene to a Canvas2D context.
     pub fn render(&self, ctx: &CanvasRenderingContext2d) {
         let selected_id = self.select_tool.selected.map(|id| id.as_str().to_string());
+        let theme = if self.dark_mode {
+            render2d::CanvasTheme::dark()
+        } else {
+            render2d::CanvasTheme::light()
+        };
         render2d::render_scene(
             ctx,
             &self.engine.graph,
@@ -92,7 +100,13 @@ impl FdCanvas {
             self.width,
             self.height,
             selected_id.as_deref(),
+            &theme,
         );
+    }
+
+    /// Set the canvas theme.
+    pub fn set_theme(&mut self, is_dark: bool) {
+        self.dark_mode = is_dark;
     }
 
     /// Resize the canvas.
