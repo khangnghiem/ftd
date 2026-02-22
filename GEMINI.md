@@ -197,6 +197,37 @@ git rebase origin/main
 | `cargo clippy --workspace`   | ✅        |
 | `cargo fmt --all -- --check` | ✅        |
 
+### 🐛 Codespace Debugging
+
+> [!TIP]
+> **Use SSH into the GitHub Codespace to debug in a clean cloud environment.**
+
+The project has a prebuilt Codespace at `khangnghiem/fast-draft`. To debug remotely via CLI:
+
+```bash
+# List available codespaces
+gh cs list
+
+# Run a one-off command
+gh cs ssh -c <codespace-name> -- "cargo test --workspace"
+
+# Open an interactive shell
+gh cs ssh -c <codespace-name>
+
+# Forward a port locally (e.g. for a dev server)
+gh cs ports forward 3000:3000 -c <codespace-name>
+```
+
+**Requires:** `gh auth refresh -h github.com -s codespace` (one-time setup to grant the `codespace` scope).
+
+Use Codespace SSH when:
+
+- Testing in a clean Linux environment (no local toolchain differences)
+- Debugging CI failures that don't reproduce locally
+- Running long builds without tying up the local machine
+
+---
+
 ### 📤 Publishing Protocol (MANDATORY)
 
 > [!IMPORTANT]

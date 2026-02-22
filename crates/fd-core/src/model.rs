@@ -407,6 +407,10 @@ pub struct SceneNode {
 
     /// Structured annotations (`##` lines).
     pub annotations: Vec<Annotation>,
+
+    /// Line comments (`# text`) that appeared before this node in the source.
+    /// Preserved across parse/emit round-trips so format passes don't delete them.
+    pub comments: Vec<String>,
 }
 
 impl SceneNode {
@@ -419,6 +423,7 @@ impl SceneNode {
             constraints: SmallVec::new(),
             animations: SmallVec::new(),
             annotations: Vec::new(),
+            comments: Vec::new(),
         }
     }
 }

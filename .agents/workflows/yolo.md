@@ -34,6 +34,15 @@ description: Full pipeline - test, build, commit, PR, and merge in one shot
    cargo test --workspace
    ```
 
+   > **If errors appear**: SSH into the Codespace for a clean Linux environment before investigating locally:
+   >
+   > ```bash
+   > gh cs list
+   > gh cs ssh -c <codespace-name> -- "cargo test --workspace 2>&1 | tail -80"
+   > ```
+   >
+   > Requires `gh auth refresh -h github.com -s codespace` (one-time setup).
+
 4. **Report** results to user. **STOP HERE.**
 
 ---

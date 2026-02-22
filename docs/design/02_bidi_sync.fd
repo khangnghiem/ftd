@@ -165,13 +165,14 @@ text @title "Bidirectional Sync Architecture" {
 @title -> absolute: 423.87, 649.43
 @subtitle -> offset: @title 0, 50
 @fd_text -> offset: @subtitle 0, 80
-@fd_text -> absolute: 187.45, 473.29
+@fd_text -> absolute: 186.03, 505.11
+@_anon_15 -> absolute: 302.76, -89.96
 @scene_graph -> offset: @fd_text 320, 0
-@scene_graph -> absolute: 106.64, 203.98
+@scene_graph -> absolute: 71.55, 287.87
 @canvas -> offset: @scene_graph 320, 0
-@canvas -> absolute: 449.99, 166.35
+@canvas -> absolute: 533.3, 300.9
 @perf_badges -> offset: @fd_text 160, 220
-@perf_badges -> absolute: 387.91, 231.75
+@perf_badges -> absolute: 548.03, 445.69
 @badge_roundtrip -> absolute: 623.94, 719.44
 @_anon_29 -> absolute: 694.32, 234.5
 @_anon_30 -> absolute: 694.77, 460.38

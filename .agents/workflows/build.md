@@ -45,6 +45,16 @@ description: How to build, test, and develop the FD workspace
    ```
 
 7. Format:
+
    ```bash
    cargo fmt --all
    ```
+
+8. **Remote Smoke Test** (if results differ from CI, use Codespace for a clean Linux environment):
+
+   ```bash
+   gh cs list
+   gh cs ssh -c <codespace-name> -- "cargo check --workspace && cargo test --workspace 2>&1 | tail -80"
+   ```
+
+   > Requires `gh auth refresh -h github.com -s codespace` (one-time setup).

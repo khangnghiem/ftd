@@ -15,54 +15,164 @@ style screen_label {
   font: "Inter" 700 16
 }
 
-rect @dashboard_screen {
-  ## "Main dashboard"
-  ## status: in_progress
-  w: 160 h: 100
-  use: screen
-  fill: #FFFFFF
-  stroke: #10B981 2
-  corner: 14
-  text @_anon_89 "Dashboard" {
-    use: screen_label
-  }
+text @title "Edge System" {
+  fill: #1A1A2E
+  font: "Inter" 800 32
 }
 
-rect @login_screen {
-  ## "Login screen"
-  ## status: done
-  w: 160 h: 100
-  use: screen
-  fill: #FFFFFF
-  stroke: #6C5CE7 2
-  corner: 14
-  text @_anon_88 "Login" {
-    use: screen_label
-  }
+text @subtitle "R1.10-R1.12: Connections, arrows, curves, and flow animations" {
+  fill: #6B7280
+  font: "Inter" 400 16
 }
 
-text @sec4_title "Annotated Edge Example" {
+text @sec1_title "Arrow Variants" {
   fill: #1A1A2E
   font: "Inter" 700 22
 }
 
-rect @flow_dash_dst {
-  ## "Pipeline stage 2"
-  w: 140 h: 80
-  fill: #EF4444
+rect @arrow_none_from {
+  ## "Source node for arrow: none"
+  w: 120 h: 64
+  use: screen
+  fill: #FFFFFF
+  stroke: #E8E8EC 1
   corner: 14
-  text @_anon_87 "Deploy Step" {
-    fill: #FFFFFF
-    font: "Inter" 600 14
+  text @_anon_72 "A" {
+    use: screen_label
   }
 }
 
-rect @flow_dash_src {
-  ## "Pipeline stage 1"
-  w: 140 h: 80
-  fill: #F59E0B
+rect @arrow_none_to {
+  w: 120 h: 64
+  use: screen
+  fill: #FFFFFF
+  stroke: #E8E8EC 1
   corner: 14
-  text @_anon_86 "Build Step" {
+  text @_anon_73 "B" {
+    use: screen_label
+  }
+}
+
+rect @arrow_end_from {
+  w: 120 h: 64
+  use: screen
+  fill: #FFFFFF
+  stroke: #E8E8EC 1
+  corner: 14
+  text @_anon_74 "C" {
+    use: screen_label
+  }
+}
+
+rect @arrow_end_to {
+  w: 120 h: 64
+  use: screen
+  fill: #FFFFFF
+  stroke: #E8E8EC 1
+  corner: 14
+  text @_anon_75 "D" {
+    use: screen_label
+  }
+}
+
+rect @arrow_both_from {
+  w: 120 h: 64
+  use: screen
+  fill: #FFFFFF
+  stroke: #E8E8EC 1
+  corner: 14
+  text @_anon_76 "E" {
+    use: screen_label
+  }
+}
+
+rect @arrow_both_to {
+  w: 120 h: 64
+  use: screen
+  fill: #FFFFFF
+  stroke: #E8E8EC 1
+  corner: 14
+  text @_anon_77 "F" {
+    use: screen_label
+  }
+}
+
+text @sec2_title "Curve Kinds" {
+  fill: #1A1A2E
+  font: "Inter" 700 22
+}
+
+rect @curve_straight_a {
+  w: 100 h: 56
+  use: screen
+  stroke: #E8E8EC 1
+  text @_anon_78 "Src" {
+    use: screen_label
+    font: "Inter" 600 13
+  }
+}
+
+rect @curve_straight_b {
+  w: 100 h: 56
+  use: screen
+  stroke: #E8E8EC 1
+  text @_anon_79 "Dst" {
+    use: screen_label
+    font: "Inter" 600 13
+  }
+}
+
+rect @curve_smooth_a {
+  w: 100 h: 56
+  use: screen
+  stroke: #E8E8EC 1
+  text @_anon_80 "Src" {
+    use: screen_label
+    font: "Inter" 600 13
+  }
+}
+
+rect @curve_smooth_b {
+  w: 100 h: 56
+  use: screen
+  stroke: #E8E8EC 1
+  text @_anon_81 "Dst" {
+    use: screen_label
+    font: "Inter" 600 13
+  }
+}
+
+rect @curve_step_a {
+  w: 100 h: 56
+  use: screen
+  stroke: #E8E8EC 1
+  text @_anon_82 "Src" {
+    use: screen_label
+    font: "Inter" 600 13
+  }
+}
+
+rect @curve_step_b {
+  w: 100 h: 56
+  use: screen
+  stroke: #E8E8EC 1
+  text @_anon_83 "Dst" {
+    use: screen_label
+    font: "Inter" 600 13
+  }
+}
+
+text @sec3_title "Flow Animations" {
+  fill: #1A1A2E
+  font: "Inter" 700 22
+}
+
+rect @flow_pulse_src {
+  ## "Data source node"
+  w: 140 h: 80
+  fill: #6C5CE7
+  corner: 14
+  text @_anon_84 "API Server" {
     fill: #FFFFFF
     font: "Inter" 600 14
   }
@@ -79,208 +189,98 @@ rect @flow_pulse_dst {
   }
 }
 
-rect @flow_pulse_src {
-  ## "Data source node"
+rect @flow_dash_src {
+  ## "Pipeline stage 1"
   w: 140 h: 80
-  fill: #6C5CE7
+  fill: #F59E0B
   corner: 14
-  text @_anon_84 "API Server" {
+  text @_anon_86 "Build Step" {
     fill: #FFFFFF
     font: "Inter" 600 14
   }
 }
 
-text @sec3_title "Flow Animations" {
+rect @flow_dash_dst {
+  ## "Pipeline stage 2"
+  w: 140 h: 80
+  fill: #EF4444
+  corner: 14
+  text @_anon_87 "Deploy Step" {
+    fill: #FFFFFF
+    font: "Inter" 600 14
+  }
+}
+
+text @sec4_title "Annotated Edge Example" {
   fill: #1A1A2E
   font: "Inter" 700 22
 }
 
-rect @curve_step_b {
-  w: 100 h: 56
-  use: screen
-  stroke: #E8E8EC 1
-  text @_anon_83 "Dst" {
-    use: screen_label
-    font: "Inter" 600 13
-  }
-}
-
-rect @curve_step_a {
-  w: 100 h: 56
-  use: screen
-  stroke: #E8E8EC 1
-  text @_anon_82 "Src" {
-    use: screen_label
-    font: "Inter" 600 13
-  }
-}
-
-rect @curve_smooth_b {
-  w: 100 h: 56
-  use: screen
-  stroke: #E8E8EC 1
-  text @_anon_81 "Dst" {
-    use: screen_label
-    font: "Inter" 600 13
-  }
-}
-
-rect @curve_smooth_a {
-  w: 100 h: 56
-  use: screen
-  stroke: #E8E8EC 1
-  text @_anon_80 "Src" {
-    use: screen_label
-    font: "Inter" 600 13
-  }
-}
-
-rect @curve_straight_b {
-  w: 100 h: 56
-  use: screen
-  stroke: #E8E8EC 1
-  text @_anon_79 "Dst" {
-    use: screen_label
-    font: "Inter" 600 13
-  }
-}
-
-rect @curve_straight_a {
-  w: 100 h: 56
-  use: screen
-  stroke: #E8E8EC 1
-  text @_anon_78 "Src" {
-    use: screen_label
-    font: "Inter" 600 13
-  }
-}
-
-text @sec2_title "Curve Kinds" {
-  fill: #1A1A2E
-  font: "Inter" 700 22
-}
-
-rect @arrow_both_to {
-  w: 120 h: 64
+rect @login_screen {
+  ## "Login screen"
+  ## status: done
+  w: 160 h: 100
   use: screen
   fill: #FFFFFF
-  stroke: #E8E8EC 1
+  stroke: #6C5CE7 2
   corner: 14
-  text @_anon_77 "F" {
+  text @_anon_88 "Login" {
     use: screen_label
   }
 }
 
-rect @arrow_both_from {
-  w: 120 h: 64
+rect @dashboard_screen {
+  ## "Main dashboard"
+  ## status: in_progress
+  w: 160 h: 100
   use: screen
   fill: #FFFFFF
-  stroke: #E8E8EC 1
+  stroke: #10B981 2
   corner: 14
-  text @_anon_76 "E" {
+  text @_anon_89 "Dashboard" {
     use: screen_label
   }
 }
 
-rect @arrow_end_to {
-  w: 120 h: 64
-  use: screen
-  fill: #FFFFFF
-  stroke: #E8E8EC 1
-  corner: 14
-  text @_anon_75 "D" {
-    use: screen_label
-  }
-}
-
-rect @arrow_end_from {
-  w: 120 h: 64
-  use: screen
-  fill: #FFFFFF
-  stroke: #E8E8EC 1
-  corner: 14
-  text @_anon_74 "C" {
-    use: screen_label
-  }
-}
-
-rect @arrow_none_to {
-  w: 120 h: 64
-  use: screen
-  fill: #FFFFFF
-  stroke: #E8E8EC 1
-  corner: 14
-  text @_anon_73 "B" {
-    use: screen_label
-  }
-}
-
-rect @arrow_none_from {
-  ## "Source node for arrow: none"
-  w: 120 h: 64
-  use: screen
-  fill: #FFFFFF
-  stroke: #E8E8EC 1
-  corner: 14
-  text @_anon_72 "A" {
-    use: screen_label
-  }
-}
-
-text @sec1_title "Arrow Variants" {
-  fill: #1A1A2E
-  font: "Inter" 700 22
-}
-
-text @subtitle "R1.10-R1.12: Connections, arrows, curves, and flow animations" {
-  fill: #6B7280
-  font: "Inter" 400 16
-}
-
-text @title "Edge System" {
-  fill: #1A1A2E
-  font: "Inter" 800 32
-}
-
-@title -> center_in: canvas
-@subtitle -> offset: @title 0, 50
-@sec1_title -> offset: @subtitle 0, 80
-@arrow_none_from -> offset: @sec1_title 0, 50
-@arrow_none_to -> offset: @arrow_none_from 200, 0
-@arrow_end_from -> offset: @arrow_none_from 0, 100
-@arrow_end_from -> absolute: 79.45, 279.98
-@arrow_end_to -> offset: @arrow_end_from 200, 0
-@arrow_both_from -> offset: @arrow_end_from 0, 100
-@arrow_both_from -> absolute: 79.45, 279.98
-@arrow_both_to -> offset: @arrow_both_from 200, 0
-@sec2_title -> offset: @sec1_title 500, 0
-@curve_straight_a -> offset: @sec2_title 0, 50
-@_anon_78 -> absolute: 50.7, 18.71
-@curve_straight_b -> offset: @curve_straight_a 200, 0
-@curve_smooth_a -> offset: @curve_straight_a 0, 100
-@curve_smooth_b -> offset: @curve_smooth_a 200, 0
-@curve_step_a -> offset: @curve_smooth_a 0, 100
-@curve_step_b -> offset: @curve_step_a 200, 0
-@sec3_title -> offset: @arrow_both_from 0, 140
-@sec3_title -> absolute: 79.45, 319.98
-@flow_pulse_src -> offset: @sec3_title 0, 50
-@flow_pulse_src -> absolute: 337.84, 27.88
-@_anon_84 -> absolute: 60.85, 50.16
-@flow_pulse_dst -> offset: @flow_pulse_src 260, 0
-@_anon_85 -> absolute: 192.66, 81.99
-@flow_dash_src -> offset: @flow_pulse_src 0, 120
-@flow_dash_src -> absolute: 228.77, 171.53
-@_anon_86 -> absolute: 378.64, 81.35
-@flow_dash_dst -> offset: @flow_dash_src 260, 0
-@flow_dash_dst -> absolute: 558.84, 112.6
-@_anon_87 -> absolute: 200.41, 35.74
-@sec4_title -> offset: @sec3_title 500, 0
-@login_screen -> offset: @sec4_title 0, 50
-@login_screen -> absolute: 483.75, 378.66
-@_anon_88 -> absolute: 377.81, 233.27
 @dashboard_screen -> offset: @login_screen 280, 0
 @dashboard_screen -> absolute: 530.31, 290.25
 @_anon_89 -> absolute: 592.88, 131.7
+@login_screen -> offset: @sec4_title 0, 50
+@login_screen -> absolute: 483.75, 378.66
+@_anon_88 -> absolute: 377.81, 233.27
+@sec4_title -> offset: @sec3_title 500, 0
+@flow_dash_dst -> offset: @flow_dash_src 260, 0
+@flow_dash_dst -> absolute: 558.84, 112.6
+@_anon_87 -> absolute: 200.41, 35.74
+@flow_dash_src -> offset: @flow_pulse_src 0, 120
+@flow_dash_src -> absolute: 229.94, 274.54
+@_anon_86 -> absolute: 378.64, 81.35
+@flow_pulse_dst -> offset: @flow_pulse_src 260, 0
+@_anon_85 -> absolute: 192.66, 81.99
+@flow_pulse_src -> offset: @sec3_title 0, 50
+@flow_pulse_src -> absolute: 337.84, 27.88
+@_anon_84 -> absolute: 60.85, 50.16
+@sec3_title -> offset: @arrow_both_from 0, 140
+@sec3_title -> absolute: 79.45, 319.98
+@curve_step_b -> offset: @curve_step_a 200, 0
+@curve_step_a -> offset: @curve_smooth_a 0, 100
+@curve_smooth_b -> offset: @curve_smooth_a 200, 0
+@curve_smooth_a -> offset: @curve_straight_a 0, 100
+@curve_straight_b -> offset: @curve_straight_a 200, 0
+@curve_straight_a -> offset: @sec2_title 0, 50
+@_anon_78 -> absolute: 50.7, 18.71
+@sec2_title -> offset: @sec1_title 500, 0
+@arrow_both_to -> offset: @arrow_both_from 200, 0
+@arrow_both_from -> offset: @arrow_end_from 0, 100
+@arrow_both_from -> absolute: 79.45, 279.98
+@arrow_end_to -> offset: @arrow_end_from 200, 0
+@arrow_end_from -> offset: @arrow_none_from 0, 100
+@arrow_end_from -> absolute: 79.45, 279.98
+@arrow_none_to -> offset: @arrow_none_from 200, 0
+@arrow_none_from -> offset: @sec1_title 0, 50
+@sec1_title -> offset: @subtitle 0, 80
+@subtitle -> offset: @title 0, 50
+@title -> center_in: canvas
 edge @edge_no_arrow {
   ## "arrow: none — no arrowheads"
   from: @arrow_none_from

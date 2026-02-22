@@ -11,7 +11,6 @@ use std::fmt::Write;
 #[must_use]
 pub fn emit_document(graph: &SceneGraph) -> String {
     let mut out = String::with_capacity(1024);
-    out.push_str("# FD v1\n\n");
 
     // Emit imports
     for import in &graph.imports {
@@ -83,6 +82,12 @@ fn emit_style_block(out: &mut String, name: &NodeId, style: &Style, depth: usize
 
 fn emit_node(out: &mut String, graph: &SceneGraph, idx: NodeIndex, depth: usize) {
     let node = &graph.graph[idx];
+
+    // Emit preserved `# comment` lines before the node declaration
+    for comment in &node.comments {
+        indent(out, depth);
+        writeln!(out, "# {comment}").unwrap();
+    }
 
     indent(out, depth);
 
@@ -1183,5 +1188,45 @@ edge @auth_flow {
         // This should fail because "as namespace" is missing
         let result = parse_document(input);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn roundtrip_comment_preserved() {
+        // A `# comment` before a node should survive parse → emit → parse.
+        let input = r#"
+# This is a section header
+rect @box {
+  w: 100 h: 50
+  fill: #FF0000
+}
+"#;
+        let graph = parse_document(input).unwrap();
+        let output = emit_document(&graph);
+        assert!(
+            output.contains("# This is a section header"),
+            "comment should appear in emitted output: {output}"
+        );
+        // Re-parse should also preserve it
+        let graph2 = parse_document(&output).expect("re-parse of commented document failed");
+        let node = graph2.get_by_id(NodeId::intern("box")).unwrap();
+        assert_eq!(node.comments, vec!["This is a section header"]);
+    }
+
+    #[test]
+    fn roundtrip_multiple_comments_preserved() {
+        let input = r#"
+# Header section
+# Subheading
+rect @panel {
+  w: 300 h: 200
+}
+"#;
+        let graph = parse_document(input).unwrap();
+        let output = emit_document(&graph);
+        let graph2 = parse_document(&output).expect("re-parse failed");
+        let node = graph2.get_by_id(NodeId::intern("panel")).unwrap();
+        assert_eq!(node.comments.len(), 2);
+        assert_eq!(node.comments[0], "Header section");
+        assert_eq!(node.comments[1], "Subheading");
     }
 }

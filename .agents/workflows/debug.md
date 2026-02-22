@@ -36,3 +36,19 @@ description: Systematic debugging methodology for problem investigation
    ```
 
 7. **Clean up**: Remove any `dbg!()` calls before committing.
+
+8. **Remote Debug** (if bug only reproduces in CI/Linux, not locally):
+
+   One-off command in Codespace:
+
+   ```bash
+   gh cs ssh -c <codespace-name> -- "cargo test --workspace -- --nocapture 2>&1 | tail -80"
+   ```
+
+   Or open an interactive shell for deeper investigation:
+
+   ```bash
+   gh cs ssh -c <codespace-name>
+   ```
+
+   > **Note**: Requires `gh auth refresh -h github.com -s codespace` (one-time setup). List available codespaces with `gh cs list`.
