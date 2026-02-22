@@ -23,6 +23,7 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R1.13**: Generic nodes — `@id { ... }` without explicit kind keyword for abstract/placeholder elements
 - **R1.14**: Namespaced imports — `import "path.fd" as ns` for cross-file style/node reuse with `ns.style_name` references
 - **R1.15**: Background shorthand — `bg: #FFF corner=12 shadow=(0,4,20,#0002)` for combined fill, corner, and shadow in one line
+- **R1.16**: Comment preservation — `# text` lines attached to the following node survive all parse/emit round-trips and format passes
 
 ### R2: Bidirectional Sync
 
@@ -58,6 +59,7 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R4.7**: Spec-view export — generate markdown report of `##` annotations (requirements, status, acceptance criteria) from any `.fd` file
 - **R4.8**: AI node refinement — restyle selected nodes and replace anonymous IDs (`_anon_N`) with semantic names via configurable AI provider
 - **R4.9**: Multi-provider AI — per-provider API keys (`fd.ai.geminiApiKey`, `fd.ai.openaiApiKey`, `fd.ai.anthropicApiKey`), custom model selection per provider, and support for Gemini, OpenAI, Anthropic, Ollama (local), and OpenRouter (multi-model gateway)
+- **R4.10**: Auto-format pipeline — `format_document` via LSP; lint diagnostics (anonymous IDs, duplicate `use:`, unused styles) + configurable dedup/hoist transforms via `fd.format.*` settings
 
 ### R5: Rendering
 

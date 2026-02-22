@@ -253,7 +253,7 @@ group @constraints_section {
 
   rect @con_fill {
     w: 360 h: 40
-    fill: #F0EDFC
+    fill: #1d1d20ff
     corner: 8
     text "@node -> fill_parent: 16" { font: "JetBrains Mono" 400 13; fill: #6C5CE7 }
   }

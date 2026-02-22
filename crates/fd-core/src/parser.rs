@@ -19,7 +19,8 @@ pub fn parse_document(input: &str) -> Result<SceneGraph, String> {
     let mut graph = SceneGraph::new();
     let mut rest = input;
 
-    skip_ws_and_comments(&mut rest);
+    // Collect any leading comments before the first declaration.
+    let mut pending_comments = collect_leading_comments(&mut rest);
 
     while !rest.is_empty() {
         if rest.starts_with("import ") {
@@ -27,22 +28,26 @@ pub fn parse_document(input: &str) -> Result<SceneGraph, String> {
                 .parse_next(&mut rest)
                 .map_err(|e| format!("Import parse error: {e}"))?;
             graph.imports.push(import);
+            pending_comments.clear();
         } else if rest.starts_with("style ") {
             let (name, style) = parse_style_block
                 .parse_next(&mut rest)
                 .map_err(|e| format!("Style parse error: {e}"))?;
             graph.define_style(name, style);
+            pending_comments.clear();
         } else if rest.starts_with("##") {
             // Top-level annotations are ignored (they only apply inside nodes)
             let _ = take_till::<_, _, ContextError>(0.., '\n').parse_next(&mut rest);
             if rest.starts_with('\n') {
                 rest = &rest[1..];
             }
+            pending_comments.clear();
         } else if rest.starts_with('@') {
             if is_generic_node_start(rest) {
-                let node_data = parse_node
+                let mut node_data = parse_node
                     .parse_next(&mut rest)
                     .map_err(|e| format!("Node parse error: {e}"))?;
+                node_data.comments = std::mem::take(&mut pending_comments);
                 let root = graph.root;
                 insert_node_recursive(&mut graph, root, node_data);
             } else {
@@ -52,16 +57,19 @@ pub fn parse_document(input: &str) -> Result<SceneGraph, String> {
                 if let Some(node) = graph.get_by_id_mut(node_id) {
                     node.constraints.push(constraint);
                 }
+                pending_comments.clear();
             }
         } else if rest.starts_with("edge ") {
             let edge = parse_edge_block
                 .parse_next(&mut rest)
                 .map_err(|e| format!("Edge parse error: {e}"))?;
             graph.edges.push(edge);
+            pending_comments.clear();
         } else if starts_with_node_keyword(rest) {
-            let node_data = parse_node
+            let mut node_data = parse_node
                 .parse_next(&mut rest)
                 .map_err(|e| format!("Node parse error: {e}"))?;
+            node_data.comments = std::mem::take(&mut pending_comments);
             let root = graph.root;
             insert_node_recursive(&mut graph, root, node_data);
         } else {
@@ -70,9 +78,13 @@ pub fn parse_document(input: &str) -> Result<SceneGraph, String> {
             if rest.starts_with('\n') {
                 rest = &rest[1..];
             }
+            pending_comments.clear();
         }
 
-        skip_ws_and_comments(&mut rest);
+        // Collect comments between top-level declarations.
+        // They will be attached to the *next* node parsed.
+        let more = collect_leading_comments(&mut rest);
+        pending_comments.extend(more);
     }
 
     Ok(graph)
@@ -111,6 +123,8 @@ struct ParsedNode {
     constraints: Vec<Constraint>,
     animations: Vec<AnimKeyframe>,
     annotations: Vec<Annotation>,
+    /// Comments that appeared before this node's opening `{` in the source.
+    comments: Vec<String>,
     children: Vec<ParsedNode>,
 }
 
@@ -125,6 +139,7 @@ fn insert_node_recursive(
     node.constraints.extend(parsed.constraints);
     node.animations.extend(parsed.animations);
     node.annotations = parsed.annotations;
+    node.comments = parsed.comments;
 
     let idx = graph.add_node(parent, node);
 
@@ -152,21 +167,28 @@ fn parse_import_line(input: &mut &str) -> ModalResult<Import> {
 
 // ─── Low-level parsers ──────────────────────────────────────────────────
 
-fn skip_ws_and_comments(input: &mut &str) {
+/// Collect leading whitespace and `# comment` lines, returning the comments.
+/// Stops at `##` annotations (which belong to nodes, not free comments).
+fn collect_leading_comments(input: &mut &str) -> Vec<String> {
+    let mut comments = Vec::new();
     loop {
+        // Skip pure whitespace (not newlines that separate nodes)
         let before = *input;
-        // Skip whitespace manually
         *input = input.trim_start();
+        if input.starts_with("##") {
+            // `##` is an annotation — stop here, do NOT consume it
+            break;
+        }
         if input.starts_with('#') {
-            // ## is an annotation — don't skip it
-            if input.starts_with("##") {
-                break;
+            // Regular `# comment` — collect it
+            let end = input.find('\n').unwrap_or(input.len());
+            let text = input[1..end].trim().to_string();
+            if !text.is_empty() {
+                comments.push(text);
             }
-            // Regular comment — skip to end of line
-            if let Some(pos) = input.find('\n') {
-                *input = &input[pos + 1..];
-            } else {
-                *input = "";
+            *input = &input[end.min(input.len())..];
+            if input.starts_with('\n') {
+                *input = &input[1..];
             }
             continue;
         }
@@ -174,6 +196,13 @@ fn skip_ws_and_comments(input: &mut &str) {
             break;
         }
     }
+    comments
+}
+
+/// Skip whitespace and comments without collecting them (used in style/anim blocks
+/// where comments are rare and not worth attaching to a model element).
+fn skip_ws_and_comments(input: &mut &str) {
+    let _ = collect_leading_comments(input);
 }
 
 /// Consume optional whitespace (concrete error type avoids inference issues).
@@ -411,7 +440,11 @@ fn parse_node(input: &mut &str) -> ModalResult<ParsedNode> {
         if input.starts_with("##") {
             annotations.push(parse_annotation.parse_next(input)?);
         } else if starts_with_child_node(input) {
-            children.push(parse_node.parse_next(input)?);
+            let mut child = parse_node.parse_next(input)?;
+            // Any comments collected before this child are attached to it
+            // (they were consumed by the preceding skip_ws_and_comments/collect call)
+            child.comments = Vec::new(); // placeholder; child attaches its own leading comments
+            children.push(child);
         } else if input.starts_with("anim") {
             animations.push(parse_anim_block.parse_next(input)?);
         } else {
@@ -425,7 +458,8 @@ fn parse_node(input: &mut &str) -> ModalResult<ParsedNode> {
                 &mut layout,
             )?;
         }
-        skip_ws_and_comments(input);
+        // Collect comments between items; they'll be attached to the *next* child node
+        let _inner_comments = collect_leading_comments(input);
     }
 
     let _ = '}'.parse_next(input)?;
@@ -458,6 +492,7 @@ fn parse_node(input: &mut &str) -> ModalResult<ParsedNode> {
         constraints,
         animations,
         annotations,
+        comments: Vec::new(),
         children,
     })
 }

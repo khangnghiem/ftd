@@ -143,8 +143,8 @@ function setupPointerEvents() {
     const x = rawX - panX;
     const y = rawY - panY;
 
-    // Check if clicking an annotation badge
-    const badgeHit = fdCanvas.hit_test_badge(rawX, rawY);
+    // Check if clicking an annotation badge (scene-space coords)
+    const badgeHit = fdCanvas.hit_test_badge(x, y);
     if (badgeHit) {
       openAnnotationCard(badgeHit, e.clientX, e.clientY);
       return;
@@ -753,8 +753,9 @@ function setupContextMenu() {
     if (!fdCanvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    // Adjust for pan offset to get scene-space coords
+    const x = (e.clientX - rect.left) - panX;
+    const y = (e.clientY - rect.top) - panY;
 
     // Hit-test for a node
     const selectedId = fdCanvas.get_selected_id();
@@ -953,8 +954,9 @@ function setupDragAndDrop() {
     if (!shape) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    // Adjust for pan offset to place node in scene-space coords
+    const x = (e.clientX - rect.left) - panX;
+    const y = (e.clientY - rect.top) - panY;
 
     const changed = fdCanvas.create_node_at(shape, x, y);
     if (changed) {
