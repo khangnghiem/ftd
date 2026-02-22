@@ -1,0 +1,259 @@
+# FD v1
+# Canvas Tools — interaction model and tool palette (R3.x)
+
+style tool_card {
+  fill: #FFFFFF
+  corner: 12
+}
+
+style shortcut_badge {
+  fill: #F0EDFC
+  corner: 6
+}
+
+style section_title {
+  fill: #1A1A2E
+  font: "Inter" 800 24
+}
+
+# ─── Title ───────────────────────────────────────────────────────────────
+
+text @title "Canvas Tool System" {
+  font: "Inter" 800 32
+  fill: #1A1A2E
+}
+
+text @subtitle "R3: Human editing via direct manipulation on GPU canvas" {
+  font: "Inter" 400 16
+  fill: #6B7280
+}
+
+# ─── Tool Palette ────────────────────────────────────────────────────────
+
+group @tool_palette {
+  ## "R3.3: Creation tools with keyboard shortcuts"
+  ## status: done
+  ## tag: canvas, interaction
+  layout: column gap=12 pad=24
+  bg: #F8F9FA corner=16 shadow=(0,2,12,#0001)
+
+  text @palette_title "Tools" { use: section_title; font: "Inter" 800 20 }
+
+  group @tools_row {
+    layout: column gap=8 pad=0
+
+    # Select tool
+    rect @tool_select {
+      ## "R3.1: Click to select, multi-select, lasso"
+      ## status: done
+      w: 260 h: 52
+      use: tool_card
+      stroke: #6C5CE7 2
+
+      group { layout: row gap=12 pad=12
+        rect @key_v { w: 28 h: 28; use: shortcut_badge
+          text "V" { font: "Inter" 700 13; fill: #6C5CE7 }
+        }
+        text "Select — cursor: default" { font: "Inter" 500 13; fill: #1A1A2E }
+      }
+
+      anim :hover { fill: #F0EDFC; ease: ease_out 150ms }
+    }
+
+    # Rectangle tool
+    rect @tool_rect {
+      ## "R3.3: Rectangle creation tool"
+      w: 260 h: 52
+      use: tool_card
+      stroke: #E8E8EC 1
+
+      group { layout: row gap=12 pad=12
+        rect @key_r { w: 28 h: 28; use: shortcut_badge
+          text "R" { font: "Inter" 700 13; fill: #6C5CE7 }
+        }
+        text "Rectangle — cursor: crosshair" { font: "Inter" 500 13; fill: #1A1A2E }
+      }
+
+      anim :hover { fill: #F0EDFC; ease: ease_out 150ms }
+    }
+
+    # Ellipse tool
+    rect @tool_ellipse {
+      ## "R3.3: Ellipse/circle creation tool"
+      w: 260 h: 52
+      use: tool_card
+      stroke: #E8E8EC 1
+
+      group { layout: row gap=12 pad=12
+        rect @key_o { w: 28 h: 28; use: shortcut_badge
+          text "O" { font: "Inter" 700 13; fill: #6C5CE7 }
+        }
+        text "Ellipse — cursor: crosshair" { font: "Inter" 500 13; fill: #1A1A2E }
+      }
+
+      anim :hover { fill: #F0EDFC; ease: ease_out 150ms }
+    }
+
+    # Pen tool
+    rect @tool_pen {
+      ## "R3.4: Freehand pen with pressure sensitivity"
+      ## accept: "Apple Pencil Pro support"
+      ## status: in_progress
+      w: 260 h: 52
+      use: tool_card
+      stroke: #E8E8EC 1
+
+      group { layout: row gap=12 pad=12
+        rect @key_p { w: 28 h: 28; use: shortcut_badge
+          text "P" { font: "Inter" 700 13; fill: #6C5CE7 }
+        }
+        text "Pen — cursor: crosshair" { font: "Inter" 500 13; fill: #1A1A2E }
+      }
+
+      anim :hover { fill: #F0EDFC; ease: ease_out 150ms }
+    }
+
+    # Text tool
+    rect @tool_text {
+      ## "R3.3: Text insertion tool"
+      w: 260 h: 52
+      use: tool_card
+      stroke: #E8E8EC 1
+
+      group { layout: row gap=12 pad=12
+        rect @key_t { w: 28 h: 28; use: shortcut_badge
+          text "T" { font: "Inter" 700 13; fill: #6C5CE7 }
+        }
+        text "Text — cursor: text" { font: "Inter" 500 13; fill: #1A1A2E }
+      }
+
+      anim :hover { fill: #F0EDFC; ease: ease_out 150ms }
+    }
+  }
+}
+
+# ─── Manipulation capabilities ───────────────────────────────────────────
+
+group @manipulation {
+  ## "R3.2: Drag, resize, rotate with modifiers"
+  ## status: done
+  layout: column gap=16 pad=24
+  bg: #FFF corner=16 shadow=(0,2,12,#0001)
+
+  text "Manipulation" { use: section_title; font: "Inter" 800 20 }
+
+  group @manip_grid {
+    layout: grid cols=2 gap=12 pad=0
+
+    rect @manip_drag {
+      w: 180 h: 64
+      fill: #D1FAE5
+      corner: 10
+      group { layout: column gap=4 pad=12
+        text "Drag" { font: "Inter" 600 14; fill: #059669 }
+        text "Move selection" { font: "Inter" 400 12; fill: #6B7280 }
+      }
+    }
+
+    rect @manip_resize {
+      w: 180 h: 64
+      fill: #DBEAFE
+      corner: 10
+      group { layout: column gap=4 pad=12
+        text "Resize" { font: "Inter" 600 14; fill: #2563EB }
+        text "Corner handles" { font: "Inter" 400 12; fill: #6B7280 }
+      }
+    }
+
+    rect @manip_rotate {
+      w: 180 h: 64
+      fill: #FEF3C7
+      corner: 10
+      group { layout: column gap=4 pad=12
+        text "Rotate" { font: "Inter" 600 14; fill: #D97706 }
+        text "Hold outside handle" { font: "Inter" 400 12; fill: #6B7280 }
+      }
+    }
+
+    rect @manip_constrain {
+      w: 180 h: 64
+      fill: #FCE7F3
+      corner: 10
+      group { layout: column gap=4 pad=12
+        text "⇧ Constrain" { font: "Inter" 600 14; fill: #DB2777 }
+        text "Shift locks axis" { font: "Inter" 400 12; fill: #6B7280 }
+      }
+    }
+  }
+}
+
+# ─── Canvas controls ────────────────────────────────────────────────────
+
+group @canvas_controls {
+  ## "R3.6: Pan, zoom, grid snap"
+  ## status: done
+  layout: column gap=12 pad=24
+  bg: #FFF corner=16 shadow=(0,2,12,#0001)
+
+  text "Canvas Controls" { use: section_title; font: "Inter" 800 20 }
+
+  group @ctrl_row {
+    layout: row gap=12 pad=0
+
+    rect @ctrl_pan {
+      w: 120 h: 48
+      fill: #F8F9FA
+      corner: 8
+      text "⌥ + Drag → Pan" { font: "Inter" 500 12; fill: #333 }
+    }
+
+    rect @ctrl_zoom {
+      w: 140 h: 48
+      fill: #F8F9FA
+      corner: 8
+      text "⌘ + Scroll → Zoom" { font: "Inter" 500 12; fill: #333 }
+    }
+
+    rect @ctrl_grid {
+      w: 140 h: 48
+      fill: #F8F9FA
+      corner: 8
+      text "Grid Snap (toggle)" { font: "Inter" 500 12; fill: #333 }
+    }
+  }
+}
+
+# ─── Undo/Redo ──────────────────────────────────────────────────────────
+
+group @undo_redo {
+  ## "R3.7: Full command stack across text + canvas"
+  ## status: done
+  ## priority: high
+  layout: row gap=16 pad=24
+  bg: #FFF corner=16 shadow=(0,2,12,#0001)
+
+  rect @btn_undo {
+    w: 120 h: 44
+    fill: #F0EDFC
+    corner: 10
+    text "⌘Z Undo" { font: "Inter" 600 13; fill: #6C5CE7 }
+    anim :press { scale: 0.92; ease: spring 150ms }
+  }
+
+  rect @btn_redo {
+    w: 120 h: 44
+    fill: #F0EDFC
+    corner: 10
+    text "⌘⇧Z Redo" { font: "Inter" 600 13; fill: #6C5CE7 }
+    anim :press { scale: 0.92; ease: spring 150ms }
+  }
+}
+
+# ─── Layout ─────────────────────────────────────────────────────────────
+
+@title -> center_in: canvas
+@subtitle -> offset: @title 0, 50
+@tool_palette -> offset: @subtitle 0, 80
+@manipulation -> offset: @tool_palette 320, 0
+@canvas_controls -> offset: @tool_palette 0, 520
+@undo_redo -> offset: @canvas_controls 0, 160

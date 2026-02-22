@@ -76,6 +76,20 @@ rect @login_btn {
 
 **Why the distinction?** Comments (`#`) are cheap and safe to be messy — they won't pollute your data model. Annotations (`##`) are the structured layer that AI agents, CI pipelines, and the canvas UI can reliably read and act on.
 
+### Generic Nodes (Spec-First)
+
+Nodes without a shape type act as abstract placeholders — define requirements first, add design later:
+
+```
+@login_btn {
+  ## "Primary CTA"
+  ## accept: "disabled when fields empty"
+  ## status: draft
+}
+```
+
+On canvas, generic nodes render as dashed placeholder boxes with the `@id` label. They can be nested inside groups and later "upgraded" to a concrete type by adding a keyword prefix (e.g., `rect @login_btn`).
+
 ## Architecture
 
 ```
