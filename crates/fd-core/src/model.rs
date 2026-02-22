@@ -596,6 +596,14 @@ impl ResolvedBounds {
     pub fn center(&self) -> (f32, f32) {
         (self.x + self.width / 2.0, self.y + self.height / 2.0)
     }
+
+    /// Check if this bounds intersects with a rectangle (AABB overlap).
+    pub fn intersects_rect(&self, rx: f32, ry: f32, rw: f32, rh: f32) -> bool {
+        self.x < rx + rw
+            && self.x + self.width > rx
+            && self.y < ry + rh
+            && self.y + self.height > ry
+    }
 }
 
 #[cfg(test)]

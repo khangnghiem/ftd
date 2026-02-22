@@ -36,14 +36,19 @@ pub trait Tool {
 // ─── Select Tool ─────────────────────────────────────────────────────────
 
 pub struct SelectTool {
-    /// Currently selected node.
-    pub selected: Option<NodeId>,
-    /// Drag state.
+    /// Currently selected node(s).
+    pub selected: Vec<NodeId>,
+    /// Drag state (moving a selected node).
     dragging: bool,
     last_x: f32,
     last_y: f32,
     /// Whether we duplicated on this drag (Alt+drag).
     alt_duplicated: bool,
+    /// Marquee (rubber-band) selection state.
+    /// Set when pointer-down hits empty space. `(start_x, start_y)`.
+    pub marquee_start: Option<(f32, f32)>,
+    /// Current marquee rectangle (normalized: x, y, w, h). Updated during drag.
+    pub marquee_rect: Option<(f32, f32, f32, f32)>,
 }
 
 impl Default for SelectTool {
@@ -55,12 +60,28 @@ impl Default for SelectTool {
 impl SelectTool {
     pub fn new() -> Self {
         Self {
-            selected: None,
+            selected: Vec::new(),
             dragging: false,
             last_x: 0.0,
             last_y: 0.0,
             alt_duplicated: false,
+            marquee_start: None,
+            marquee_rect: None,
         }
+    }
+
+    /// Get the first selected node (backward compatibility).
+    pub fn first_selected(&self) -> Option<NodeId> {
+        self.selected.first().copied()
+    }
+
+    /// Normalize a drag rectangle from start + current positions.
+    fn normalize_rect(x1: f32, y1: f32, x2: f32, y2: f32) -> (f32, f32, f32, f32) {
+        let rx = x1.min(x2);
+        let ry = y1.min(y2);
+        let rw = (x2 - x1).abs();
+        let rh = (y2 - y1).abs();
+        (rx, ry, rw, rh)
     }
 }
 
@@ -74,29 +95,58 @@ impl Tool for SelectTool {
             InputEvent::PointerDown {
                 x, y, modifiers, ..
             } => {
-                self.selected = hit_node;
-                self.dragging = self.selected.is_some();
-                self.last_x = *x;
-                self.last_y = *y;
-                self.alt_duplicated = false;
+                self.marquee_start = None;
+                self.marquee_rect = None;
 
-                // Alt+click on a node → prepare for duplicate-drag
-                // Actual duplication happens on first move to avoid duplicating on click
-                if modifiers.alt
-                    && let Some(id) = self.selected
-                {
-                    self.alt_duplicated = true;
-                    return vec![GraphMutation::DuplicateNode { id }];
+                if let Some(hit_id) = hit_node {
+                    // Shift+click: toggle node in/out of selection
+                    if modifiers.shift {
+                        if let Some(pos) = self.selected.iter().position(|id| *id == hit_id) {
+                            self.selected.remove(pos);
+                        } else {
+                            self.selected.push(hit_id);
+                        }
+                    } else if !self.selected.contains(&hit_id) {
+                        // Click on unselected node: replace selection
+                        self.selected = vec![hit_id];
+                    }
+                    // If clicking on already-selected node, keep selection (for drag)
+
+                    self.dragging = true;
+                    self.last_x = *x;
+                    self.last_y = *y;
+                    self.alt_duplicated = false;
+
+                    // Alt+click on a node → duplicate
+                    if modifiers.alt && self.selected.len() == 1 {
+                        self.alt_duplicated = true;
+                        return vec![GraphMutation::DuplicateNode { id: hit_id }];
+                    }
+
+                    vec![]
+                } else {
+                    // Click on empty space: start marquee
+                    if !modifiers.shift {
+                        self.selected.clear();
+                    }
+                    self.dragging = false;
+                    self.marquee_start = Some((*x, *y));
+                    self.marquee_rect = Some((*x, *y, 0.0, 0.0));
+                    vec![]
                 }
-
-                vec![]
             }
             InputEvent::PointerMove {
                 x, y, modifiers, ..
             } => {
-                if self.dragging
-                    && let Some(id) = self.selected
-                {
+                // Marquee drag
+                if let Some((sx, sy)) = self.marquee_start {
+                    self.marquee_rect = Some(Self::normalize_rect(sx, sy, *x, *y));
+                    // Return empty — no graph mutation, but FdCanvas will re-render
+                    return vec![];
+                }
+
+                // Node drag
+                if self.dragging && !self.selected.is_empty() {
                     let mut dx = x - self.last_x;
                     let mut dy = y - self.last_y;
                     self.last_x = *x;
@@ -111,11 +161,17 @@ impl Tool for SelectTool {
                         }
                     }
 
-                    return vec![GraphMutation::MoveNode { id, dx, dy }];
+                    // Move all selected nodes
+                    return self
+                        .selected
+                        .iter()
+                        .map(|id| GraphMutation::MoveNode { id: *id, dx, dy })
+                        .collect();
                 }
                 vec![]
             }
             InputEvent::PointerUp { .. } => {
+                // Marquee end is handled by FdCanvas (it calls hit_test_rect)
                 self.dragging = false;
                 self.alt_duplicated = false;
                 vec![]
@@ -431,7 +487,7 @@ mod tests {
             Some(target),
         );
         assert!(mutations.is_empty()); // Press alone doesn't mutate
-        assert_eq!(tool.selected, Some(target));
+        assert_eq!(tool.selected, vec![target]);
 
         // Drag
         let mutations = tool.handle(

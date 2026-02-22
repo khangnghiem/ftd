@@ -33,7 +33,7 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 
 ### R3: Human Editing (Canvas)
 
-- **R3.1**: Selection: Click to select, multi-select, lasso
+- **R3.1**: Selection: Click to select, Shift+click to toggle multi-select, marquee drag-to-select (rubber-band box selection on empty canvas) with Shift+marquee additive mode
 - **R3.2**: Manipulation: Drag, resize, rotate; shift-constrain to axis
 - **R3.3**: Creation: Rectangle, ellipse, text, group tools with keyboard shortcuts (V/R/O/P/T)
 - **R3.4**: Freehand: Pen/pencil tool with pressure sensitivity (Apple Pencil Pro)

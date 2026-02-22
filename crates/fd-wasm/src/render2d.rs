@@ -45,14 +45,16 @@ impl CanvasTheme {
 }
 
 /// Render the entire scene graph to a Canvas2D context.
+#[allow(clippy::too_many_arguments)]
 pub fn render_scene(
     ctx: &CanvasRenderingContext2d,
     graph: &SceneGraph,
     bounds: &HashMap<NodeIndex, ResolvedBounds>,
     canvas_width: f64,
     canvas_height: f64,
-    selected_id: Option<&str>,
+    selected_ids: &[String],
     theme: &CanvasTheme,
+    marquee_rect: Option<(f32, f32, f32, f32)>,
 ) {
     // Clear canvas
     ctx.set_fill_style_str(theme.bg);
@@ -62,10 +64,15 @@ pub fn render_scene(
     draw_grid(ctx, canvas_width, canvas_height, theme);
 
     // Paint nodes recursively from root
-    render_node(ctx, graph, graph.root, bounds, selected_id, theme);
+    render_node(ctx, graph, graph.root, bounds, selected_ids, theme);
 
     // Draw edges between nodes
     draw_edges(ctx, graph, bounds);
+
+    // Draw marquee selection rectangle (on top of everything)
+    if let Some((rx, ry, rw, rh)) = marquee_rect {
+        draw_marquee_rect(ctx, rx, ry, rw, rh);
+    }
 }
 
 fn render_node(
@@ -73,7 +80,7 @@ fn render_node(
     graph: &SceneGraph,
     idx: NodeIndex,
     bounds: &HashMap<NodeIndex, ResolvedBounds>,
-    selected_id: Option<&str>,
+    selected_ids: &[String],
     theme: &CanvasTheme,
 ) {
     let node = &graph.graph[idx];
@@ -83,7 +90,7 @@ fn render_node(
     };
 
     let style = graph.resolve_style(node);
-    let is_selected = selected_id.is_some_and(|sel| sel == node.id.as_str());
+    let is_selected = selected_ids.iter().any(|sel| sel == node.id.as_str());
 
     match &node.kind {
         NodeKind::Root => {}
@@ -109,7 +116,7 @@ fn render_node(
 
     // Paint children
     for child_idx in graph.children(idx) {
-        render_node(ctx, graph, child_idx, bounds, selected_id, theme);
+        render_node(ctx, graph, child_idx, bounds, selected_ids, theme);
     }
 
     // Annotation badge (drawn after children so it's on top)
@@ -330,6 +337,31 @@ fn draw_grid(ctx: &CanvasRenderingContext2d, width: f64, height: f64, theme: &Ca
         }
         x += spacing;
     }
+}
+
+/// Draw the marquee (rubber-band) selection rectangle.
+fn draw_marquee_rect(ctx: &CanvasRenderingContext2d, x: f32, y: f32, w: f32, h: f32) {
+    let (x, y, w, h) = (x as f64, y as f64, w as f64, h as f64);
+    if w < 1.0 && h < 1.0 {
+        return;
+    }
+
+    ctx.save();
+
+    // Semi-transparent blue fill
+    ctx.set_fill_style_str("rgba(79, 195, 247, 0.08)");
+    ctx.fill_rect(x, y, w, h);
+
+    // Dashed blue border
+    ctx.set_stroke_style_str("#4FC3F7");
+    ctx.set_line_width(1.0);
+    let _ = ctx.set_line_dash(&js_sys::Array::of2(
+        &wasm_bindgen::JsValue::from_f64(4.0),
+        &wasm_bindgen::JsValue::from_f64(4.0),
+    ));
+    ctx.stroke_rect(x, y, w, h);
+
+    ctx.restore();
 }
 
 // ─── Annotation badge ────────────────────────────────────────────────────
