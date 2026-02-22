@@ -16,6 +16,8 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R1.6**: Git-friendly plain text — line-oriented diffs work well
 - **R1.7**: Comments via `#` prefix
 - **R1.8**: Human-readable and AI-writable without special tooling
+- **R1.9**: Structured annotations (`##`) — description, accept criteria, status, priority, tags — parsed and round-tripped as first-class metadata
+- **R1.10**: First-class edges — `edge @id { from: @a to: @b }` with arrow, curve, label, stroke, and `##` annotations for user flows, wireframes, and state machines
 
 ### R2: Bidirectional Sync
 
@@ -27,12 +29,17 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 ### R3: Human Editing (Canvas)
 
 - **R3.1**: Selection: Click to select, multi-select, lasso
-- **R3.2**: Manipulation: Drag, resize, rotate
-- **R3.3**: Creation: Rectangle, ellipse, text, group tools
+- **R3.2**: Manipulation: Drag, resize, rotate; shift-constrain to axis
+- **R3.3**: Creation: Rectangle, ellipse, text, group tools with keyboard shortcuts (V/R/O/P/T)
 - **R3.4**: Freehand: Pen/pencil tool with pressure sensitivity (Apple Pencil Pro)
 - **R3.5**: Path editing: Node manipulation, curve handles, boolean operations (future)
 - **R3.6**: Canvas controls: Pan, zoom, grid snap
 - **R3.7**: Undo/redo: Full command stack, works across both text and canvas edits
+- **R3.8**: Properties panel: Apple-style frosted glass inspector for position, size, fill, stroke, corner radius, opacity, and text content — edits propagate bidirectionally
+- **R3.9**: Drag-and-drop: Shape palette for dropping Rect, Ellipse, or Text onto canvas
+- **R3.10**: Apple Pencil Pro squeeze: Toggle between last two tools
+- **R3.11**: Per-tool cursor feedback (crosshair for drawing, text cursor for text, default for select)
+- **R3.12**: Annotation pins: Visual badge dots on annotated nodes with inline edit card
 
 ### R4: AI Editing (Text)
 
@@ -40,6 +47,8 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R4.2**: Semantic node names (`@login_form`, `@submit_btn`) help AI understand intent
 - **R4.3**: Style inheritance reduces repetition — AI only specifies overrides
 - **R4.4**: Constraints describe relationships ("center in canvas") not pixel positions
+- **R4.5**: Annotations (`##`) give AI structured metadata — acceptance criteria, status, priority, tags — on the visual element itself
+- **R4.6**: Edges let AI reason about flows and transitions between screens
 
 ### R5: Rendering
 
@@ -49,6 +58,7 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R5.4**: Shapes: rect, ellipse, path, text
 - **R5.5**: Styling: fill, stroke, gradients, shadows, corner radius, opacity
 - **R5.6**: Animation: keyframe transitions with easing functions
+- **R5.7**: Edge rendering: lines, smooth curves, step routing with arrowheads and midpoint labels
 
 ### R6: Platform Targets
 
@@ -61,7 +71,7 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 
 | Requirement        | Target                                    |
 | ------------------ | ----------------------------------------- |
-| Parse throughput   | >10 MB/s of `.fd` text                   |
+| Parse throughput   | >10 MB/s of `.fd` text                    |
 | Render latency     | <16ms per frame (60 FPS)                  |
 | Bidirectional sync | <16ms round-trip                          |
 | File size          | ~5× smaller than SVG equivalent           |
