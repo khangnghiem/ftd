@@ -2,7 +2,7 @@
   "name": "fast-draft",
   "displayName": "Fast Draft",
   "description": "Syntax highlighting, live parser validation, and interactive canvas editor for .fd (Fast Draft) files",
-  "version": "0.5.8",
+  "version": "0.5.9",
   "publisher": "KhangNghiem",
   "license": "MIT",
   "icon": "icon.png",
@@ -65,25 +65,72 @@
       "properties": {
         "fd.ai.provider": {
           "type": "string",
-          "default": "gemini-free",
+          "default": "gemini",
           "enum": [
-            "gemini-free",
             "gemini",
             "openai",
-            "ollama"
+            "anthropic",
+            "ollama",
+            "openrouter"
           ],
           "enumDescriptions": [
-            "Gemini free tier (rate-limited, no key needed)",
-            "Gemini with your own API key",
-            "OpenAI with your own API key",
-            "Ollama (Local, completely free, requires Ollama running on localhost:11434)"
+            "Google Gemini (free tier available at aistudio.google.com)",
+            "OpenAI (GPT-4o, GPT-4o-mini, etc.)",
+            "Anthropic (Claude 3.5 Sonnet, Haiku, etc.)",
+            "Ollama (Local, completely free, no API key needed)",
+            "OpenRouter (Multi-model gateway — access 100+ models with one key)"
           ],
           "description": "AI provider for the Refine feature"
         },
-        "fd.ai.apiKey": {
+        "fd.ai.geminiApiKey": {
           "type": "string",
           "default": "",
-          "description": "API key for AI provider (leave empty for free tier)"
+          "description": "Google Gemini API key (free at https://aistudio.google.com/)"
+        },
+        "fd.ai.geminiModel": {
+          "type": "string",
+          "default": "gemini-2.0-flash",
+          "description": "Gemini model to use (e.g. gemini-2.0-flash, gemini-1.5-pro)"
+        },
+        "fd.ai.openaiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "OpenAI API key"
+        },
+        "fd.ai.openaiModel": {
+          "type": "string",
+          "default": "gpt-4o-mini",
+          "description": "OpenAI model to use (e.g. gpt-4o-mini, gpt-4o, o1-mini)"
+        },
+        "fd.ai.anthropicApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Anthropic API key"
+        },
+        "fd.ai.anthropicModel": {
+          "type": "string",
+          "default": "claude-sonnet-4-20250514",
+          "description": "Anthropic model to use (e.g. claude-sonnet-4-20250514, claude-3-5-haiku-20241022)"
+        },
+        "fd.ai.ollamaModel": {
+          "type": "string",
+          "default": "llama3.2",
+          "description": "Ollama model to use (e.g. llama3.2, codellama, mistral, deepseek-r1)"
+        },
+        "fd.ai.ollamaUrl": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Ollama server URL"
+        },
+        "fd.ai.openrouterApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "OpenRouter API key (get one at https://openrouter.ai/)"
+        },
+        "fd.ai.openrouterModel": {
+          "type": "string",
+          "default": "google/gemini-2.0-flash-exp:free",
+          "description": "OpenRouter model to use (e.g. google/gemini-2.0-flash-exp:free, anthropic/claude-3.5-sonnet)"
         }
       }
     },
