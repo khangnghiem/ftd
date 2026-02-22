@@ -2,16 +2,21 @@
  * AI Refine service for FD nodes.
  *
  * Calls an LLM to rename _anon_ IDs with semantic names and
- * improve visual styling. Supports free-tier Gemini and BYOK.
+ * improve visual styling. Supports multiple providers with
+ * per-provider API keys and custom model selection.
  */
 
 import * as vscode from "vscode";
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
+type Provider = "gemini" | "openai" | "anthropic" | "ollama" | "openrouter";
+
 interface AiConfig {
-  provider: "gemini-free" | "gemini" | "openai" | "ollama";
+  provider: Provider;
   apiKey: string;
+  model: string;
+  ollamaUrl: string;
 }
 
 interface RefineResult {
@@ -24,9 +29,31 @@ interface RefineResult {
 /** Read AI settings from VS Code configuration. */
 export function getAiConfig(): AiConfig {
   const config = vscode.workspace.getConfiguration("fd.ai");
-  const provider = (config.get<string>("provider") ?? "gemini-free") as AiConfig["provider"];
-  const apiKey = config.get<string>("apiKey") ?? "";
-  return { provider, apiKey };
+  const provider = (config.get<string>("provider") ?? "gemini") as Provider;
+
+  // Per-provider API keys and models
+  const keyMap: Record<Provider, string> = {
+    gemini: config.get<string>("geminiApiKey") ?? "",
+    openai: config.get<string>("openaiApiKey") ?? "",
+    anthropic: config.get<string>("anthropicApiKey") ?? "",
+    ollama: "", // No key needed
+    openrouter: config.get<string>("openrouterApiKey") ?? "",
+  };
+
+  const modelMap: Record<Provider, string> = {
+    gemini: config.get<string>("geminiModel") ?? "gemini-2.0-flash",
+    openai: config.get<string>("openaiModel") ?? "gpt-4o-mini",
+    anthropic: config.get<string>("anthropicModel") ?? "claude-sonnet-4-20250514",
+    ollama: config.get<string>("ollamaModel") ?? "llama3.2",
+    openrouter: config.get<string>("openrouterModel") ?? "google/gemini-2.0-flash-exp:free",
+  };
+
+  return {
+    provider,
+    apiKey: keyMap[provider],
+    model: modelMap[provider],
+    ollamaUrl: config.get<string>("ollamaUrl") ?? "http://localhost:11434",
+  };
 }
 
 // ─── Prompt ──────────────────────────────────────────────────────────────
@@ -94,11 +121,15 @@ async function callGemini(
   return text.trim();
 }
 
-async function callOpenAi(prompt: string, apiKey: string): Promise<string> {
+async function callOpenAi(
+  prompt: string,
+  apiKey: string,
+  model: string
+): Promise<string> {
   const url = "https://api.openai.com/v1/chat/completions";
 
   const body = {
-    model: "gpt-4o-mini",
+    model,
     messages: [{ role: "user", content: prompt }],
     temperature: 0.3,
     max_tokens: 8192,
@@ -130,17 +161,58 @@ async function callOpenAi(prompt: string, apiKey: string): Promise<string> {
   return text.trim();
 }
 
-async function callOllama(prompt: string): Promise<string> {
-  const url = "http://localhost:11434/api/generate";
+async function callAnthropic(
+  prompt: string,
+  apiKey: string,
+  model: string
+): Promise<string> {
+  const url = "https://api.anthropic.com/v1/messages";
 
   const body = {
-    // Default to a common fast model. Could be made configurable later.
-    model: "llama3.2",
-    prompt: prompt,
+    model,
+    max_tokens: 8192,
+    messages: [{ role: "user", content: prompt }],
+  };
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Anthropic API error (${response.status}): ${errorText}`);
+  }
+
+  const data = (await response.json()) as {
+    content?: Array<{ type: string; text?: string }>;
+  };
+
+  const text = data.content?.find((c) => c.type === "text")?.text;
+  if (!text) {
+    throw new Error("Anthropic returned empty response");
+  }
+
+  return text.trim();
+}
+
+async function callOllama(
+  prompt: string,
+  model: string,
+  baseUrl: string
+): Promise<string> {
+  const url = `${baseUrl}/api/generate`;
+
+  const body = {
+    model,
+    prompt,
     stream: false,
-    options: {
-      temperature: 0.3,
-    }
+    options: { temperature: 0.3 },
   };
 
   let response;
@@ -150,8 +222,10 @@ async function callOllama(prompt: string): Promise<string> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-  } catch (err) {
-    throw new Error("Could not connect to Ollama. Make sure Ollama is running on localhost:11434.");
+  } catch {
+    throw new Error(
+      `Could not connect to Ollama at ${baseUrl}. Make sure Ollama is running.`
+    );
   }
 
   if (!response.ok) {
@@ -165,6 +239,48 @@ async function callOllama(prompt: string): Promise<string> {
   }
 
   return data.response.trim();
+}
+
+async function callOpenRouter(
+  prompt: string,
+  apiKey: string,
+  model: string
+): Promise<string> {
+  const url = "https://openrouter.ai/api/v1/chat/completions";
+
+  const body = {
+    model,
+    messages: [{ role: "user", content: prompt }],
+    temperature: 0.3,
+    max_tokens: 8192,
+  };
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+      "HTTP-Referer": "https://github.com/khangnghiem/fast-draft",
+      "X-Title": "Fast Draft",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`OpenRouter API error (${response.status}): ${errorText}`);
+  }
+
+  const data = (await response.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+  };
+
+  const text = data.choices?.[0]?.message?.content;
+  if (!text) {
+    throw new Error("OpenRouter returned empty response");
+  }
+
+  return text.trim();
 }
 
 // ─── Main Entry Point ────────────────────────────────────────────────────
@@ -191,44 +307,57 @@ export async function refineSelectedNodes(
     let refined: string;
 
     switch (config.provider) {
-      case "gemini-free": {
-        const key = config.apiKey || getFreeTierKey();
-        if (!key) {
-          return {
-            refinedText: fdText,
-            error: "Gemini requires an API key even for the free tier. Get a FREE key at https://aistudio.google.com/ and set 'fd.ai.apiKey' in VS Code settings."
-          };
-        }
-        refined = await callGemini(prompt, key, "gemini-2.0-flash");
-        break;
-      }
-
       case "gemini":
         if (!config.apiKey) {
           return {
             refinedText: fdText,
-            error: "Gemini API key not configured. Set fd.ai.apiKey in settings.",
+            error:
+              "Gemini API key not configured. Get a FREE key at https://aistudio.google.com/ and set 'fd.ai.geminiApiKey' in settings.",
           };
         }
-        refined = await callGemini(prompt, config.apiKey, "gemini-2.0-flash");
+        refined = await callGemini(prompt, config.apiKey, config.model);
         break;
 
       case "openai":
         if (!config.apiKey) {
           return {
             refinedText: fdText,
-            error: "OpenAI API key not configured. Set fd.ai.apiKey in settings.",
+            error: "OpenAI API key not configured. Set 'fd.ai.openaiApiKey' in settings.",
           };
         }
-        refined = await callOpenAi(prompt, config.apiKey);
+        refined = await callOpenAi(prompt, config.apiKey, config.model);
+        break;
+
+      case "anthropic":
+        if (!config.apiKey) {
+          return {
+            refinedText: fdText,
+            error: "Anthropic API key not configured. Set 'fd.ai.anthropicApiKey' in settings.",
+          };
+        }
+        refined = await callAnthropic(prompt, config.apiKey, config.model);
         break;
 
       case "ollama":
-        refined = await callOllama(prompt);
+        refined = await callOllama(prompt, config.model, config.ollamaUrl);
+        break;
+
+      case "openrouter":
+        if (!config.apiKey) {
+          return {
+            refinedText: fdText,
+            error:
+              "OpenRouter API key not configured. Get one at https://openrouter.ai/ and set 'fd.ai.openrouterApiKey' in settings.",
+          };
+        }
+        refined = await callOpenRouter(prompt, config.apiKey, config.model);
         break;
 
       default:
-        return { refinedText: fdText, error: `Unknown provider: ${config.provider}` };
+        return {
+          refinedText: fdText,
+          error: `Unknown provider: ${config.provider}`,
+        };
     }
 
     // Strip markdown fences if the model wrapped the output
@@ -263,22 +392,10 @@ export function findAnonNodeIds(fdText: string): string[] {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────
 
-/** Strip ```fd or ```text fences from LLM output. */
+/** Strip \`\`\`fd or \`\`\`text fences from LLM output. */
 function stripMarkdownFences(text: string): string {
-  // Remove leading ```fd or ```text or ``` and trailing ```
   let result = text;
-  result = result.replace(/^```(?:fd|text|plaintext)?\s*\n?/, "");
-  result = result.replace(/\n?```\s*$/, "");
+  result = result.replace(/^\`\`\`(?:fd|text|plaintext)?\s*\n?/, "");
+  result = result.replace(/\n?\`\`\`\s*$/, "");
   return result.trim();
-}
-
-/**
- * Free-tier Gemini API key.
- * Rate-limited but functional for casual use.
- * Users should configure their own key for production use.
- */
-function getFreeTierKey(): string {
-  // This is a free-tier key with strict rate limits.
-  // For production use, users should set their own key in fd.ai.apiKey.
-  return vscode.workspace.getConfiguration("fd.ai").get<string>("freeTierKey") ?? "";
 }

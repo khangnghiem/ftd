@@ -56,6 +56,7 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R4.6**: Edges let AI reason about flows and transitions between screens
 - **R4.7**: Spec-view export — generate markdown report of `##` annotations (requirements, status, acceptance criteria) from any `.fd` file
 - **R4.8**: AI node refinement — restyle selected nodes and replace anonymous IDs (`_anon_N`) with semantic names via configurable AI provider
+- **R4.9**: Multi-provider AI — per-provider API keys (`fd.ai.geminiApiKey`, `fd.ai.openaiApiKey`, `fd.ai.anthropicApiKey`), custom model selection per provider, and support for Gemini, OpenAI, Anthropic, Ollama (local), and OpenRouter (multi-model gateway)
 
 ### R5: Rendering
 
