@@ -253,6 +253,9 @@ function setupPointerEvents() {
     canvas.releasePointerCapture(e.pointerId);
     // Update properties panel after interaction ends
     updatePropertiesPanel();
+    // Notify extension of canvas selection change (for Code ↔ Canvas sync)
+    const selectedId = fdCanvas.get_selected_id();
+    vscode.postMessage({ type: "nodeSelected", id: selectedId });
   });
 
   // ── Wheel / Trackpad scroll → pan ──
@@ -431,6 +434,12 @@ document.addEventListener("keydown", (e) => {
     case "showHelp":
       toggleShortcutHelp();
       break;
+  }
+
+  // Notify extension of selection changes from keyboard actions
+  if (result.changed || result.action === "deselect") {
+    const selectedId = fdCanvas.get_selected_id();
+    vscode.postMessage({ type: "nodeSelected", id: selectedId });
   }
 
   // Update cursor when tool changes via shortcut

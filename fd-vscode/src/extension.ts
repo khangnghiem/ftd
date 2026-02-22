@@ -62,7 +62,41 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
           break;
         }
         case "nodeSelected": {
-          // Future: show properties panel, highlight in text
+          const nodeId = message.id;
+          if (!nodeId) break;
+          // Find the line containing @<nodeId> in the text editor
+          const pattern = new RegExp(`@${nodeId}\\b`);
+          for (let i = 0; i < document.lineCount; i++) {
+            const line = document.lineAt(i);
+            if (pattern.test(line.text)) {
+              // Suppress cursor→canvas sync to prevent feedback loop
+              suppressCursorSync = true;
+              const editor = vscode.window.visibleTextEditors.find(
+                (e) => e.document.uri.toString() === document.uri.toString()
+              );
+              if (editor) {
+                const pos = new vscode.Position(i, 0);
+                editor.selection = new vscode.Selection(pos, pos);
+                editor.revealRange(
+                  line.range,
+                  vscode.TextEditorRevealType.InCenterIfOutsideViewport
+                );
+                // Briefly highlight the node declaration line
+                const decoration = vscode.window.createTextEditorDecorationType({
+                  backgroundColor: new vscode.ThemeColor(
+                    "editor.findMatchHighlightBackground"
+                  ),
+                  isWholeLine: true,
+                });
+                editor.setDecorations(decoration, [line.range]);
+                setTimeout(() => decoration.dispose(), 1500);
+              }
+              setTimeout(() => {
+                suppressCursorSync = false;
+              }, 100);
+              break;
+            }
+          }
           break;
         }
         case "ready": {
