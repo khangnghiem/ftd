@@ -1,0 +1,90 @@
+# FD Changelog
+
+> Tracks requirement completion status across the entire FD project.
+> For VS Code extension release notes, see [`fd-vscode/CHANGELOG.md`](../fd-vscode/CHANGELOG.md).
+
+## Completed Requirements
+
+### R1: File Format (`.fd`)
+
+- [x] **R1.1**: Token-efficient text DSL
+- [x] **R1.2**: Graph-based document model (DAG)
+- [x] **R1.3**: Constraint-based layout
+- [x] **R1.4**: Reusable styles via `style` blocks
+- [x] **R1.5**: Animation declarations with triggers
+- [x] **R1.6**: Git-friendly plain text
+- [x] **R1.7**: Comments via `#` prefix
+- [x] **R1.8**: Human-readable and AI-writable
+- [x] **R1.9**: Structured annotations (`##`)
+- [x] **R1.10**: First-class edges
+- [x] **R1.11**: Edge trigger animations
+- [x] **R1.12**: Edge flow animations
+- [x] **R1.13**: Generic nodes
+- [x] **R1.14**: Namespaced imports
+- [x] **R1.15**: Background shorthand
+- [x] **R1.16**: Comment preservation
+
+### R2: Bidirectional Sync
+
+- [x] **R2.1**: Canvas → Text sync (<16ms)
+- [x] **R2.2**: Text → Canvas sync (<16ms)
+- [ ] **R2.3**: Incremental parse/emit (currently full re-parse — fast enough for typical docs)
+- [x] **R2.4**: Conflict-free via single authoritative SceneGraph
+
+### R3: Human Editing (Canvas)
+
+- [x] **R3.1**: Selection (click, shift, marquee)
+- [x] **R3.2**: Manipulation (drag, resize, shift-constrain)
+- [x] **R3.3**: Creation (rect, ellipse, text, pen + shortcuts)
+- [x] **R3.4**: Freehand pen tool (Catmull-Rom smoothing) — _pressure captured but not yet mapped to stroke width_
+- [ ] **R3.5**: Path editing (future — boolean operations)
+- [x] **R3.6**: Canvas controls — pan (Space+drag, middle-click, ⌘-hold)
+- [x] **R3.7**: Undo/redo command stack
+- [x] **R3.8**: Properties panel (frosted glass inspector)
+- [x] **R3.9**: Drag-and-drop shape palette
+- [x] **R3.10**: Apple Pencil Pro squeeze toggle
+- [x] **R3.11**: Per-tool cursor feedback
+- [x] **R3.12**: Annotation pins (badge dots + inline card)
+- [x] **R3.13**: Light/dark theme toggle
+- [x] **R3.14**: View mode toggle (Design | Spec)
+- [ ] **R3.15**: Live preview outlines
+- [ ] **R3.16**: Resize handles (8-point grips)
+- [ ] **R3.17**: Smart guides (alignment snapping)
+- [ ] **R3.18**: Dimension tooltip
+- [ ] **R3.19**: Alt-draw-from-center
+- [ ] **R3.20**: Zoom (⌘+/−, pinch, fit)
+- [ ] **R3.21**: Grid overlay
+- [ ] **R3.22**: Pressure-sensitive stroke width
+- [ ] **R3.23**: Freehand shape recognition
+
+### R4: AI Editing (Text)
+
+- [x] **R4.1**: AI reads/writes `.fd` directly
+- [x] **R4.2**: Semantic node names
+- [x] **R4.3**: Style inheritance
+- [x] **R4.4**: Constraint relationships
+- [x] **R4.5**: Annotations as structured metadata
+- [x] **R4.6**: Edges for AI flow reasoning
+- [x] **R4.7**: Spec-view export (markdown report)
+- [x] **R4.8**: AI node refinement (Gemini)
+- [x] **R4.9**: Multi-provider AI (Gemini configured, OpenAI/Anthropic settings present)
+- [x] **R4.10**: Auto-format pipeline (`format_document` via LSP)
+- [x] **R4.11**: Inline Spec View
+
+### R5: Rendering
+
+- [x] **R5.1**: GPU-accelerated 2D — Vello + wgpu crate exists; webview currently uses Canvas2D fallback
+- [x] **R5.2**: WASM-compatible (wasm-pack build)
+- [ ] **R5.3**: Native desktop/mobile (future)
+- [x] **R5.4**: Shapes (rect, ellipse, path, text)
+- [x] **R5.5**: Styling (fill, stroke, gradients, shadows, corner radius, opacity)
+- [x] **R5.6**: Animation (keyframe transitions)
+- [x] **R5.7**: Edge rendering (lines, curves, arrows, labels)
+- [x] **R5.8**: Edge animation rendering (pulse dots, marching dashes)
+
+### R6: Platform Targets
+
+- [x] **R6.1**: VS Code / Cursor IDE extension (published)
+- [ ] **R6.2**: Desktop app via Tauri (future)
+- [ ] **R6.3**: Mobile app (future)
+- [ ] **R6.4**: Web app (future)

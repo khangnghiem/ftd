@@ -17,28 +17,7 @@ trigger: always_on
 
 ### 🧹 Clean Code (MANDATORY)
 
-| Principle | Rule                                                 |
-| --------- | ---------------------------------------------------- |
-| **SRP**   | Single Responsibility — each function does ONE thing |
-| **DRY**   | Don't Repeat Yourself — extract duplicates           |
-| **KISS**  | Keep It Simple — simplest solution that works        |
-| **YAGNI** | You Aren't Gonna Need It — no unused features        |
-
-**Naming:**
-| Element | Convention |
-|---------|------------|
-| Variables | Reveal intent: `node_count` not `n` |
-| Functions | Verb + noun: `parse_node()` not `node()` |
-| Booleans | Question form: `is_root`, `has_children` |
-| Types | PascalCase: `SceneNode`, `NodeKind` |
-| Constants | SCREAMING_SNAKE: `MAX_DEPTH` |
-
-**Functions:**
-
-- Max 30 lines, prefer 10-15
-- Max 3 arguments, prefer 0-2
-- Guard clauses for early returns
-- Max 2 levels of nesting
+Write clean code (SRP, DRY, KISS, YAGNI). Use semantic names that reveal intent. Keep functions <30 lines, max 3 args, max 2 nesting levels. Guard clauses for early returns.
 
 ### 📁 File Dependency Awareness
 
@@ -49,32 +28,22 @@ Before modifying ANY file:
 3. Never leave broken imports or trait bounds
 4. Run `cargo check --workspace` after cross-crate changes
 
+### 📋 Requirement Deduplication
+
+Before proposing any new requirement, search the **Requirement Index** at the bottom of `REQUIREMENTS.md` and check `docs/CHANGELOG.md` for overlapping keywords. If a similar requirement exists, **extend it** instead of creating a duplicate. Always update the index when adding new requirements.
+
 ### 🔀 Git Workflow (MANDATORY)
 
-| Rule                     | Description                                                     |
-| ------------------------ | --------------------------------------------------------------- |
-| **Never commit to main** | All changes go through feature branches                         |
-| **Branch naming**        | `feat/`, `fix/`, `refactor/`, `test/`, `docs/` prefixes         |
-| **PR required**          | All merges via Pull Request                                     |
-| **CI must pass**         | Never force-push or bypass checks                               |
-| **Sync before branch**   | Always `git fetch origin main` before creating branches         |
-| **Never commit secrets** | `.env`, tokens, passwords, and API keys must NEVER be committed |
+- **Never commit to main** — all changes via feature branches (`feat/`, `fix/`, `refactor/`, `test/`, `docs/`)
+- **PR required** — all merges via Pull Request; CI must pass
+- **Sync first** — always `git fetch origin main` before creating branches
 
 > [!CAUTION]
 > **NEVER stage or commit `.env`, `.env.*`, or any file containing secrets, tokens, or API keys.**
-> These are always git-ignored. If accidentally staged, run `git rm --cached .env` immediately.
 
 > [!CAUTION]
 > **Direct pushes to `main` are blocked by a pre-push git hook** (`.githooks/pre-push`).
-> This is enforced mechanically — not just advisory. You CANNOT push to `main` directly.
-> The `git config core.hooksPath .githooks` setting activates this for all clones that run it.
 > On a fresh clone, run: `git config core.hooksPath .githooks` to activate.
-
-**Branch Flow:**
-
-```
-main ← PR ← feature-branch ← your commits
-```
 
 ---
 
@@ -114,19 +83,13 @@ crates/
         └── input.rs    # Input event abstraction
 ```
 
-**Testing:**
-
-- Every parser feature gets a round-trip test
-- Test names: `parse_<feature>`, `emit_<feature>`, `roundtrip_<feature>`
-- Use `assert_eq!` with descriptive messages
-- Test edge cases: empty input, missing optional fields, nested structures
+**Testing:** Every parser feature gets a round-trip test (`parse_<feature>`, `emit_<feature>`, `roundtrip_<feature>`). Test edge cases: empty input, missing optional fields, nested structures.
 
 ### 📝 FD Format Rules
 
 > [!IMPORTANT]
 > **Code mode prioritizes AI-agent readability and accuracy over token efficiency.**
 > Semantic naming is the single highest-impact factor for AI comprehension (arXiv 2510.02268).
-> Token efficiency remains a secondary goal — keep files concise where it doesn't hurt clarity.
 
 | Rule                        | Description                                                         |
 | --------------------------- | ------------------------------------------------------------------- |
@@ -153,125 +116,13 @@ crates/
 
 ---
 
-## TIER 2: WORKFLOWS (Slash Commands)
-
-| Command   | Purpose                                  | When to Use                   |
-| --------- | ---------------------------------------- | ----------------------------- |
-| `/spec`   | Requirements + acceptance criteria       | Before design, define scope   |
-| `/design` | UI/UX mockups + specs                    | Before implementation         |
-| `/uiux`   | UI/UX design with professional standards | Visual design work            |
-| `/test`   | Test generation                          | Write tests before code (TDD) |
-| `/build`  | Build + test workspace                   | Implementation + verification |
-| `/commit` | Stage + commit changes                   | After successful build        |
-| `/pr`     | Create PR + merge into main              | Ready to merge to main        |
-| `/merge`  | Merge an existing PR into main           | After PR is approved          |
-| `/debug`  | Systematic debugging                     | Bug investigation             |
-| `/yolo`   | Full pipeline (test→build→commit→pr)     | Small changes, feeling lucky  |
-
-### Test-First Development
-
-1. **Define AC first** — Know what "done" looks like
-2. **Write tests for AC** — Before implementation
-3. **Cover edge cases** — Empty, malformed, nested, boundary values
-4. **Implement** — Make tests pass
-5. **Refactor** — Clean up while tests are green
+## TIER 2: CI/CD
 
 ### Before Completing Any Task
 
 - [ ] `cargo check --workspace` passes
 - [ ] `cargo test --workspace` passes
 - [ ] `cargo clippy --workspace -- -D warnings` passes
+- [ ] `cargo fmt --all -- --check` passes
 - [ ] No panic paths in library code (no `unwrap()` on user input)
 - [ ] All dependent files updated across crates
-
----
-
-## TIER 3: CI/CD
-
-### Branch Sync Protocol
-
-> [!IMPORTANT]
-> **ALWAYS sync with origin/main before creating branches or committing.**
-
-```bash
-git fetch origin main
-git rev-list HEAD..origin/main --count
-# If behind:
-git rebase origin/main
-```
-
-### Required CI Checks
-
-| Check                        | Must Pass |
-| ---------------------------- | --------- |
-| `cargo check --workspace`    | ✅        |
-| `cargo test --workspace`     | ✅        |
-| `cargo clippy --workspace`   | ✅        |
-| `cargo fmt --all -- --check` | ✅        |
-
-### 🐛 Codespace Debugging
-
-> [!TIP]
-> **Use SSH into the GitHub Codespace to debug in a clean cloud environment.**
-
-The project has a prebuilt Codespace at `khangnghiem/fast-draft`. To debug remotely via CLI:
-
-```bash
-# List available codespaces
-gh cs list
-
-# Run a one-off command
-gh cs ssh -c <codespace-name> -- "cargo test --workspace"
-
-# Open an interactive shell
-gh cs ssh -c <codespace-name>
-
-# Forward a port locally (e.g. for a dev server)
-gh cs ports forward 3000:3000 -c <codespace-name>
-```
-
-**Requires:** `gh auth refresh -h github.com -s codespace` (one-time setup to grant the `codespace` scope).
-
-Use Codespace SSH when:
-
-- Testing in a clean Linux environment (no local toolchain differences)
-- Debugging CI failures that don't reproduce locally
-- Running long builds without tying up the local machine
-
----
-
-### 📤 Publishing Protocol (MANDATORY)
-
-> [!IMPORTANT]
-> **Every release MUST publish to ALL registries. Never publish to just one.**
-
-| Package            | Registry            | Command                            |
-| ------------------ | ------------------- | ---------------------------------- |
-| **fd-vscode**      | VS Code Marketplace | `pnpm vsce publish`                |
-| **fd-vscode**      | Open VSX Registry   | `pnpm ovsx publish`                |
-| **fd-core**        | crates.io           | `cargo publish -p fd-core`         |
-| **fd-lsp**         | crates.io           | `cargo publish -p fd-lsp`          |
-| **tree-sitter-fd** | npm                 | `cd tree-sitter-fd && npm publish` |
-
-**Publish order** (dependencies first):
-
-```
-fd-core → fd-lsp → tree-sitter-fd → fd-vscode (Marketplace + Open VSX)
-```
-
-**Before publishing:**
-
-- [ ] Read `.env` for registry tokens (`CARGO_REGISTRY_TOKEN`, `NPM_TOKEN`, `VSCE_PAT`, `VSX_PAT`) and AI features (`GEMINI_API_KEY`)
-- [ ] All CI checks pass
-- [ ] Version bumped in all affected `Cargo.toml` / `package.json`
-- [ ] CHANGELOG updated
-- [ ] Git tag created: `v0.x.y`
-
-### Development Flow
-
-```
-/spec → /design → /test → /build → /commit → /pr
-```
-
-> [!TIP]
-> Start with `/spec` to define requirements, then follow the flow.

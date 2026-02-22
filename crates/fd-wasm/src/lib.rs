@@ -212,7 +212,11 @@ impl FdCanvas {
         changed || self.select_tool.marquee_rect.is_some() || hovered_changed
     }
 
-    /// Handle pointer up event. Returns true if the graph changed.
+    /// Handle pointer up event. Returns a JSON string:
+    /// `{"changed":bool, "toolSwitched":bool, "tool":"<name>"}`
+    ///
+    /// After a drawing gesture (Rect/Ellipse/Pen/Text) completes,
+    /// the tool automatically switches back to Select.
     pub fn handle_pointer_up(
         &mut self,
         x: f32,
@@ -221,7 +225,7 @@ impl FdCanvas {
         ctrl: bool,
         alt: bool,
         meta: bool,
-    ) -> bool {
+    ) -> String {
         let mods = Modifiers {
             shift,
             ctrl,
@@ -278,11 +282,20 @@ impl FdCanvas {
         };
         let changed = self.apply_mutations(mutations);
         // Flush text after gesture ends
-        // Also fire render if hover/press changed
         if changed {
             self.engine.flush_to_text();
         }
-        changed || marquee_changed || pressed_changed || hovered_changed
+        let visual_changed = changed || marquee_changed || pressed_changed || hovered_changed;
+
+        // Auto-switch back to Select after drawing gesture completes
+        let tool_switched = self.active_tool != ToolKind::Select;
+        if tool_switched {
+            self.set_tool("select");
+        }
+        let tool_name = tool_kind_to_name(self.active_tool);
+        let c = if visual_changed { "true" } else { "false" };
+        let ts = if tool_switched { "true" } else { "false" };
+        format!(r#"{{"changed":{c},"toolSwitched":{ts},"tool":"{tool_name}"}}"#)
     }
 
     /// Switch the active tool, remembering the previous one.

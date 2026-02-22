@@ -39,7 +39,7 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R3.3**: Creation: Rectangle, ellipse, text, group tools with keyboard shortcuts (V/R/O/P/T)
 - **R3.4**: Freehand: Pen/pencil tool with pressure sensitivity (Apple Pencil Pro)
 - **R3.5**: Path editing: Node manipulation, curve handles, boolean operations (future)
-- **R3.6**: Canvas controls: Pan, zoom, grid snap
+- **R3.6**: Canvas controls: Pan (Space+drag, middle-click drag, ⌘-hold hand tool), zoom (see R3.20), grid (see R3.21)
 - **R3.7**: Undo/redo: Full command stack, works across both text and canvas edits
 - **R3.8**: Properties panel: Apple-style frosted glass inspector for position, size, fill, stroke, corner radius, opacity, and text content — edits propagate bidirectionally
 - **R3.9**: Drag-and-drop: Shape palette for dropping Rect, Ellipse, or Text onto canvas
@@ -48,6 +48,15 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R3.12**: Annotation pins: Visual badge dots on annotated nodes with inline edit card
 - **R3.13**: Light/dark theme toggle — canvas defaults to light mode with a toolbar toggle button (🌙 in light → switch to dark, ☀️ in dark → switch to light); preference persists across sessions via VS Code state
 - **R3.14**: View mode toggle — **Design | Spec** segmented control in the canvas toolbar (Design default); Spec View hides the canvas and shows a scrollable overlay of node IDs, `##` annotations, acceptance criteria, status/priority/tag badges, unannotated node chips, and edges; overlay updates live as the `.fd` source changes; also accessible via `FD: Toggle Design/Spec View` command in the editor title bar and Command Palette
+- **R3.15**: Live preview: Dashed outline ghost of shape during drag-to-create (rect, ellipse); live smooth curve during pen draw (no jagged LineTo visible to user)
+- **R3.16**: Resize handles: 8-point resize grips (4 corners + 4 edge midpoints) on selected shapes; directional cursors (`nwse-resize`, `nesw-resize`, `ew-resize`, `ns-resize`) on hover
+- **R3.17**: Smart guides: Alignment snapping with visual guide lines — snap to center, edges, and equal spacing of nearby nodes; hold Ctrl/⌘ to temporarily disable snapping
+- **R3.18**: Dimension tooltip: Floating `W × H` badge near cursor during draw and resize; absolute position `(X, Y)` badge during move
+- **R3.19**: Alt-draw-from-center: Hold Alt/⌥ while creating rect/ellipse to anchor the starting point as center (not top-left corner)
+- **R3.20**: Zoom: ⌘+/⌘− to step-zoom, ⌘0 to zoom-to-fit, pinch-to-zoom on trackpad; zoom level indicator in toolbar (e.g. "100%")
+- **R3.21**: Grid overlay: Toggleable dot/line grid with configurable spacing; shapes snap to grid when enabled
+- **R3.22**: Pressure-sensitive stroke width: Pen tool maps pointer pressure to stroke thickness in real-time (Apple Pencil + Wacom); width range configurable
+- **R3.23**: Freehand shape recognition: After pen stroke completes, detect near-rectangular/elliptical/linear shapes and offer a one-click "Snap to Shape" action — converting freehand to a clean geometric node
 
 ### R4: AI Editing (Text)
 
@@ -105,3 +114,33 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 | WASM             | wasm-pack + wasm-bindgen              |
 | IDE glue         | TypeScript (minimal VS Code API shim) |
 | Desktop (future) | Tauri                                 |
+
+## Requirement Index
+
+<!-- AI: Search this index BEFORE proposing new requirements. If a similar tag already exists, extend the existing requirement instead of creating a duplicate. -->
+
+| Tag                | Requirements                          |
+| ------------------ | ------------------------------------- |
+| selection          | R3.1, R3.16                           |
+| drawing            | R3.3, R3.15, R3.19                    |
+| pen / freehand     | R3.4, R3.22, R3.23                    |
+| pan                | R3.6, R3.10                           |
+| zoom               | R3.6, R3.20                           |
+| grid / snap        | R3.17, R3.21                          |
+| cursor             | R3.11, R3.16                          |
+| resize             | R3.2, R3.16                           |
+| feedback / tooltip | R3.15, R3.18                          |
+| undo / redo        | R3.7                                  |
+| properties         | R3.8                                  |
+| drag-drop          | R3.9                                  |
+| annotation         | R1.9, R3.12, R4.5                     |
+| theme              | R3.13                                 |
+| view mode          | R3.14, R4.11                          |
+| pressure / pencil  | R3.4, R3.10, R3.22                    |
+| ai / refinement    | R4.7, R4.8, R4.9, R4.10               |
+| edge               | R1.10, R1.11, R1.12, R4.6, R5.7, R5.8 |
+| import             | R1.14                                 |
+| style              | R1.4, R4.3                            |
+| animation          | R1.5, R1.11, R1.12, R5.6, R5.8        |
+| rendering          | R5.1, R5.2, R5.4, R5.5                |
+| platform           | R6.1, R6.2, R6.3, R6.4                |

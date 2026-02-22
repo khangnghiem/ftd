@@ -1,199 +1,231 @@
 # FD v1
-# Dark theme — settings panel with toggles and sliders
 
-style dark_bg { fill: #1A1A2E }
-style dark_card { fill: #2D2D44; corner: 12 }
-style dark_text { font: "Inter" 14; fill: #E0E0E0 }
-style dark_muted { font: "Inter" 12; fill: #6B7280 }
-style dark_accent { fill: #A29BFE }
+style dark_accent {
+  fill: #A29BFE
+}
 
-# ─── Settings panel ─────────────────────────────────────────────────────
+style dark_bg {
+  fill: #1A1A2E
+}
 
-rect @panel_bg {
-  w: 400 h: 700
-  corner: 20
-  use: dark_bg
-  bg: #1A1A2E corner=20 shadow=(0,8,40,#00000080)
+style dark_card {
+  fill: #2D2D44
+  corner: 12
+}
+
+style dark_muted {
+  fill: #6B7280
+  font: "Inter" 400 12
+}
+
+style dark_text {
+  fill: #E0E0E0
+  font: "Inter" 400 14
 }
 
 group @settings {
   layout: column gap=20 pad=28
-
-  # ─── Header ────────────────────────────────────────────────────────
-
   group @header {
     layout: row gap=0 pad=0
-
-    text @title "Settings" { font: "Inter" 700 24; fill: #FFF }
-
+    text @title "Settings" {
+      fill: #FFFFFF
+      font: "Inter" 700 24
+    }
     rect @close_btn {
       w: 36 h: 36
-      corner: 18
       fill: #2D2D44
-
-      text "×" { font: "Inter" 400 20; fill: #999 }
-
-      anim :hover { fill: #3D3D5C; ease: ease_out 150ms }
+      corner: 18
+      text @_anon_25 "×" {
+        fill: #999999
+        font: "Inter" 400 20
+      }
+      anim :hover {
+        fill: #3D3D5C
+        ease: ease_out 150ms
+      }
     }
   }
-
-  # ─── Profile section ──────────────────────────────────────────────
-
   rect @profile_card {
     w: 344 h: 80
     use: dark_card
-
-    group { layout: row gap=14 pad=16
+    group @_anon_26 {
+      layout: row gap=14 pad=16
       ellipse @user_avatar {
+        ## "User profile photo"
         w: 48 h: 48
         fill: #6C5CE7
-        ## "User profile photo"
       }
-
-      group { layout: column gap=4 pad=0
-        text "Khang Nghiem" { font: "Inter" 600 16; fill: #FFF }
-        text "khang@fastdraft.io" { use: dark_muted }
-      }
-    }
-  }
-
-  # ─── Toggle settings ──────────────────────────────────────────────
-
-  text "Preferences" { font: "Inter" 600 13; fill: #6B7280 }
-
-  rect @toggle_dark {
-    w: 344 h: 56
-    use: dark_card
-
-    group { layout: row gap=0 pad=16
-      group { layout: column gap=2 pad=0
-        text "Dark Mode" { use: dark_text }
-        text "Use dark theme across the app" { use: dark_muted }
-      }
-
-      rect @switch_on {
-        w: 44 h: 24
-        corner: 12
-        fill: #6C5CE7
-        ## "Toggle — ON state"
-
-        ellipse @switch_knob {
-          w: 20 h: 20
-          fill: #FFF
+      group @_anon_27 {
+        layout: column gap=4 pad=0
+        text @_anon_28 "Khang Nghiem" {
+          fill: #FFFFFF
+          font: "Inter" 600 16
+        }
+        text @_anon_29 "khang@fastdraft.io" {
+          use: dark_muted
         }
       }
     }
-
-    anim :hover { fill: #353550; ease: ease_out 150ms }
   }
-
+  text @_anon_30 "Preferences" {
+    fill: #6B7280
+    font: "Inter" 600 13
+  }
+  rect @toggle_dark {
+    w: 344 h: 56
+    use: dark_card
+    group @_anon_31 {
+      layout: row gap=0 pad=16
+      group @_anon_32 {
+        layout: column gap=2 pad=0
+        text @_anon_33 "Dark Mode" {
+          use: dark_text
+        }
+        text @_anon_34 "Use dark theme across the app" {
+          use: dark_muted
+        }
+      }
+      rect @switch_on {
+        ## "Toggle — ON state"
+        w: 44 h: 24
+        fill: #6C5CE7
+        corner: 12
+        ellipse @switch_knob {
+          w: 20 h: 20
+          fill: #FFFFFF
+        }
+      }
+    }
+    anim :hover {
+      fill: #353550
+      ease: ease_out 150ms
+    }
+  }
   rect @toggle_notif {
     w: 344 h: 56
     use: dark_card
-
-    group { layout: row gap=0 pad=16
-      group { layout: column gap=2 pad=0
-        text "Notifications" { use: dark_text }
-        text "Push and email alerts" { use: dark_muted }
+    group @_anon_35 {
+      layout: row gap=0 pad=16
+      group @_anon_36 {
+        layout: column gap=2 pad=0
+        text @_anon_37 "Notifications" {
+          use: dark_text
+        }
+        text @_anon_38 "Push and email alerts" {
+          use: dark_muted
+        }
       }
-
       rect @switch_off {
-        w: 44 h: 24
-        corner: 12
-        fill: #3D3D5C
         ## "Toggle — OFF state"
-
+        w: 44 h: 24
+        fill: #3D3D5C
+        corner: 12
         ellipse @switch_knob_off {
           w: 20 h: 20
           fill: #6B7280
         }
       }
     }
-
-    anim :hover { fill: #353550; ease: ease_out 150ms }
+    anim :hover {
+      fill: #353550
+      ease: ease_out 150ms
+    }
   }
-
   rect @toggle_sound {
     w: 344 h: 56
     use: dark_card
-
-    group { layout: row gap=0 pad=16
-      group { layout: column gap=2 pad=0
-        text "Sound Effects" { use: dark_text }
-        text "UI interaction sounds" { use: dark_muted }
+    group @_anon_39 {
+      layout: row gap=0 pad=16
+      group @_anon_40 {
+        layout: column gap=2 pad=0
+        text @_anon_41 "Sound Effects" {
+          use: dark_text
+        }
+        text @_anon_42 "UI interaction sounds" {
+          use: dark_muted
+        }
       }
-
       rect @switch_sound {
         w: 44 h: 24
-        corner: 12
         fill: #6C5CE7
-
+        corner: 12
         ellipse @switch_knob_s {
           w: 20 h: 20
-          fill: #FFF
+          fill: #FFFFFF
         }
       }
     }
-
-    anim :hover { fill: #353550; ease: ease_out 150ms }
+    anim :hover {
+      fill: #353550
+      ease: ease_out 150ms
+    }
   }
-
-  # ─── Slider ────────────────────────────────────────────────────────
-
-  text "Display" { font: "Inter" 600 13; fill: #6B7280 }
-
+  text @_anon_43 "Display" {
+    fill: #6B7280
+    font: "Inter" 600 13
+  }
   rect @slider_card {
     w: 344 h: 72
     use: dark_card
-
-    group { layout: column gap=8 pad=16
-      text "Canvas Zoom" { use: dark_text }
-
-      group { layout: row gap=0 pad=0
+    group @_anon_44 {
+      layout: column gap=8 pad=16
+      text @_anon_45 "Canvas Zoom" {
+        use: dark_text
+      }
+      group @_anon_46 {
+        layout: row gap=0 pad=0
         rect @slider_track {
           w: 260 h: 4
-          corner: 2
           fill: #3D3D5C
-
+          corner: 2
           rect @slider_fill {
             w: 160 h: 4
-            corner: 2
             fill: #6C5CE7
+            corner: 2
           }
-
           ellipse @slider_thumb {
-            w: 16 h: 16
-            fill: #FFF
             ## "Draggable thumb"
-
-            anim :press { scale: 1.3; ease: spring 200ms }
+            w: 16 h: 16
+            fill: #FFFFFF
+            anim :press {
+              scale: 1.3
+              ease: spring 200ms
+            }
           }
         }
-
-        text "75%" { font: "Inter" 600 13; fill: #A29BFE }
+        text @_anon_47 "75%" {
+          fill: #A29BFE
+          font: "Inter" 600 13
+        }
       }
     }
   }
-
-  # ─── Danger zone ──────────────────────────────────────────────────
-
-  text "Danger Zone" { font: "Inter" 600 13; fill: #E17055 }
-
+  text @_anon_48 "Danger Zone" {
+    fill: #E17055
+    font: "Inter" 600 13
+  }
   rect @btn_delete {
-    w: 344 h: 48
-    corner: 10
-    fill: #E1705520
-    stroke: #E17055 1
     ## "Destructive action — delete account"
     ## accept: "confirmation dialog before proceeding"
     ## priority: high
-
-    text "Delete Account" { font: "Inter" 600 14; fill: #E17055 }
-
-    anim :hover { fill: #E1705540; ease: ease_out 150ms }
-    anim :press { scale: 0.97; ease: ease_out 100ms }
+    w: 344 h: 48
+    fill: #E1705520
+    stroke: #E17055 1
+    corner: 10
+    text @_anon_49 "Delete Account" {
+      fill: #E17055
+      font: "Inter" 600 14
+    }
+    anim :hover {
+      fill: #E1705540
+      ease: ease_out 150ms
+    }
+    anim :press {
+      scale: 0.97
+      ease: ease_out 100ms
+    }
   }
 }
 
-@panel_bg -> center_in: canvas
 @settings -> center_in: canvas
+@_anon_29 -> absolute: 159.45, 287.16
