@@ -1,0 +1,267 @@
+# FD v1
+# Format Overview — illustrates all FD syntax features (R1.x)
+
+# ─── Styles (R1.4) ──────────────────────────────────────────────────────
+
+style card_bg {
+  fill: #FFFFFF
+  corner: 16
+  opacity: 0.95
+}
+
+style heading {
+  fill: #1A1A2E
+  font: "Inter" 700 20
+}
+
+style body_text {
+  fill: #4A4A68
+  font: "Inter" 400 14
+}
+
+style accent {
+  fill: #6C5CE7
+}
+
+style tag_chip {
+  fill: #F0EDFC
+  corner: 20
+}
+
+# ─── Section 1: Node Types (R1.2, R1.13) ────────────────────────────────
+
+group @node_types {
+  ## "All supported node types in FD"
+  ## status: done
+  ## tag: format, core
+  layout: column gap=24 pad=32
+
+  text @sec1_title "Node Types" { font: "Inter" 800 28; fill: #1A1A2E }
+
+  group @node_grid {
+    layout: grid cols=3 gap=20 pad=0
+
+    # Rectangle node
+    rect @demo_rect {
+      ## "rect — rectangular shape with fill, stroke, corner"
+      w: 200 h: 120
+      use: card_bg
+      stroke: #E8E8EC 1
+      bg: #FFF corner=16 shadow=(0,2,12,#0001)
+
+      group { layout: column gap=8 pad=20
+        text "rect" { font: "Inter" 700 16; fill: #6C5CE7 }
+        text "Rounded rectangular shape" { use: body_text }
+      }
+
+      anim :hover { scale: 1.03; ease: spring 300ms }
+    }
+
+    # Ellipse node
+    rect @demo_ellipse_card {
+      ## "ellipse — circular/oval shape"
+      w: 200 h: 120
+      use: card_bg
+      stroke: #E8E8EC 1
+      bg: #FFF corner=16 shadow=(0,2,12,#0001)
+
+      group { layout: column gap=8 pad=20
+        ellipse @demo_ellipse { w: 32 h: 32; fill: #00B894 }
+        text "ellipse" { font: "Inter" 700 16; fill: #00B894 }
+        text "Circle or oval shape" { use: body_text }
+      }
+
+      anim :hover { scale: 1.03; ease: spring 300ms }
+    }
+
+    # Text node
+    rect @demo_text_card {
+      ## "text — inline text label with font control"
+      w: 200 h: 120
+      use: card_bg
+      stroke: #E8E8EC 1
+      bg: #FFF corner=16 shadow=(0,2,12,#0001)
+
+      group { layout: column gap=8 pad=20
+        text "text" { font: "Inter" 700 16; fill: #E17055 }
+        text "\"Content goes here\"" { use: body_text }
+      }
+
+      anim :hover { scale: 1.03; ease: spring 300ms }
+    }
+
+    # Group node
+    rect @demo_group_card {
+      ## "group — container with layout (column/row/grid)"
+      w: 200 h: 120
+      use: card_bg
+      stroke: #E8E8EC 1
+      bg: #FFF corner=16 shadow=(0,2,12,#0001)
+
+      group { layout: column gap=8 pad=20
+        text "group" { font: "Inter" 700 16; fill: #FDCB6E }
+        text "layout: column | row | grid" { use: body_text }
+      }
+
+      anim :hover { scale: 1.03; ease: spring 300ms }
+    }
+
+    # Path node
+    rect @demo_path_card {
+      ## "path — freeform vector drawing (future)"
+      ## status: draft
+      w: 200 h: 120
+      use: card_bg
+      stroke: #E8E8EC 1
+
+      group { layout: column gap=8 pad=20
+        text "path" { font: "Inter" 700 16; fill: #A29BFE }
+        text "SVG-like pen tool output" { use: body_text }
+      }
+
+      anim :hover { scale: 1.03; ease: spring 300ms }
+    }
+
+    # Generic node (R1.13)
+    rect @demo_generic_card {
+      ## "generic — @id { } without shape keyword"
+      w: 200 h: 120
+      fill: #FFFFFF
+      stroke: #6C5CE7 2
+      corner: 16
+
+      group { layout: column gap=8 pad=20
+        text "@generic" { font: "Inter" 700 16; fill: #6C5CE7 }
+        text "Spec-first placeholder" { use: body_text }
+      }
+
+      anim :hover { scale: 1.03; ease: spring 300ms }
+    }
+  }
+}
+
+# ─── Section 2: Annotations (R1.9) ──────────────────────────────────────
+
+group @annotations_section {
+  ## "Structured metadata via ## syntax"
+  ## status: done
+  layout: column gap=16 pad=32
+
+  text @sec2_title "Annotations (##)" { font: "Inter" 800 28; fill: #1A1A2E }
+
+  group @anno_examples {
+    layout: column gap=12 pad=0
+
+    rect @anno_desc {
+      w: 420 h: 44
+      fill: #F8F9FA
+      corner: 8
+      text "## \"description text\"" { font: "JetBrains Mono" 400 13; fill: #6C5CE7 }
+    }
+
+    rect @anno_accept {
+      w: 420 h: 44
+      fill: #F8F9FA
+      corner: 8
+      text "## accept: \"validation criterion\"" { font: "JetBrains Mono" 400 13; fill: #10B981 }
+    }
+
+    rect @anno_status {
+      w: 420 h: 44
+      fill: #F8F9FA
+      corner: 8
+      text "## status: draft | in_progress | done" { font: "JetBrains Mono" 400 13; fill: #F59E0B }
+    }
+
+    rect @anno_priority {
+      w: 420 h: 44
+      fill: #F8F9FA
+      corner: 8
+      text "## priority: high | medium | low" { font: "JetBrains Mono" 400 13; fill: #EF4444 }
+    }
+
+    rect @anno_tag {
+      w: 420 h: 44
+      fill: #F8F9FA
+      corner: 8
+      text "## tag: auth, mvp, a11y" { font: "JetBrains Mono" 400 13; fill: #8B5CF6 }
+    }
+  }
+}
+
+# ─── Section 3: Animations (R1.5) ───────────────────────────────────────
+
+group @animations_section {
+  ## "Trigger-based property animations"
+  ## status: done
+  layout: column gap=16 pad=32
+
+  text @sec3_title "Animations" { font: "Inter" 800 28; fill: #1A1A2E }
+
+  group @anim_demos {
+    layout: row gap=16 pad=0
+
+    rect @anim_hover {
+      w: 140 h: 90
+      fill: #6C5CE7
+      corner: 12
+      text ":hover" { font: "Inter" 600 14; fill: #FFF }
+      anim :hover { scale: 1.08; fill: #5A4BD1; ease: spring 300ms }
+    }
+
+    rect @anim_press {
+      w: 140 h: 90
+      fill: #00B894
+      corner: 12
+      text ":press" { font: "Inter" 600 14; fill: #FFF }
+      anim :press { scale: 0.9; ease: spring 150ms }
+    }
+
+    rect @anim_enter {
+      w: 140 h: 90
+      fill: #E17055
+      corner: 12
+      opacity: 0.5
+      text ":enter" { font: "Inter" 600 14; fill: #FFF }
+      anim :enter { opacity: 1; ease: ease_out 400ms }
+    }
+  }
+}
+
+# ─── Section 4: Constraints (R1.3) ──────────────────────────────────────
+
+group @constraints_section {
+  ## "Layout via constraints, not coordinates"
+  ## status: done
+  layout: column gap=12 pad=32
+
+  text @sec4_title "Constraints" { font: "Inter" 800 28; fill: #1A1A2E }
+
+  rect @con_center {
+    w: 360 h: 40
+    fill: #F0EDFC
+    corner: 8
+    text "@node -> center_in: canvas" { font: "JetBrains Mono" 400 13; fill: #6C5CE7 }
+  }
+
+  rect @con_offset {
+    w: 360 h: 40
+    fill: #F0EDFC
+    corner: 8
+    text "@node -> offset: @ref 20, 10" { font: "JetBrains Mono" 400 13; fill: #6C5CE7 }
+  }
+
+  rect @con_fill {
+    w: 360 h: 40
+    fill: #F0EDFC
+    corner: 8
+    text "@node -> fill_parent: 16" { font: "JetBrains Mono" 400 13; fill: #6C5CE7 }
+  }
+}
+
+# ─── Layout ─────────────────────────────────────────────────────────────
+
+@node_types -> center_in: canvas
+@annotations_section -> offset: @node_types 0, 460
+@animations_section -> offset: @annotations_section 0, 380
+@constraints_section -> offset: @animations_section 0, 240

@@ -84,6 +84,32 @@ path @drawing {
 }
 ```
 
+### Generic Nodes (Placeholders)
+
+Nodes without a shape type — for spec-only requirements, wireframing, and progressive enhancement:
+
+```
+@login_btn {
+  ## "Primary CTA — triggers login API call"
+  ## accept: "disabled when fields empty"
+  ## status: in_progress
+  fill: #FFFFFF
+  corner: 8
+}
+```
+
+Generic nodes can be nested inside groups:
+
+```
+group @form {
+  layout: column gap=16 pad=32
+  @email_input { ## "Email field" }
+  @password_input { ## "Password field" }
+}
+```
+
+On canvas, generic nodes render as dashed placeholder boxes with the `@id` label centered. They can later be "upgraded" to a specific type by adding a keyword prefix (e.g., `rect @login_btn`).
+
 ### Edges (Connections)
 
 Visual connections between nodes with styled lines, arrowheads, and labels:

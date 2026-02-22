@@ -21,6 +21,8 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R1.11**: Edge trigger animations — edges support `anim :hover { ... }` blocks identical to nodes
 - **R1.12**: Edge flow animations — `flow: pulse Nms` (traveling dot) and `flow: dash Nms` (marching dashes) for visualizing data flow direction
 - **R1.13**: Generic nodes — `@id { ... }` without explicit kind keyword for abstract/placeholder elements
+- **R1.14**: Namespaced imports — `import "path.fd" as ns` for cross-file style/node reuse with `ns.style_name` references
+- **R1.15**: Background shorthand — `bg: #FFF corner=12 shadow=(0,4,20,#0002)` for combined fill, corner, and shadow in one line
 
 ### R2: Bidirectional Sync
 
@@ -52,6 +54,8 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R4.4**: Constraints describe relationships ("center in canvas") not pixel positions
 - **R4.5**: Annotations (`##`) give AI structured metadata — acceptance criteria, status, priority, tags — on the visual element itself
 - **R4.6**: Edges let AI reason about flows and transitions between screens
+- **R4.7**: Spec-view export — generate markdown report of `##` annotations (requirements, status, acceptance criteria) from any `.fd` file
+- **R4.8**: AI node refinement — restyle selected nodes and replace anonymous IDs (`_anon_N`) with semantic names via configurable AI provider
 
 ### R5: Rendering
 
