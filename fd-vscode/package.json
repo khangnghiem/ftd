@@ -2,7 +2,7 @@
   "name": "fast-draft",
   "displayName": "Fast Draft",
   "description": "Syntax highlighting, live parser validation, and interactive canvas editor for .fd (Fast Draft) files",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "publisher": "KhangNghiem",
   "license": "MIT",
   "icon": "icon.png",
@@ -105,12 +105,27 @@
         "command": "fd.aiRefineAll",
         "title": "FD: AI Refine All Anonymous Nodes",
         "icon": "$(wand)"
+      },
+      {
+        "command": "fd.showSpecView",
+        "title": "FD: Show Spec View",
+        "icon": "$(checklist)"
+      },
+      {
+        "command": "fd.exportSpec",
+        "title": "FD: Export Spec to Markdown",
+        "icon": "$(markdown)"
       }
     ],
     "menus": {
       "editor/title": [
         {
           "command": "fd.showPreview",
+          "when": "resourceLangId == fd",
+          "group": "navigation"
+        },
+        {
+          "command": "fd.showSpecView",
           "when": "resourceLangId == fd",
           "group": "navigation"
         }

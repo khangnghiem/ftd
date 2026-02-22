@@ -401,6 +401,108 @@ fn emit_edge(out: &mut String, edge: &Edge) {
     out.push_str("}\n");
 }
 
+// ─── Spec Markdown Export ─────────────────────────────────────────────────
+
+/// Emit a `SceneGraph` as a markdown spec document.
+///
+/// Extracts only `@id` names, `##` annotations, hierarchy, and edges —
+/// all visual properties (fill, stroke, dimensions, animations) are omitted.
+/// Intended for PM-facing spec reports.
+#[must_use]
+pub fn emit_spec_markdown(graph: &SceneGraph, title: &str) -> String {
+    let mut out = String::with_capacity(512);
+    writeln!(out, "# Spec: {title}\n").unwrap();
+
+    // Emit root's children
+    let children = graph.children(graph.root);
+    for child_idx in &children {
+        emit_spec_node(&mut out, graph, *child_idx, 2);
+    }
+
+    // Emit edges as flow descriptions
+    if !graph.edges.is_empty() {
+        out.push_str("\n---\n\n## Flows\n\n");
+        for edge in &graph.edges {
+            write!(
+                out,
+                "- **@{}** → **@{}**",
+                edge.from.as_str(),
+                edge.to.as_str()
+            )
+            .unwrap();
+            if let Some(ref label) = edge.label {
+                write!(out, " — {label}").unwrap();
+            }
+            out.push('\n');
+            emit_spec_annotations(&mut out, &edge.annotations, "  ");
+        }
+    }
+
+    out
+}
+
+fn emit_spec_node(out: &mut String, graph: &SceneGraph, idx: NodeIndex, heading_level: usize) {
+    let node = &graph.graph[idx];
+
+    // Skip nodes with no annotations and no annotated children
+    let has_annotations = !node.annotations.is_empty();
+    let children = graph.children(idx);
+    let has_annotated_children = children
+        .iter()
+        .any(|c| has_annotations_recursive(graph, *c));
+
+    if !has_annotations && !has_annotated_children {
+        return;
+    }
+
+    // Heading: ## @node_id (kind)
+    let hashes = "#".repeat(heading_level.min(6));
+    let kind_label = match &node.kind {
+        NodeKind::Root => return,
+        NodeKind::Generic => "spec",
+        NodeKind::Group { .. } => "group",
+        NodeKind::Rect { .. } => "rect",
+        NodeKind::Ellipse { .. } => "ellipse",
+        NodeKind::Path { .. } => "path",
+        NodeKind::Text { .. } => "text",
+    };
+    writeln!(out, "{hashes} @{} `{kind_label}`\n", node.id.as_str()).unwrap();
+
+    // Annotation details
+    emit_spec_annotations(out, &node.annotations, "");
+
+    // Children (recurse with deeper heading level)
+    for child_idx in &children {
+        emit_spec_node(out, graph, *child_idx, heading_level + 1);
+    }
+}
+
+fn has_annotations_recursive(graph: &SceneGraph, idx: NodeIndex) -> bool {
+    let node = &graph.graph[idx];
+    if !node.annotations.is_empty() {
+        return true;
+    }
+    graph
+        .children(idx)
+        .iter()
+        .any(|c| has_annotations_recursive(graph, *c))
+}
+
+fn emit_spec_annotations(out: &mut String, annotations: &[Annotation], prefix: &str) {
+    for ann in annotations {
+        match ann {
+            Annotation::Description(s) => writeln!(out, "{prefix}> {s}").unwrap(),
+            Annotation::Accept(s) => writeln!(out, "{prefix}- [ ] {s}").unwrap(),
+            Annotation::Status(s) => writeln!(out, "{prefix}- **Status:** {s}").unwrap(),
+            Annotation::Priority(s) => writeln!(out, "{prefix}- **Priority:** {s}").unwrap(),
+            Annotation::Tag(s) => writeln!(out, "{prefix}- **Tag:** {s}").unwrap(),
+        }
+    }
+    if !annotations.is_empty() {
+        out.push('\n');
+    }
+}
+
 /// Format a float without trailing zeros for compact output.
 fn format_num(n: f32) -> String {
     if n == n.floor() {
@@ -945,5 +1047,93 @@ edge @dashed {
         let flow2 = edge2.flow.unwrap();
         assert_eq!(flow2.kind, FlowKind::Dash);
         assert_eq!(flow2.duration_ms, 400);
+    }
+
+    #[test]
+    fn test_spec_markdown_basic() {
+        let input = r#"
+rect @login_btn {
+  ## "Primary CTA for login"
+  ## accept: "disabled when fields empty"
+  ## status: in_progress
+  ## priority: high
+  ## tag: auth
+  w: 280 h: 48
+  fill: #6C5CE7
+}
+"#;
+        let graph = parse_document(input).unwrap();
+        let md = emit_spec_markdown(&graph, "login.fd");
+
+        assert!(md.starts_with("# Spec: login.fd\n"));
+        assert!(md.contains("## @login_btn `rect`"));
+        assert!(md.contains("> Primary CTA for login"));
+        assert!(md.contains("- [ ] disabled when fields empty"));
+        assert!(md.contains("- **Status:** in_progress"));
+        assert!(md.contains("- **Priority:** high"));
+        assert!(md.contains("- **Tag:** auth"));
+        // Visual props must NOT appear
+        assert!(!md.contains("280"));
+        assert!(!md.contains("6C5CE7"));
+    }
+
+    #[test]
+    fn test_spec_markdown_nested() {
+        let input = r#"
+group @form {
+  layout: column gap=16 pad=32
+  ## "Shipping address form"
+  ## accept: "autofill from saved addresses"
+
+  rect @email {
+    ## "Email input"
+    ## accept: "validates email format"
+    w: 280 h: 44
+  }
+
+  rect @no_annotations {
+    w: 100 h: 50
+    fill: #CCC
+  }
+}
+"#;
+        let graph = parse_document(input).unwrap();
+        let md = emit_spec_markdown(&graph, "checkout.fd");
+
+        assert!(md.contains("## @form `group`"));
+        assert!(md.contains("### @email `rect`"));
+        assert!(md.contains("> Shipping address form"));
+        assert!(md.contains("- [ ] autofill from saved addresses"));
+        assert!(md.contains("- [ ] validates email format"));
+        // Node without annotations should be skipped
+        assert!(!md.contains("no_annotations"));
+    }
+
+    #[test]
+    fn test_spec_markdown_with_edges() {
+        let input = r#"
+rect @login { w: 200 h: 100 }
+rect @dashboard {
+  ## "Main dashboard"
+  w: 200 h: 100
+}
+
+edge @auth_flow {
+  ## "Authentication flow"
+  ## accept: "redirect within 2s"
+  from: @login
+  to: @dashboard
+  label: "on success"
+  arrow: end
+}
+"#;
+        let graph = parse_document(input).unwrap();
+        let md = emit_spec_markdown(&graph, "flow.fd");
+
+        assert!(md.contains("## Flows"));
+        assert!(md.contains("**@login** → **@dashboard**"));
+        assert!(md.contains("on success"));
+        assert!(md.contains("> Authentication flow"));
+        assert!(md.contains("- [ ] redirect within 2s"));
     }
 }
