@@ -819,7 +819,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
     <button class="tool-btn" id="ai-refine-btn" title="AI Refine selected node (rename + restyle)">✨ Refine</button>
     <button class="tool-btn" id="ai-refine-all-btn" title="AI Refine all anonymous nodes">✨ All</button>
     <div class="tool-sep"></div>
-    <button class="tool-btn" id="theme-toggle-btn" title="Toggle light/dark canvas theme">☀️</button>
+    <button class="tool-btn" id="theme-toggle-btn" title="Toggle light/dark canvas theme">🌙</button>
     <button class="tool-btn" id="tool-help-btn" title="Keyboard shortcuts">?</button>
     <span id="status">Loading WASM…</span>
   </div>

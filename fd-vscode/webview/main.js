@@ -1002,10 +1002,10 @@ function applyTheme(isDark) {
   const btn = document.getElementById("theme-toggle-btn");
   if (isDark) {
     document.body.classList.add("dark-theme");
-    if (btn) btn.textContent = "🌙";
+    if (btn) btn.textContent = "☀️";
   } else {
     document.body.classList.remove("dark-theme");
-    if (btn) btn.textContent = "☀️";
+    if (btn) btn.textContent = "🌙";
   }
   if (fdCanvas) {
     fdCanvas.set_theme(isDark);
