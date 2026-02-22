@@ -3,15 +3,19 @@
  *
  * Loads the Rust WASM module, initializes the FdCanvas, and bridges
  * between the VS Code extension (postMessage) and the WASM engine.
+ *
+ * NOTE: We use dynamic import() instead of static `import ... from`
+ * because relative module resolution fails silently in VS Code webviews
+ * (the vscode-webview:// resource scheme doesn't support it).
  */
-
-// Import WASM module (built by wasm-pack)
-import init, { FdCanvas } from "./wasm/fd_wasm.js";
 
 // VS Code API (shared — already acquired in inline script)
 const vscode = window.vscodeApi;
 
-/** @type {FdCanvas | null} */
+/** @type {any} */
+let FdCanvas = null;
+
+/** @type {any} */
 let fdCanvas = null;
 
 /** @type {CanvasRenderingContext2D | null} */
@@ -37,8 +41,13 @@ async function main() {
   const status = document.getElementById("status");
 
   try {
-    // Initialize WASM — pass explicit URL so it works in VS Code webviews
-    // (import.meta.url resolution fails under vscode-webview:// scheme)
+    // Dynamic import — use absolute webview URI to bypass relative path resolution
+    const wasmJsUrl = window.wasmJsUrl;
+    const wasmModule = await import(wasmJsUrl);
+    const init = wasmModule.default;
+    FdCanvas = wasmModule.FdCanvas;
+
+    // Initialize WASM — pass explicit binary URL for webview compatibility
     await init(window.wasmBinaryUrl || undefined);
 
     // Set up canvas
