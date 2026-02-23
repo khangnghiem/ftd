@@ -913,11 +913,18 @@ impl FdCanvas {
         if mutations.is_empty() {
             return false;
         }
+        let all_moves = mutations
+            .iter()
+            .all(|m| matches!(m, GraphMutation::MoveNode { .. }));
         for mutation in mutations {
             self.commands
                 .execute(&mut self.engine, mutation, "canvas edit");
         }
-        self.engine.resolve();
+        // Skip full layout resolve for move-only batches — bounds already updated in-place.
+        // Re-resolving would recalculate from constraints and fight with the in-place update.
+        if !all_moves {
+            self.engine.resolve();
+        }
         true
     }
 

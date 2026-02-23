@@ -1,5 +1,3 @@
-# FD v1
-
 style dark_accent {
   fill: #A29BFE
 }
@@ -167,6 +165,8 @@ group @settings {
   rect @slider_card {
     w: 344 h: 72
     use: dark_card
+    fill: #2D2D44
+    corner: 12
     group @_anon_44 {
       layout: column gap=8 pad=16
       text @_anon_45 "Canvas Zoom" {
@@ -230,4 +230,11 @@ group @settings {
 }
 
 @settings -> center_in: canvas
+@btn_delete -> absolute: 635.39, 633.41
+@slider_card -> absolute: 353.91, 189.09
+@slider_track -> absolute: 3401.04, 11038.97
+@toggle_sound -> absolute: 28.51, 340.51
+@toggle_notif -> absolute: 376.84, 708.79
+@toggle_dark -> absolute: 237.5, 834.9
+@_anon_34 -> absolute: 3129.49, 15512.29
 @_anon_29 -> absolute: 159.45, 287.16

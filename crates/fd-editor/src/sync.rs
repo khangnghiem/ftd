@@ -87,18 +87,36 @@ impl SyncEngine {
                         bounds.x += dx;
                         bounds.y += dy;
                     }
-                    // Update constraint to Absolute (pinning the moved position)
+                    // Pin moved node to Absolute constraint with parent-relative coords.
+                    // Absolute { x, y } is interpreted by resolve_layout as
+                    // (parent.x + x, parent.y + y), so we must subtract parent offset.
+                    let abs_pos = self
+                        .bounds
+                        .get(&idx)
+                        .map(|b| (b.x, b.y))
+                        .unwrap_or((0.0, 0.0));
+                    // Look up parent offset *before* mutable borrow of graph
+                    let parent_offset = self
+                        .graph
+                        .parent(idx)
+                        .and_then(|pidx| self.bounds.get(&pidx))
+                        .map(|pb| (pb.x, pb.y))
+                        .unwrap_or((0.0, 0.0));
+                    let rel_x = abs_pos.0 - parent_offset.0;
+                    let rel_y = abs_pos.1 - parent_offset.1;
                     if let Some(node) = self.graph.get_by_id_mut(id) {
-                        let pos = self
-                            .bounds
-                            .get(&idx)
-                            .map(|b| (b.x, b.y))
-                            .unwrap_or((0.0, 0.0));
-                        // Replace or add an Absolute constraint
+                        // Strip ALL positioning constraints — moved node is pinned
+                        node.constraints.retain(|c| {
+                            !matches!(
+                                c,
+                                Constraint::Absolute { .. }
+                                    | Constraint::CenterIn(_)
+                                    | Constraint::Offset { .. }
+                                    | Constraint::FillParent { .. }
+                            )
+                        });
                         node.constraints
-                            .retain(|c| !matches!(c, Constraint::Absolute { .. }));
-                        node.constraints
-                            .push(Constraint::Absolute { x: pos.0, y: pos.1 });
+                            .push(Constraint::Absolute { x: rel_x, y: rel_y });
                     }
                 }
             }
@@ -621,6 +639,148 @@ rect @card {
         assert_eq!(
             node.annotations[2],
             Annotation::Status("in_progress".into())
+        );
+    }
+
+    #[test]
+    fn sync_move_multi_frame_no_jitter() {
+        // Simulates a drag gesture across 3 frames.
+        // After each MoveNode, bounds should accumulate consistently
+        // and the Absolute constraint should match the relative position.
+        let input = r#"
+rect @box {
+  w: 100
+  h: 50
+}
+"#;
+        let viewport = Viewport {
+            width: 800.0,
+            height: 600.0,
+        };
+        let mut engine = SyncEngine::from_text(input, viewport).unwrap();
+        let box_id = NodeId::intern("box");
+        let idx = engine.graph.index_of(box_id).unwrap();
+
+        let initial_x = engine.bounds[&idx].x;
+        let initial_y = engine.bounds[&idx].y;
+
+        // Frame 1: move right 10, down 5
+        engine.apply_mutation(GraphMutation::MoveNode {
+            id: box_id,
+            dx: 10.0,
+            dy: 5.0,
+        });
+        // Re-resolve (as apply_mutations does for non-move batches)
+        engine.resolve();
+        let b1 = engine.bounds[&idx];
+        assert!(
+            (b1.x - (initial_x + 10.0)).abs() < 0.01,
+            "frame 1: x={}, expected {}",
+            b1.x,
+            initial_x + 10.0
+        );
+        assert!(
+            (b1.y - (initial_y + 5.0)).abs() < 0.01,
+            "frame 1: y={}, expected {}",
+            b1.y,
+            initial_y + 5.0
+        );
+
+        // Frame 2: move right another 10, down 5
+        engine.apply_mutation(GraphMutation::MoveNode {
+            id: box_id,
+            dx: 10.0,
+            dy: 5.0,
+        });
+        engine.resolve();
+        let b2 = engine.bounds[&idx];
+        assert!(
+            (b2.x - (initial_x + 20.0)).abs() < 0.01,
+            "frame 2: x={}, expected {}",
+            b2.x,
+            initial_x + 20.0
+        );
+        assert!(
+            (b2.y - (initial_y + 10.0)).abs() < 0.01,
+            "frame 2: y={}, expected {}",
+            b2.y,
+            initial_y + 10.0
+        );
+
+        // Frame 3: move left 30, up 10
+        engine.apply_mutation(GraphMutation::MoveNode {
+            id: box_id,
+            dx: -30.0,
+            dy: -10.0,
+        });
+        engine.resolve();
+        let b3 = engine.bounds[&idx];
+        assert!(
+            (b3.x - (initial_x - 10.0)).abs() < 0.01,
+            "frame 3: x={}, expected {}",
+            b3.x,
+            initial_x - 10.0
+        );
+        assert!(
+            (b3.y - initial_y).abs() < 0.01,
+            "frame 3: y={}, expected {}",
+            b3.y,
+            initial_y
+        );
+    }
+
+    #[test]
+    fn sync_move_strips_center_in() {
+        // A node with center_in should lose that constraint after being moved,
+        // so it stays at the dropped position rather than snapping back.
+        let input = r#"
+rect @box {
+  w: 100
+  h: 50
+}
+
+@box -> center_in: canvas
+"#;
+        let viewport = Viewport {
+            width: 800.0,
+            height: 600.0,
+        };
+        let mut engine = SyncEngine::from_text(input, viewport).unwrap();
+        let box_id = NodeId::intern("box");
+
+        // Verify CenterIn is present initially
+        let node = engine.graph.get_by_id(box_id).unwrap();
+        assert!(
+            node.constraints
+                .iter()
+                .any(|c| matches!(c, Constraint::CenterIn(_))),
+            "should have CenterIn before move"
+        );
+
+        // Move node
+        engine.apply_mutation(GraphMutation::MoveNode {
+            id: box_id,
+            dx: 50.0,
+            dy: 30.0,
+        });
+
+        // After move, CenterIn should be stripped and only Absolute remains
+        let node = engine.graph.get_by_id(box_id).unwrap();
+        assert!(
+            !node
+                .constraints
+                .iter()
+                .any(|c| matches!(c, Constraint::CenterIn(_))),
+            "CenterIn should be stripped after move"
+        );
+        assert_eq!(
+            node.constraints.len(),
+            1,
+            "should have exactly one constraint (Absolute)"
+        );
+        assert!(
+            matches!(node.constraints[0], Constraint::Absolute { .. }),
+            "single constraint should be Absolute"
         );
     }
 }
