@@ -5,6 +5,8 @@ import {
   computeSpecHideLines,
   escapeHtml,
   resolveTargetColumn,
+  parseDocumentSymbols,
+  FdSymbol,
 } from "./fd-parse";
 
 /**
@@ -20,9 +22,9 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
   /** The most recently focused canvas webview panel, for command routing. */
   public static activePanel: vscode.WebviewPanel | undefined;
   /** Current view mode of the active panel. */
-  public static activeViewMode: "design" | "spec" = "design";
+  public static activeViewMode: "design" | "spec" | "tree" = "design";
   /** Callback invoked when canvas webview changes view mode. */
-  public static onViewModeChanged: ((mode: "design" | "spec") => void) | undefined;
+  public static onViewModeChanged: ((mode: "design" | "spec" | "tree") => void) | undefined;
 
   constructor(private readonly context: vscode.ExtensionContext) { }
 
@@ -445,6 +447,72 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       color: var(--fd-text);
       box-shadow: var(--fd-segment-shadow);
       font-weight: 600;
+    }
+
+    /* ── Layers Panel (Tree View sidebar) ── */
+    #layers-panel {
+      display: none;
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 220px;
+      background: var(--fd-surface);
+      border-right: 0.5px solid var(--fd-border);
+      overflow-y: auto;
+      z-index: 10;
+      font-size: 12px;
+      padding: 8px 0;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    #layers-panel.visible { display: block; }
+    .layers-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--fd-text-secondary);
+      padding: 4px 12px 8px;
+      font-weight: 600;
+    }
+    .layer-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px 3px 0;
+      cursor: pointer;
+      border-radius: 6px;
+      margin: 0 4px;
+      transition: background 0.1s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .layer-item:hover { background: var(--fd-hover); }
+    .layer-item.selected {
+      background: var(--fd-segment-active);
+      font-weight: 600;
+    }
+    .layer-icon {
+      flex-shrink: 0;
+      width: 16px;
+      text-align: center;
+      font-size: 11px;
+      opacity: 0.7;
+    }
+    .layer-name {
+      color: var(--fd-text);
+      font-size: 12px;
+    }
+    .layer-kind {
+      color: var(--fd-text-secondary);
+      font-size: 10px;
+      margin-left: auto;
+      padding-right: 4px;
+    }
+    .layer-children {
+      margin-left: 12px;
+      border-left: 1px solid var(--fd-border);
     }
 
     /* ── Spec Overlay (transparent badge layer over canvas) ── */
@@ -1122,6 +1190,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
     <div class="view-toggle" id="view-toggle">
       <button class="view-btn active" id="view-design" title="Design View — full canvas">Design</button>
       <button class="view-btn" id="view-spec" title="Spec View — requirements and structure">Spec</button>
+      <button class="view-btn" id="view-tree" title="Tree View — layers panel">Tree</button>
     </div>
     <div class="tool-sep"></div>
     <button class="tool-btn" id="theme-toggle-btn" title="Toggle light/dark canvas theme">🌙</button>
@@ -1138,6 +1207,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
     <canvas id="fd-canvas" class="tool-select"></canvas>
     <div id="dimension-tooltip"></div>
     <div id="spec-overlay"></div>
+    <div id="layers-panel"></div>
     <div id="loading">Loading FD engine…</div>
     <!-- Properties Panel (Apple-style) -->
     <div id="props-panel">
@@ -2237,7 +2307,52 @@ function getNonce(): string {
   return text;
 }
 
-// ─── Extension Entry Points ──────────────────────────────────────────────
+// ─── Document Symbol Provider (Outline View) ───────────────────────────────────────
+
+class FdDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
+  provideDocumentSymbols(
+    document: vscode.TextDocument
+  ): vscode.DocumentSymbol[] {
+    const lines: string[] = [];
+    for (let i = 0; i < document.lineCount; i++) {
+      lines.push(document.lineAt(i).text);
+    }
+    const fdSymbols = parseDocumentSymbols(lines);
+    return fdSymbols.map((s) => this.toDocumentSymbol(s, document));
+  }
+
+  private toDocumentSymbol(
+    sym: FdSymbol,
+    doc: vscode.TextDocument
+  ): vscode.DocumentSymbol {
+    const kindMap: Record<string, vscode.SymbolKind> = {
+      group: vscode.SymbolKind.Module,
+      rect: vscode.SymbolKind.Struct,
+      ellipse: vscode.SymbolKind.Struct,
+      path: vscode.SymbolKind.Struct,
+      text: vscode.SymbolKind.String,
+      style: vscode.SymbolKind.Class,
+      edge: vscode.SymbolKind.Interface,
+      spec: vscode.SymbolKind.Object,
+      constraint: vscode.SymbolKind.Property,
+    };
+
+    const range = new vscode.Range(sym.startLine, 0, sym.endLine, doc.lineAt(sym.endLine).text.length);
+    const selRange = new vscode.Range(sym.startLine, 0, sym.startLine, doc.lineAt(sym.startLine).text.length);
+    const detail = sym.text ? `"${sym.text}"` : sym.kind;
+    const dsym = new vscode.DocumentSymbol(
+      sym.name,
+      detail,
+      kindMap[sym.kind] ?? vscode.SymbolKind.Variable,
+      range,
+      selRange
+    );
+    dsym.children = sym.children.map((c) => this.toDocumentSymbol(c, doc));
+    return dsym;
+  }
+}
+
+// ─── Extension Entry Points ────────────────────────────────────────────────────
 
 export function activate(context: vscode.ExtensionContext) {
   // Register custom editor provider
@@ -2307,6 +2422,14 @@ export function activate(context: vscode.ExtensionContext) {
   const diagnostics = new FdDiagnosticsProvider();
   diagnostics.activate(context);
 
+  // Register document symbol provider (Outline view)
+  context.subscriptions.push(
+    vscode.languages.registerDocumentSymbolProvider(
+      "fd",
+      new FdDocumentSymbolProvider()
+    )
+  );
+
   // Register tree preview command
   context.subscriptions.push(
     vscode.commands.registerCommand("fd.showPreview", () => {
@@ -2324,7 +2447,7 @@ export function activate(context: vscode.ExtensionContext) {
   // ─── Code-mode Spec View (editor decorations) ────────────────────
   // When spec mode is active, hide style/animation/layout details from
   // the text editor, showing only #, ##, node/edge declarations, and braces.
-  let codeSpecMode: "design" | "spec" = "design";
+  let codeSpecMode: "design" | "spec" | "tree" = "design";
 
   // Wire up canvas → code-mode spec sync
   FdEditorProvider.onViewModeChanged = (mode) => {
@@ -2379,10 +2502,12 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  // Register view mode toggle command (Design ↔ Spec in both canvas + code)
+  // Register view mode toggle command (Design → Spec → Tree cycle)
   context.subscriptions.push(
     vscode.commands.registerCommand("fd.toggleViewMode", () => {
-      const next = FdEditorProvider.activeViewMode === "design" ? "spec" : "design";
+      const modes: Array<"design" | "spec" | "tree"> = ["design", "spec", "tree"];
+      const idx = modes.indexOf(FdEditorProvider.activeViewMode);
+      const next = modes[(idx + 1) % modes.length];
       FdEditorProvider.activeViewMode = next;
       codeSpecMode = next;
 
@@ -2395,8 +2520,9 @@ export function activate(context: vscode.ExtensionContext) {
       // Apply/remove code-mode decorations
       applyCodeSpecView();
 
+      const labels: Record<string, string> = { design: "Design", spec: "Spec", tree: "Tree" };
       vscode.window.showInformationMessage(
-        `FD View: ${next === "spec" ? "Spec" : "Design"} Mode`
+        `FD View: ${labels[next]} Mode`
       );
     })
   );

@@ -304,6 +304,156 @@ export function resolveTargetColumn(
   return otherColumn ?? "beside";
 }
 
+// ─── Document Symbols (Outline / Layers) ─────────────────────────────────
+
+export interface FdSymbol {
+  name: string;       // "@gallery"
+  kind: string;       // "group", "rect", "text", "style", "edge", "spec"
+  text?: string;      // label text for text nodes
+  startLine: number;  // 0-based line index
+  endLine: number;    // 0-based line index (closing brace)
+  children: FdSymbol[];
+}
+
+/**
+ * Parse FD source lines into a hierarchical symbol tree.
+ * Used by DocumentSymbolProvider (Outline) and Layers Panel.
+ */
+export function parseDocumentSymbols(lines: string[]): FdSymbol[] {
+  const root: FdSymbol[] = [];
+  const stack: { symbol: FdSymbol; depth: number }[] = [];
+
+  let braceDepth = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+
+    const openBraces = (trimmed.match(/\{/g) || []).length;
+    const closeBraces = (trimmed.match(/\}/g) || []).length;
+
+    // Style definition: style name {
+    const styleMatch = trimmed.match(/^style\s+(\w+)\s*\{/);
+    if (styleMatch) {
+      const sym: FdSymbol = {
+        name: styleMatch[1],
+        kind: "style",
+        startLine: i,
+        endLine: i,
+        children: [],
+      };
+      pushSymbol(root, stack, sym, braceDepth);
+      braceDepth += openBraces - closeBraces;
+      stack.push({ symbol: sym, depth: braceDepth });
+      continue;
+    }
+
+    // Edge block: edge @name {
+    const edgeMatch = trimmed.match(/^edge\s+@(\w+)\s*\{/);
+    if (edgeMatch) {
+      const sym: FdSymbol = {
+        name: `@${edgeMatch[1]}`,
+        kind: "edge",
+        startLine: i,
+        endLine: i,
+        children: [],
+      };
+      pushSymbol(root, stack, sym, braceDepth);
+      braceDepth += openBraces - closeBraces;
+      stack.push({ symbol: sym, depth: braceDepth });
+      continue;
+    }
+
+    // Typed node: group/rect/ellipse/path/text @name ["label"] {
+    const nodeMatch = trimmed.match(
+      /^(group|rect|ellipse|path|text)\s+@(\w+)(?:\s+"([^"]*)")?\s*\{?/
+    );
+    if (nodeMatch) {
+      const sym: FdSymbol = {
+        name: `@${nodeMatch[2]}`,
+        kind: nodeMatch[1],
+        startLine: i,
+        endLine: i,
+        children: [],
+      };
+      if (nodeMatch[3]) sym.text = nodeMatch[3];
+      pushSymbol(root, stack, sym, braceDepth);
+      if (trimmed.endsWith("{")) {
+        braceDepth += 1;
+        stack.push({ symbol: sym, depth: braceDepth });
+      }
+      continue;
+    }
+
+    // Generic node: @name {
+    const genericMatch = trimmed.match(/^@(\w+)\s*\{/);
+    if (genericMatch) {
+      const sym: FdSymbol = {
+        name: `@${genericMatch[1]}`,
+        kind: "spec",
+        startLine: i,
+        endLine: i,
+        children: [],
+      };
+      pushSymbol(root, stack, sym, braceDepth);
+      braceDepth += openBraces - closeBraces;
+      stack.push({ symbol: sym, depth: braceDepth });
+      continue;
+    }
+
+    // Closing brace
+    if (trimmed === "}") {
+      braceDepth -= 1;
+      // Pop stack entries that match this depth
+      while (stack.length > 0 && stack[stack.length - 1].depth > braceDepth) {
+        const popped = stack.pop()!;
+        popped.symbol.endLine = i;
+      }
+      continue;
+    }
+
+    // Constraint line: @id -> ...
+    const constraintMatch = trimmed.match(/^@(\w+)\s*->\s*(.+)/);
+    if (constraintMatch) {
+      const sym: FdSymbol = {
+        name: `@${constraintMatch[1]}`,
+        kind: "constraint",
+        text: constraintMatch[2].trim(),
+        startLine: i,
+        endLine: i,
+        children: [],
+      };
+      pushSymbol(root, stack, sym, braceDepth);
+      continue;
+    }
+
+    braceDepth += openBraces - closeBraces;
+  }
+
+  // Close any remaining symbols
+  const lastLine = lines.length > 0 ? lines.length - 1 : 0;
+  while (stack.length > 0) {
+    const popped = stack.pop()!;
+    popped.symbol.endLine = lastLine;
+  }
+
+  return root;
+}
+
+/** Push a symbol into the correct parent based on the stack. */
+function pushSymbol(
+  root: FdSymbol[],
+  stack: { symbol: FdSymbol; depth: number }[],
+  sym: FdSymbol,
+  _currentDepth: number
+): void {
+  if (stack.length > 0) {
+    stack[stack.length - 1].symbol.children.push(sym);
+  } else {
+    root.push(sym);
+  }
+}
+
 // ─── HTML Escaping ───────────────────────────────────────────────────────
 
 /** Escape HTML special characters. */

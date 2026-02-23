@@ -46,7 +46,7 @@ let annotationCardNodeId = null;
 /** Node ID from right-click context menu */
 let contextMenuNodeId = null;
 
-/** Current view mode: "design" | "spec" */
+/** Current view mode: "design" | "spec" | "tree" */
 let viewMode = "design";
 
 /** Pointer interaction tracking for dimension tooltip */
@@ -392,6 +392,7 @@ window.addEventListener("message", (event) => {
       render();
       suppressTextSync = false;
       if (viewMode === "spec") refreshSpecView();
+      if (viewMode === "tree") refreshLayersPanel();
       break;
     }
     case "selectNode": {
@@ -1257,22 +1258,29 @@ function setupDragAndDrop() {
 function setupViewToggle() {
   document.getElementById("view-design")?.addEventListener("click", () => setViewMode("design"));
   document.getElementById("view-spec")?.addEventListener("click", () => setViewMode("spec"));
+  document.getElementById("view-tree")?.addEventListener("click", () => setViewMode("tree"));
 }
 
 function setViewMode(mode) {
   viewMode = mode;
   const isSpec = mode === "spec";
+  const isTree = mode === "tree";
 
-  document.getElementById("view-design")?.classList.toggle("active", !isSpec);
+  document.getElementById("view-design")?.classList.toggle("active", mode === "design");
   document.getElementById("view-spec")?.classList.toggle("active", isSpec);
+  document.getElementById("view-tree")?.classList.toggle("active", isTree);
 
   // Canvas stays visible — spec view keeps full interactivity
   const overlay = document.getElementById("spec-overlay");
   if (overlay) overlay.style.display = isSpec ? "" : "none";
 
-  // Hide properties panel in spec view (annotation card replaces it)
+  // Show/hide layers panel
+  const layers = document.getElementById("layers-panel");
+  if (layers) layers.classList.toggle("visible", isTree);
+
+  // Hide properties panel in spec/tree view
   const props = document.getElementById("props-panel");
-  if (props && isSpec) props.classList.remove("visible");
+  if (props && (isSpec || isTree)) props.classList.remove("visible");
 
   // Notify extension to apply/remove code-mode spec hiding
   vscode.postMessage({ type: "viewModeChanged", mode });
@@ -1282,6 +1290,10 @@ function setViewMode(mode) {
   } else {
     // Clear badges when leaving spec view
     if (overlay) overlay.innerHTML = "";
+  }
+
+  if (isTree) {
+    refreshLayersPanel();
   }
 }
 
@@ -1436,6 +1448,161 @@ function parseAnnotatedNodes(source) {
   }
 
   return result;
+}
+
+// ─── Layers Panel (Tree View) ────────────────────────────────────────────
+
+const LAYER_ICONS = {
+  group: "📦",
+  rect: "▢",
+  ellipse: "◯",
+  path: "✎",
+  text: "📝",
+  style: "🎨",
+  edge: "→",
+  spec: "📋",
+};
+
+/**
+ * Parse FD source into a hierarchical layer tree.
+ * Returns array of { id, kind, text, children[] }.
+ */
+function parseLayerTree(source) {
+  const lines = source.split("\n");
+  const root = [];
+  const stack = []; // { node, depth }
+  let braceDepth = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+
+    const openBraces = (trimmed.match(/\{/g) || []).length;
+    const closeBraces = (trimmed.match(/\}/g) || []).length;
+
+    // Style definition
+    const styleMatch = trimmed.match(/^style\s+(\w+)\s*\{/);
+    if (styleMatch) {
+      const node = { id: styleMatch[1], kind: "style", text: "", children: [] };
+      if (stack.length > 0) stack[stack.length - 1].node.children.push(node);
+      else root.push(node);
+      braceDepth += openBraces - closeBraces;
+      stack.push({ node, depth: braceDepth });
+      continue;
+    }
+
+    // Edge
+    const edgeMatch = trimmed.match(/^edge\s+@(\w+)\s*\{/);
+    if (edgeMatch) {
+      const node = { id: edgeMatch[1], kind: "edge", text: "", children: [] };
+      if (stack.length > 0) stack[stack.length - 1].node.children.push(node);
+      else root.push(node);
+      braceDepth += openBraces - closeBraces;
+      stack.push({ node, depth: braceDepth });
+      continue;
+    }
+
+    // Typed node
+    const nodeMatch = trimmed.match(
+      /^(group|rect|ellipse|path|text)\s+@(\w+)(?:\s+"([^"]*)")?\s*\{?/
+    );
+    if (nodeMatch) {
+      const node = {
+        id: nodeMatch[2],
+        kind: nodeMatch[1],
+        text: nodeMatch[3] || "",
+        children: [],
+      };
+      if (stack.length > 0) stack[stack.length - 1].node.children.push(node);
+      else root.push(node);
+      if (trimmed.endsWith("{")) {
+        braceDepth += 1;
+        stack.push({ node, depth: braceDepth });
+      }
+      continue;
+    }
+
+    // Generic node
+    const genericMatch = trimmed.match(/^@(\w+)\s*\{/);
+    if (genericMatch) {
+      const node = { id: genericMatch[1], kind: "spec", text: "", children: [] };
+      if (stack.length > 0) stack[stack.length - 1].node.children.push(node);
+      else root.push(node);
+      braceDepth += openBraces - closeBraces;
+      stack.push({ node, depth: braceDepth });
+      continue;
+    }
+
+    // Closing brace
+    if (trimmed === "}") {
+      braceDepth -= 1;
+      while (stack.length > 0 && stack[stack.length - 1].depth > braceDepth) {
+        stack.pop();
+      }
+      continue;
+    }
+
+    braceDepth += openBraces - closeBraces;
+  }
+
+  return root;
+}
+
+/** Render a layer tree node as HTML. */
+function renderLayerNode(node, selectedId) {
+  const icon = LAYER_ICONS[node.kind] || "•";
+  const isSelected = node.id === selectedId;
+  const label = node.text ? `${node.id} "${node.text}"` : node.id;
+  let html = `<div class="layer-item${isSelected ? " selected" : ""}" data-node-id="${escapeAttr(node.id)}">`;
+  html += `<span class="layer-icon">${icon}</span>`;
+  html += `<span class="layer-name">${escapeHtml(label)}</span>`;
+  html += `<span class="layer-kind">${escapeHtml(node.kind)}</span>`;
+  html += `</div>`;
+
+  if (node.children.length > 0) {
+    html += `<div class="layer-children">`;
+    for (const child of node.children) {
+      html += renderLayerNode(child, selectedId);
+    }
+    html += `</div>`;
+  }
+  return html;
+}
+
+/** Refresh the layers panel content. */
+function refreshLayersPanel() {
+  const panel = document.getElementById("layers-panel");
+  if (!panel || !fdCanvas) return;
+
+  const source = fdCanvas.get_text();
+  const tree = parseLayerTree(source);
+  const selectedId = fdCanvas.get_selected_id() || "";
+
+  let html = '<div class="layers-title">Layers</div>';
+  for (const node of tree) {
+    html += renderLayerNode(node, selectedId);
+  }
+
+  panel.innerHTML = html;
+
+  // Wire click handlers
+  panel.querySelectorAll(".layer-item").forEach((item) => {
+    item.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const nodeId = item.getAttribute("data-node-id");
+      if (nodeId && fdCanvas) {
+        if (fdCanvas.select_by_id(nodeId)) {
+          render();
+          // Update selection highlight in layers
+          panel.querySelectorAll(".layer-item").forEach((el) => {
+            el.classList.toggle("selected", el.getAttribute("data-node-id") === nodeId);
+          });
+          // Notify extension of selection
+          vscode.postMessage({ type: "nodeSelected", id: nodeId });
+        }
+      }
+    });
+  });
 }
 
 // ─── Spec View Parser (client-side) ──────────────────────────────────────

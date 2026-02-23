@@ -7,6 +7,7 @@ import {
   stripMarkdownFences,
   escapeHtml,
   resolveTargetColumn,
+  parseDocumentSymbols,
 } from "./fd-parse";
 
 // ─── parseAnnotation ─────────────────────────────────────────────────────
@@ -386,5 +387,128 @@ describe("resolveTargetColumn", () => {
 
   it("returns the group column when active column is not in groups", () => {
     expect(resolveTargetColumn(1, [2])).toBe(2);
+  });
+});
+
+// ─── parseDocumentSymbols ────────────────────────────────────────────────
+
+describe("parseDocumentSymbols", () => {
+  it("returns empty for empty input", () => {
+    expect(parseDocumentSymbols([])).toEqual([]);
+  });
+
+  it("returns empty for comments-only", () => {
+    expect(parseDocumentSymbols(["# comment", "# another"])).toEqual([]);
+  });
+
+  it("parses a single rect node", () => {
+    const lines = ["rect @hero {", "  fill: #FF0000", "}"];
+    const result = parseDocumentSymbols(lines);
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe("@hero");
+    expect(result[0].kind).toBe("rect");
+    expect(result[0].startLine).toBe(0);
+    expect(result[0].endLine).toBe(2);
+    expect(result[0].children).toEqual([]);
+  });
+
+  it("parses text node with label", () => {
+    const lines = ['text @title "Hello World" {', "  font: Inter 700 32", "}"];
+    const result = parseDocumentSymbols(lines);
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe("@title");
+    expect(result[0].kind).toBe("text");
+    expect(result[0].text).toBe("Hello World");
+  });
+
+  it("parses nested group with children", () => {
+    const lines = [
+      "group @outer {",
+      "  rect @inner {",
+      "    fill: #FFF",
+      "  }",
+      "}",
+    ];
+    const result = parseDocumentSymbols(lines);
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe("@outer");
+    expect(result[0].kind).toBe("group");
+    expect(result[0].children).toHaveLength(1);
+    expect(result[0].children[0].name).toBe("@inner");
+    expect(result[0].children[0].kind).toBe("rect");
+    expect(result[0].startLine).toBe(0);
+    expect(result[0].endLine).toBe(4);
+    expect(result[0].children[0].startLine).toBe(1);
+    expect(result[0].children[0].endLine).toBe(3);
+  });
+
+  it("parses style definition", () => {
+    const lines = ["style card_text {", "  font: Inter 14", "  fill: #FFF", "}"];
+    const result = parseDocumentSymbols(lines);
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe("card_text");
+    expect(result[0].kind).toBe("style");
+    expect(result[0].startLine).toBe(0);
+    expect(result[0].endLine).toBe(3);
+  });
+
+  it("parses edge block", () => {
+    const lines = ["edge @flow1 {", "  from: @login", "  to: @dashboard", "}"];
+    const result = parseDocumentSymbols(lines);
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe("@flow1");
+    expect(result[0].kind).toBe("edge");
+  });
+
+  it("parses generic node", () => {
+    const lines = ["@login_flow {", "  ## \"User login\"", "}"];
+    const result = parseDocumentSymbols(lines);
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe("@login_flow");
+    expect(result[0].kind).toBe("spec");
+  });
+
+  it("parses constraint line", () => {
+    const lines = ["@gallery -> center_in: canvas"];
+    const result = parseDocumentSymbols(lines);
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe("@gallery");
+    expect(result[0].kind).toBe("constraint");
+    expect(result[0].text).toBe("center_in: canvas");
+  });
+
+  it("handles multiple top-level symbols", () => {
+    const lines = [
+      "style heading {",
+      "  fill: #333",
+      "}",
+      "rect @hero {",
+      "  fill: #FFF",
+      "}",
+      "text @label \"Hi\" {",
+      "}",
+    ];
+    const result = parseDocumentSymbols(lines);
+    expect(result).toHaveLength(3);
+    expect(result[0].kind).toBe("style");
+    expect(result[1].kind).toBe("rect");
+    expect(result[2].kind).toBe("text");
+  });
+
+  it("handles deeply nested groups", () => {
+    const lines = [
+      "group @a {",
+      "  group @b {",
+      "    rect @c {",
+      "      fill: #FFF",
+      "    }",
+      "  }",
+      "}",
+    ];
+    const result = parseDocumentSymbols(lines);
+    expect(result).toHaveLength(1);
+    expect(result[0].children).toHaveLength(1);
+    expect(result[0].children[0].children).toHaveLength(1);
+    expect(result[0].children[0].children[0].name).toBe("@c");
   });
 });
