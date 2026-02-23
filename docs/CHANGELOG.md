@@ -5,6 +5,12 @@
 
 ## Completed Requirements
 
+### v0.6.32
+
+- **R2.5 fix**: Cursor→canvas selection sync now works from any line inside a node block (property lines, style lines, animation lines), not just the `@id` declaration line — uses `findSymbolAtLine` symbol tree lookup instead of simple regex
+- **R3.14**: Layers panel restyled with Figma/Apple design language (sticky header, indent guides, chevron toggles, hover/selection states)
+- **Workflow**: `/yolo` and `/commit` workflows now include a mandatory docs update step before committing
+
 ### R1: File Format (`.fd`)
 
 - [x] **R1.1**: Token-efficient text DSL

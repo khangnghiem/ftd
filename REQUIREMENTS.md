@@ -31,7 +31,7 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R2.2**: Text → Canvas: Source edits re-render the canvas in <16ms
 - **R2.3**: Incremental: Only re-parse/re-emit changed regions, not the entire document
 - **R2.4**: Conflict-free: Both directions funnel through a single authoritative `SceneGraph`
-- **R2.5**: Selection sync — clicking a node `@id` line in the text editor selects it on canvas; clicking a node on canvas reveals and highlights its `@id` line in the text editor
+- **R2.5**: Selection sync — clicking anywhere inside a node block in the text editor (not just the `@id` declaration line) selects it on canvas; clicking a node on canvas reveals and highlights its `@id` line in the text editor
 
 ### R3: Human Editing (Canvas)
 
