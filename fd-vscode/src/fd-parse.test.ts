@@ -3,6 +3,7 @@ import {
   parseAnnotation,
   parseSpecNodes,
   computeSpecHideLines,
+  computeSpecFoldRanges,
   findAnonNodeIds,
   stripMarkdownFences,
   escapeHtml,
@@ -269,6 +270,76 @@ describe("computeSpecHideLines", () => {
     const hidden = computeSpecHideLines(lines);
     expect(hidden).toContain(1); // layout
     expect(hidden).toContain(2); // use
+  });
+});
+
+// ─── computeSpecFoldRanges ──────────────────────────────────────────────
+
+describe("computeSpecFoldRanges", () => {
+  it("returns empty for empty input", () => {
+    expect(computeSpecFoldRanges([])).toEqual([]);
+  });
+
+  it("returns empty when nothing is hidden", () => {
+    const lines = ["# comment", "rect @hero {", "}"];
+    expect(computeSpecFoldRanges(lines)).toEqual([]);
+  });
+
+  it("returns one range for a single contiguous hidden block", () => {
+    const lines = ["style heading {", "  fill: #333", "  font: Inter 700 32", "}"];
+    const ranges = computeSpecFoldRanges(lines);
+    expect(ranges).toEqual([{ start: 0, end: 3 }]);
+  });
+
+  it("returns one range for consecutive hidden lines", () => {
+    const lines = [
+      "rect @btn {",       // 0 - kept
+      "  fill: #333",      // 1 - hidden
+      '  anim :hover {',   // 2 - hidden
+      '    fill: #555',    // 3 - hidden
+      "    scale: 1.02",   // 4 - hidden
+      "  }",               // 5 - hidden (inside anim closing brace)
+      "}",                 // 6 - kept
+    ];
+    const ranges = computeSpecFoldRanges(lines);
+    expect(ranges).toEqual([{ start: 1, end: 5 }]);
+  });
+
+  it("returns multiple ranges when hidden blocks are separated by kept lines", () => {
+    const lines = [
+      "style body {",      // 0 - hidden
+      "  fill: #333",      // 1 - hidden
+      "}",                 // 2 - hidden
+      "",                  // 3 - blank (kept)
+      "rect @hero {",      // 4 - kept
+      "  w: 100 h: 100",   // 5 - hidden
+      "}",                 // 6 - kept
+    ];
+    const ranges = computeSpecFoldRanges(lines);
+    expect(ranges).toHaveLength(2);
+    expect(ranges[0]).toEqual({ start: 0, end: 2 });
+    expect(ranges[1]).toEqual({ start: 5, end: 5 });
+  });
+
+  it("handles realistic multi-node structure", () => {
+    const lines = [
+      "group @nav {",        // 0 - kept
+      "  ## \"Navigation\"",  // 1 - kept
+      "  layout: row gap=8", // 2 - hidden
+      "  rect @btn1 {",      // 3 - kept
+      "    w: 50 h: 30",     // 4 - hidden
+      "    fill: #FFF",      // 5 - hidden
+      "  }",                 // 6 - kept
+      "  rect @btn2 {",      // 7 - kept
+      "    w: 50 h: 30",     // 8 - hidden
+      "  }",                 // 9 - kept
+      "}",                   // 10 - kept
+    ];
+    const ranges = computeSpecFoldRanges(lines);
+    expect(ranges).toHaveLength(3);
+    expect(ranges[0]).toEqual({ start: 2, end: 2 });
+    expect(ranges[1]).toEqual({ start: 4, end: 5 });
+    expect(ranges[2]).toEqual({ start: 8, end: 8 });
   });
 });
 

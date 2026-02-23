@@ -262,6 +262,36 @@ export function computeSpecHideLines(lines: string[]): number[] {
   return hidden;
 }
 
+// ─── Spec Fold Ranges ────────────────────────────────────────────────────
+
+/**
+ * Group consecutive hidden line indices into contiguous fold ranges.
+ * Each range { start, end } is a 0-based inclusive line range suitable
+ * for VS Code's FoldingRangeProvider.
+ */
+export function computeSpecFoldRanges(
+  lines: string[]
+): { start: number; end: number }[] {
+  const hidden = computeSpecHideLines(lines);
+  if (hidden.length === 0) return [];
+
+  const ranges: { start: number; end: number }[] = [];
+  let start = hidden[0];
+  let prev = hidden[0];
+
+  for (let i = 1; i < hidden.length; i++) {
+    if (hidden[i] === prev + 1) {
+      prev = hidden[i];
+    } else {
+      ranges.push({ start, end: prev });
+      start = hidden[i];
+      prev = hidden[i];
+    }
+  }
+  ranges.push({ start, end: prev });
+  return ranges;
+}
+
 // ─── Anon Node IDs ───────────────────────────────────────────────────────
 
 /** Find all `@_anon_N` node IDs in an FD document. */

@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { refineSelectedNodes, findAnonNodeIds } from "./ai-refine";
 import {
   parseAnnotation as fdParseAnnotation,
-  computeSpecHideLines,
+  computeSpecFoldRanges,
   escapeHtml,
   resolveTargetColumn,
   parseDocumentSymbols,
@@ -2455,46 +2455,65 @@ export function activate(context: vscode.ExtensionContext) {
     applyCodeSpecView();
   };
 
-  const specHideDecoration = vscode.window.createTextEditorDecorationType({
-    opacity: "0",
-    letterSpacing: "-9999px",
-    textDecoration: "none; font-size: 0; line-height: 0; overflow: hidden; max-height: 0",
-  });
-  context.subscriptions.push(specHideDecoration);
+  // ─── FoldingRangeProvider for Spec View ─────────────────────────────
+  // When spec mode is active, provide fold ranges for style/anim/property
+  // blocks so they collapse to zero height (no gaps).
 
-  /** Return ranges of lines to hide for spec view. */
-  function computeSpecHideRanges(doc: vscode.TextDocument): vscode.Range[] {
-    const lines: string[] = [];
-    for (let i = 0; i < doc.lineCount; i++) {
-      lines.push(doc.lineAt(i).text);
-    }
-    return computeSpecHideLines(lines).map(
-      (i) => doc.lineAt(i).range
-    );
-  }
+  const foldChangeEmitter = new vscode.EventEmitter<void>();
+  context.subscriptions.push(foldChangeEmitter);
 
-  function applyCodeSpecView() {
+  const foldingProvider: vscode.FoldingRangeProvider = {
+    onDidChangeFoldingRanges: foldChangeEmitter.event,
+    provideFoldingRanges(
+      document: vscode.TextDocument
+    ): vscode.FoldingRange[] {
+      if (codeSpecMode !== "spec") return [];
+      const lines: string[] = [];
+      for (let i = 0; i < document.lineCount; i++) {
+        lines.push(document.lineAt(i).text);
+      }
+      return computeSpecFoldRanges(lines).map(
+        (r) => new vscode.FoldingRange(r.start, r.end, vscode.FoldingRangeKind.Region)
+      );
+    },
+  };
+
+  context.subscriptions.push(
+    vscode.languages.registerFoldingRangeProvider("fd", foldingProvider)
+  );
+
+  /** Fold or unfold all spec regions in visible FD editors. */
+  async function applyCodeSpecView() {
+    // Notify VS Code that fold ranges changed
+    foldChangeEmitter.fire();
+
+    // Small delay so VS Code processes the new fold ranges first
+    await new Promise((r) => setTimeout(r, 100));
+
     for (const editor of vscode.window.visibleTextEditors) {
       if (editor.document.languageId !== "fd") continue;
+      // Focus the editor temporarily to apply fold/unfold commands
+      await vscode.window.showTextDocument(editor.document, editor.viewColumn, false);
       if (codeSpecMode === "spec") {
-        const ranges = computeSpecHideRanges(editor.document);
-        editor.setDecorations(specHideDecoration, ranges);
+        await vscode.commands.executeCommand("editor.foldAll");
       } else {
-        editor.setDecorations(specHideDecoration, []);
+        await vscode.commands.executeCommand("editor.unfoldAll");
       }
     }
   }
 
-  // Re-apply spec decorations when text changes
+  // Re-fold when text changes in spec mode
+  let foldDebounce: ReturnType<typeof setTimeout> | undefined;
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument((e) => {
       if (codeSpecMode !== "spec") return;
       if (e.document.languageId !== "fd") return;
-      applyCodeSpecView();
+      clearTimeout(foldDebounce);
+      foldDebounce = setTimeout(() => applyCodeSpecView(), 300);
     })
   );
 
-  // Re-apply when visible editors change
+  // Re-fold when visible editors change
   context.subscriptions.push(
     vscode.window.onDidChangeVisibleTextEditors(() => {
       if (codeSpecMode !== "spec") return;
