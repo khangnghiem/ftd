@@ -2534,111 +2534,95 @@ export function activate(context: vscode.ExtensionContext) {
     )
   );
 
-  // ─── Auto-open canvas alongside text editor for .fd files ────────
+  // ─── Track opened .fd documents ──────────────────────────────────────
   const openedUris = new Set<string>();
-  context.subscriptions.push(
-    vscode.workspace.onDidOpenTextDocument(async (doc: vscode.TextDocument) => {
-      if (doc.languageId !== "fd") return;
-      const key = doc.uri.toString();
-      if (openedUris.has(key)) return;
-      openedUris.add(key);
-
-      // Small delay so the text editor settles first
-      await new Promise((r) => setTimeout(r, 300));
-
-      // Find a reusable editor group: prefer an existing non-active column
-      // so we don't keep creating new Beside panels.
-      // Use tabGroups.all (not visibleTextEditors) to include webview panels.
-      const activeColumn = vscode.window.activeTextEditor?.viewColumn;
-      const allGroupColumns = vscode.window.tabGroups.all.map(
-        (g) => g.viewColumn
-      );
-      const resolved = resolveTargetColumn(activeColumn, allGroupColumns);
-      const targetColumn =
-        resolved === "beside" ? vscode.ViewColumn.Beside : resolved;
-
-      await vscode.commands.executeCommand(
-        "vscode.openWith",
-        doc.uri,
-        "fd.canvas",
-        targetColumn
-      );
-
-      // Refocus the text editor so Code Mode has focus by default
-      await new Promise((r) => setTimeout(r, 100));
-      const textEditor = vscode.window.visibleTextEditors.find(
-        (e) => e.document.uri.toString() === key
-      );
-      if (textEditor) {
-        await vscode.window.showTextDocument(
-          textEditor.document,
-          textEditor.viewColumn,
-          false
-        );
-      }
-    })
-  );
   context.subscriptions.push(
     vscode.workspace.onDidCloseTextDocument((doc: vscode.TextDocument) => {
       openedUris.delete(doc.uri.toString());
     })
   );
 
-  // ─── Reveal canvas when switching to an .fd tab ─────────────────────
-  // When the user selects a different .fd file in the text editor, ensure
-  // its Canvas Mode panel is visible in the other column (without focus).
+  // ─── Canvas reveal/open on .fd tab activation ──────────────────────
+  // Single handler: whenever a text editor for an .fd file becomes active,
+  // ensure its Canvas Mode is visible in the OTHER column (without focus).
+  //
+  // Handles all scenarios:
+  //  1. No canvas → open one in the other column
+  //  2. Canvas in a different column → reveal it (bring to front)
+  //  3. Canvas in the SAME column as text → move it to the other column
   let revealDebounce: ReturnType<typeof setTimeout> | undefined;
   context.subscriptions.push(
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       clearTimeout(revealDebounce);
       if (!editor || editor.document.languageId !== "fd") return;
       const key = editor.document.uri.toString();
+      openedUris.add(key);
 
       revealDebounce = setTimeout(async () => {
-        // Find the canvas tab for this URI and its column
+        const editorColumn = editor.viewColumn;
+
+        // Helper: check if a tab is the canvas for this URI
+        const isCanvasForUri = (tab: vscode.Tab): boolean => {
+          const input = tab.input;
+          return (
+            input != null &&
+            typeof input === "object" &&
+            "viewType" in input &&
+            (input as { viewType: string }).viewType === "fd.canvas" &&
+            "uri" in input &&
+            (input as { uri: vscode.Uri }).uri.toString() === key
+          );
+        };
+
+        // Find existing canvas tab
+        let canvasTab: vscode.Tab | undefined;
+        let canvasGroup: vscode.TabGroup | undefined;
         for (const group of vscode.window.tabGroups.all) {
-          const canvasTab = group.tabs.find((tab) => {
-            const input = tab.input;
-            return (
-              input &&
-              typeof input === "object" &&
-              "viewType" in input &&
-              (input as { viewType: string }).viewType === "fd.canvas" &&
-              "uri" in input &&
-              (input as { uri: vscode.Uri }).uri.toString() === key
-            );
-          });
-          if (canvasTab) {
-            // Only reveal if it's not already the active tab in its group
-            if (!canvasTab.isActive) {
-              await vscode.commands.executeCommand(
-                "vscode.openWith",
-                editor.document.uri,
-                "fd.canvas",
-                { viewColumn: group.viewColumn, preserveFocus: true }
-              );
-            }
-            return; // Found it — done
+          const found = group.tabs.find(isCanvasForUri);
+          if (found) {
+            canvasTab = found;
+            canvasGroup = group;
+            break;
           }
         }
 
-        // No canvas tab exists — open one in the other column
-        const activeColumn = editor.viewColumn;
+        // Determine the correct target column for canvas (opposite of text editor)
         const allGroupColumns = vscode.window.tabGroups.all.map(
           (g) => g.viewColumn
         );
-        const resolved = resolveTargetColumn(activeColumn, allGroupColumns);
+        const resolved = resolveTargetColumn(editorColumn, allGroupColumns);
         const targetColumn =
           resolved === "beside" ? vscode.ViewColumn.Beside : resolved;
 
-        openedUris.add(key); // Mark so onDidOpenTextDocument won't duplicate
-        await vscode.commands.executeCommand(
-          "vscode.openWith",
-          editor.document.uri,
-          "fd.canvas",
-          { viewColumn: targetColumn, preserveFocus: true }
-        );
-      }, 150);
+        if (canvasTab && canvasGroup) {
+          if (canvasGroup.viewColumn === editorColumn) {
+            // Canvas is in the SAME column as text editor — move it
+            await vscode.commands.executeCommand(
+              "vscode.openWith",
+              editor.document.uri,
+              "fd.canvas",
+              { viewColumn: targetColumn, preserveFocus: true }
+            );
+          } else if (!canvasTab.isActive) {
+            // Canvas is in a different column but hidden behind another tab
+            await vscode.commands.executeCommand(
+              "vscode.openWith",
+              editor.document.uri,
+              "fd.canvas",
+              { viewColumn: canvasGroup.viewColumn, preserveFocus: true }
+            );
+          }
+          // else: canvas is already active in the other column — nothing to do
+        } else {
+          // No canvas exists — open one in the other column
+          await vscode.commands.executeCommand(
+            "vscode.openWith",
+            editor.document.uri,
+            "fd.canvas",
+            { viewColumn: targetColumn, preserveFocus: true }
+          );
+        }
+      }, 200);
     })
   );
 
