@@ -2595,9 +2595,9 @@ export function activate(context: vscode.ExtensionContext) {
       const key = editor.document.uri.toString();
 
       revealDebounce = setTimeout(async () => {
-        // Check if a canvas tab already exists for this URI
-        const canvasTabExists = vscode.window.tabGroups.all.some((group) =>
-          group.tabs.some((tab) => {
+        // Find the canvas tab for this URI and its column
+        for (const group of vscode.window.tabGroups.all) {
+          const canvasTab = group.tabs.find((tab) => {
             const input = tab.input;
             return (
               input &&
@@ -2607,37 +2607,21 @@ export function activate(context: vscode.ExtensionContext) {
               "uri" in input &&
               (input as { uri: vscode.Uri }).uri.toString() === key
             );
-          })
-        );
-
-        if (canvasTabExists) {
-          // Canvas exists — bring it to front in its column without focus.
-          // preserveFocus=true keeps the text editor focused.
-          await vscode.commands.executeCommand(
-            "vscode.openWith",
-            editor.document.uri,
-            "fd.canvas",
-            { preserveFocus: true }
-          );
-        } else if (!openedUris.has(key)) {
-          // No canvas yet — open one in the other column (same logic as
-          // the onDidOpenTextDocument handler above).
-          openedUris.add(key);
-          const activeColumn = editor.viewColumn;
-          const allGroupColumns = vscode.window.tabGroups.all.map(
-            (g) => g.viewColumn
-          );
-          const resolved = resolveTargetColumn(activeColumn, allGroupColumns);
-          const targetColumn =
-            resolved === "beside" ? vscode.ViewColumn.Beside : resolved;
-
-          await vscode.commands.executeCommand(
-            "vscode.openWith",
-            editor.document.uri,
-            "fd.canvas",
-            { viewColumn: targetColumn, preserveFocus: true }
-          );
+          });
+          if (canvasTab) {
+            // Only reveal if it's not already the active tab in its group
+            if (!canvasTab.isActive) {
+              await vscode.commands.executeCommand(
+                "vscode.openWith",
+                editor.document.uri,
+                "fd.canvas",
+                { viewColumn: group.viewColumn, preserveFocus: true }
+              );
+            }
+            return; // Found it — done
+          }
         }
+        // No canvas tab exists — onDidOpenTextDocument will handle first opens
       }, 150);
     })
   );
