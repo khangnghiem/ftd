@@ -24,19 +24,23 @@ description: Stage and commit changes to a feature branch (never main)
    git checkout -b feat/<descriptive-name>
    ```
 
-4. Stage all changes:
+4. **Update docs** (MANDATORY):
+   - `docs/CHANGELOG.md` — add entry for each meaningful change
+   - `REQUIREMENTS.md` — update if behavior changed or new feature added (check Requirement Index first)
+
+5. Stage all changes:
 
    ```bash
    git add -A
    ```
 
-5. Review what's staged:
+6. Review what's staged:
 
    ```bash
    git diff --cached --stat
    ```
 
-6. Commit with a conventional commit message:
+7. Commit with a conventional commit message:
 
    ```bash
    git commit -m "<type>(<scope>): <description>"
@@ -45,7 +49,7 @@ description: Stage and commit changes to a feature branch (never main)
    Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`
    Scopes: `core`, `render`, `editor`, `vscode`, `docs`, `ci`
 
-7. Push to remote:
+8. Push to remote:
    ```bash
    git push -u origin HEAD
    ```

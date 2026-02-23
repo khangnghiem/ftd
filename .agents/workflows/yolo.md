@@ -78,40 +78,44 @@ description: Full pipeline - test, build, commit, PR, and merge in one shot
 8. **Bump Version** (if `fd-vscode/` was changed):
    - Bump the `version` field in `fd-vscode/package.json` appropriately (patch/minor/major).
 
-9. **Stage and commit**:
+9. **Update docs** (MANDATORY):
+   - `docs/CHANGELOG.md` — add entry under the current version section for each meaningful change
+   - `REQUIREMENTS.md` — update if behavior changed, new feature added, or requirement wording needs refinement (check the Requirement Index for overlap first)
 
-   ```bash
-   git add -A
-   git commit -m "<type>(<scope>): <description>"
-   ```
+10. **Stage and commit**:
 
-10. **Push**:
+    ```bash
+    git add -A
+    git commit -m "<type>(<scope>): <description>"
+    ```
+
+11. **Push**:
 
     ```bash
     git push -u origin HEAD
     ```
 
-11. **Create PR** using GitKraken MCP:
+12. **Create PR** using GitKraken MCP:
     - `provider`: github
     - `source_branch`: current branch
     - `target_branch`: main
     - Title in conventional format
     - Body summarizing changes + test results
 
-12. **Merge PR** and clean up:
+13. **Merge PR** and clean up:
 
     ```bash
     gh pr merge <PR_NUMBER> --merge --delete-branch
     ```
 
-13. **Sync main**:
+14. **Sync main**:
 
     ```bash
     git checkout main
     git pull origin main
     ```
 
-14. **Build & Publish VS Code extension** (if `fd-vscode/`, `crates/fd-wasm/`, `crates/fd-core/`, `crates/fd-editor/`, `crates/fd-render/`, or `tree-sitter-fd/` were changed):
+15. **Build & Publish VS Code extension** (if `fd-vscode/`, `crates/fd-wasm/`, `crates/fd-core/`, `crates/fd-editor/`, `crates/fd-render/`, or `tree-sitter-fd/` were changed):
 
     > ⚠️ **MANDATORY**: Read `.env` for `VSCE_PAT`, `VSX_PAT`, and `GEMINI_API_KEY` BEFORE publishing.
     > Never rely on interactive prompts — always pass tokens via flags.
@@ -133,10 +137,10 @@ description: Full pipeline - test, build, commit, PR, and merge in one shot
     > Skip publish if the change is local-only or version wasn't bumped.
     > **NEVER** publish to only one registry — both Marketplace AND Open VSX are required.
 
-15. Report PR URL, merge status, and publish results to user.
+16. Report PR URL, merge status, and publish results to user.
 
 ---
 
 ## `/yolo` — Full Pipeline
 
-Runs **all steps 1–14** in sequence (local + deploy).
+Runs **all steps 1–15** in sequence (local + deploy).
