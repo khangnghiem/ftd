@@ -193,17 +193,14 @@ export function parseSpecNodes(source: string): SpecResult {
 
 // ─── Spec Hide Lines ─────────────────────────────────────────────────────
 
-/**
- * Given an array of source lines, return the 0-based indices of lines
- * that should be hidden in Code Spec View. Hides style blocks, anim
- * blocks, and property lines — keeps #, ##, node/edge names, and braces.
- */
 export function computeSpecHideLines(lines: string[]): number[] {
   const hidden: number[] = [];
   let insideStyleBlock = false;
   let insideAnimBlock = false;
+  let insideNodeBlock = false;
   let styleDepth = 0;
   let animDepth = 0;
+  let nodeDepth = 0;
 
   const keepPatterns = [
     /^\s*#/,                              // Comments and annotations
@@ -253,7 +250,38 @@ export function computeSpecHideLines(lines: string[]): number[] {
       continue;
     }
 
-    // Check keep patterns
+    // Track node blocks (typed and generic)
+    const isNodeStart = /^\s*(group|frame|rect|ellipse|path|text)\s+@/.test(text) || /^\s*@\w+\s*\{/.test(text);
+    if (isNodeStart) {
+      insideNodeBlock = true;
+      nodeDepth += (trimmed.match(/\{/g) || []).length;
+      // The declaration line itself is kept
+      continue;
+    }
+
+    if (insideNodeBlock) {
+      nodeDepth += (trimmed.match(/\{/g) || []).length;
+      nodeDepth -= (trimmed.match(/\}/g) || []).length;
+
+      if (nodeDepth <= 0) {
+        insideNodeBlock = false;
+      }
+
+      // Check keep patterns (comments, annotations, closing braces, blank lines, edge stuff, inside a node)
+      const shouldKeep = keepPatterns.some((p) => p.test(text));
+      if (!shouldKeep && trimmed.length > 0) {
+        // It's a property line or untracked block inside a node
+        hidden.push(i);
+      }
+      continue;
+    }
+
+    // Outside of style, anim, and node blocks (e.g. constraints, global edge blocks)
+    // We hide constraints in spec view? Actually constraints should be kept or hidden?
+    // The previous logic hid anything not in keepPatterns.
+    const shouldKeepGlobal = keepPatterns.some((p) => p.test(text)) || /^\s*@\w+\s*->/.test(text); // Added constraint keeping if needed? Wait, original logic didn't explicitly keep constraints.
+    // Let's check original logic: constraints were HIDDEN because they didn't match keepPatterns.
+    // Let's just reproduce original logic for outside blocks.
     const shouldKeep = keepPatterns.some((p) => p.test(text));
     if (!shouldKeep && trimmed.length > 0) {
       hidden.push(i);
