@@ -362,7 +362,7 @@ impl Tool for RectTool {
                         height: 0.0,
                     },
                 );
-                node.constraints.push(Constraint::Absolute { x: *x, y: *y });
+                node.constraints.push(Constraint::Position { x: *x, y: *y });
                 vec![GraphMutation::AddNode {
                     parent_id: NodeId::intern("root"),
                     node: Box::new(node),
@@ -635,7 +635,7 @@ impl Tool for EllipseTool {
                 self.current_id = Some(id);
 
                 let mut node = SceneNode::new(id, NodeKind::Ellipse { rx: 0.0, ry: 0.0 });
-                node.constraints.push(Constraint::Absolute { x: *x, y: *y });
+                node.constraints.push(Constraint::Position { x: *x, y: *y });
                 vec![GraphMutation::AddNode {
                     parent_id: NodeId::intern("root"),
                     node: Box::new(node),
@@ -746,7 +746,7 @@ impl Tool for TextTool {
                         content: "Text".to_string(),
                     },
                 );
-                node.constraints.push(Constraint::Absolute { x: *x, y: *y });
+                node.constraints.push(Constraint::Position { x: *x, y: *y });
                 vec![GraphMutation::AddNode {
                     parent_id: NodeId::intern("root"),
                     node: Box::new(node),
@@ -1107,11 +1107,11 @@ mod tests {
                     }
                     _ => panic!("expected Text node"),
                 }
-                // Should have an Absolute constraint for positioning
+                // Should have a Position constraint for positioning
                 assert!(
                     node.constraints
                         .iter()
-                        .any(|c| matches!(c, Constraint::Absolute { .. }))
+                        .any(|c| matches!(c, Constraint::Position { .. }))
                 );
             }
             _ => panic!("expected AddNode"),

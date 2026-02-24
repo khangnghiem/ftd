@@ -180,6 +180,16 @@ Easing: `linear`, `ease_in`, `ease_out`, `ease_in_out`, `spring`
 @node_id -> fill_parent: 16
 ```
 
+Nodes can also use inline `x:` / `y:` for parent-relative positioning (e.g. after drag):
+
+```
+rect @box {
+  x: 100
+  y: 200
+  w: 50 h: 50
+}
+```
+
 ### Annotations (spec)
 
 Structured metadata attached to nodes and edges via `spec` blocks. Unlike `#` comments (which are discarded), annotations are parsed, stored on the scene graph, and survive round-trips.
@@ -187,25 +197,29 @@ Structured metadata attached to nodes and edges via `spec` blocks. Unlike `#` co
 **Inline form** (single description):
 
 ```
+
 rect @login_btn {
-  spec "Primary CTA — triggers login API call"
-  w: 280 h: 48
+spec "Primary CTA — triggers login API call"
+w: 280 h: 48
 }
+
 ```
 
 **Block form** (multiple annotations):
 
 ```
+
 rect @login_btn {
-  spec {
-    "Primary CTA — triggers login API call"
-    accept: "disabled state when fields empty"
-    status: in_progress
-    priority: high
-    tag: auth, mvp
-  }
-  w: 280 h: 48
+spec {
+"Primary CTA — triggers login API call"
+accept: "disabled state when fields empty"
+status: in_progress
+priority: high
+tag: auth, mvp
 }
+w: 280 h: 48
+}
+
 ```
 
 | Syntax            | Kind        | Purpose                        |
@@ -222,7 +236,7 @@ rect @login_btn {
 > Research shows semantic naming has 2× more impact on AI accuracy than any other factor.
 
 1. **Semantic IDs** — `@login_form` not `@rect_17`; the #1 factor for AI comprehension
-2. **Constraints over coords** — `center_in: canvas` tells agents _why_, not just _where_; LLMs reason better with relationships than absolute positions
+2. **Constraints over coords** — `center_in: canvas` tells agents _why_, not just _where_; LLMs reason better with relationships than absolute positions. Inline `x:` / `y:` is the acceptable escape hatch for pinned/drag-placed nodes.
 3. **Accurate comments** — `#` lines help, but wrong comments actively hurt AI; keep them correct or remove them
 4. **Spec blocks** — `spec { status: in_progress }` gives AI structured metadata it can reliably parse, unlike freeform comments
 5. **Style reuse** — `use:` references enforce consistency; consistent codebases produce better AI-generated code
@@ -231,26 +245,28 @@ rect @login_btn {
 ## Example: Complete Card
 
 ```
+
 style body { font: "Inter" 14; fill: #333 }
 style accent { fill: #6C5CE7 }
 
 group @card {
-  layout: column gap=12 pad=20
-  bg: #FFF corner=8 shadow=(0,2,8,#0001)
+layout: column gap=12 pad=20
+bg: #FFF corner=8 shadow=(0,2,8,#0001)
 
-  text @heading "Dashboard" { font: "Inter" 600 20; fill: #111 }
-  text @desc "Overview of metrics" { use: body }
+text @heading "Dashboard" { font: "Inter" 600 20; fill: #111 }
+text @desc "Overview of metrics" { use: body }
 
-  rect @cta {
-    w: 180 h: 40
-    corner: 8
-    use: accent
-    text "View Details" { font: "Inter" 500 14; fill: #FFF }
-    anim :hover { scale: 1.03; ease: spring 200ms }
-  }
+rect @cta {
+w: 180 h: 40
+corner: 8
+use: accent
+text "View Details" { font: "Inter" 500 14; fill: #FFF }
+anim :hover { scale: 1.03; ease: spring 200ms }
+}
 }
 
 @card -> center_in: canvas
+
 ```
 
 ## Crate Locations
@@ -259,3 +275,7 @@ group @card {
 - Emitter: `crates/fd-core/src/emitter.rs`
 - Data model: `crates/fd-core/src/model.rs`
 - Layout solver: `crates/fd-core/src/layout.rs`
+
+```
+
+```

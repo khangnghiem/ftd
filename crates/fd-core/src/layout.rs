@@ -189,7 +189,7 @@ fn resolve_children(
             let mut rel_x = 0.0;
             let mut rel_y = 0.0;
             for c in &child_node.constraints {
-                if let Constraint::Absolute { x, y } = c {
+                if let Constraint::Position { x, y } = c {
                     rel_x = *x;
                     rel_y = *y;
                 }
@@ -310,7 +310,7 @@ fn apply_constraint(
                 );
             }
         }
-        Constraint::Absolute { x, y } => {
+        Constraint::Position { x, y } => {
             let (px, py) = match graph.parent(node_idx).and_then(|p| bounds.get(&p)) {
                 Some(p_bounds) => (p_bounds.x, p_bounds.y),
                 None => (0.0, 0.0),

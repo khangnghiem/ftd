@@ -87,8 +87,8 @@ impl SyncEngine {
                         bounds.x += dx;
                         bounds.y += dy;
                     }
-                    // Pin moved node to Absolute constraint with parent-relative coords.
-                    // Absolute { x, y } is interpreted by resolve_layout as
+                    // Pin moved node to Position constraint with parent-relative coords.
+                    // Position { x, y } is interpreted by resolve_layout as
                     // (parent.x + x, parent.y + y), so we must subtract parent offset.
                     let abs_pos = self
                         .bounds
@@ -109,14 +109,14 @@ impl SyncEngine {
                         node.constraints.retain(|c| {
                             !matches!(
                                 c,
-                                Constraint::Absolute { .. }
+                                Constraint::Position { .. }
                                     | Constraint::CenterIn(_)
                                     | Constraint::Offset { .. }
                                     | Constraint::FillParent { .. }
                             )
                         });
                         node.constraints
-                            .push(Constraint::Absolute { x: rel_x, y: rel_y });
+                            .push(Constraint::Position { x: rel_x, y: rel_y });
                     }
                 }
             }
@@ -150,7 +150,7 @@ impl SyncEngine {
                 let parent_idx = self.graph.index_of(parent_id).unwrap_or(self.graph.root);
                 // Extract positioning info before moving node into graph
                 let abs_pos = node.constraints.iter().find_map(|c| match c {
-                    Constraint::Absolute { x, y } => Some((*x, *y)),
+                    Constraint::Position { x, y } => Some((*x, *y)),
                     _ => None,
                 });
                 let (w, h) = match &node.kind {
@@ -265,7 +265,7 @@ impl SyncEngine {
                         layout: LayoutMode::Free,
                     },
                 );
-                group_node.constraints.push(Constraint::Absolute {
+                group_node.constraints.push(Constraint::Position {
                     x: rel_group_x,
                     y: rel_group_y,
                 });
@@ -298,10 +298,10 @@ impl SyncEngine {
                     if let Some(idx) = self.graph.index_of(id) {
                         self.graph.reparent_node(idx, group_idx);
 
-                        // Shift Absolute constraints to be relative to the group
+                        // Shift Position constraints to be relative to the group
                         if let Some(node) = self.graph.get_by_id_mut(id) {
                             for c in &mut node.constraints {
-                                if let Constraint::Absolute { x, y } = c {
+                                if let Constraint::Position { x, y } = c {
                                     *x -= rel_group_x;
                                     *y -= rel_group_y;
                                 }
@@ -319,7 +319,7 @@ impl SyncEngine {
                             .constraints
                             .iter()
                             .find_map(|c| match c {
-                                Constraint::Absolute { x, y } => Some((*x, *y)),
+                                Constraint::Position { x, y } => Some((*x, *y)),
                                 _ => None,
                             })
                             .unwrap_or((0.0, 0.0))
@@ -333,7 +333,7 @@ impl SyncEngine {
                         let child_id = self.graph.graph[child_idx].id;
                         if let Some(child_node) = self.graph.get_by_id_mut(child_id) {
                             for c in &mut child_node.constraints {
-                                if let Constraint::Absolute { x, y } = c {
+                                if let Constraint::Position { x, y } = c {
                                     *x += group_rel_x;
                                     *y += group_rel_y;
                                 }
@@ -657,7 +657,7 @@ rect @card {
     fn sync_move_multi_frame_no_jitter() {
         // Simulates a drag gesture across 3 frames.
         // After each MoveNode, bounds should accumulate consistently
-        // and the Absolute constraint should match the relative position.
+        // and the Position constraint should match the relative position.
         let input = r#"
 rect @box {
   w: 100
@@ -775,7 +775,7 @@ rect @box {
             dy: 30.0,
         });
 
-        // After move, CenterIn should be stripped and only Absolute remains
+        // After move, CenterIn should be stripped and only Position remains
         let node = engine.graph.get_by_id(box_id).unwrap();
         assert!(
             !node
@@ -787,11 +787,11 @@ rect @box {
         assert_eq!(
             node.constraints.len(),
             1,
-            "should have exactly one constraint (Absolute)"
+            "should have exactly one constraint (Position)"
         );
         assert!(
-            matches!(node.constraints[0], Constraint::Absolute { .. }),
-            "single constraint should be Absolute"
+            matches!(node.constraints[0], Constraint::Position { .. }),
+            "single constraint should be Position"
         );
     }
 

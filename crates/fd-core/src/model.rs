@@ -3,7 +3,8 @@
 //! The document is a DAG (Directed Acyclic Graph) where nodes represent
 //! visual elements (shapes, text, groups) and edges represent parent→child
 //! containment. Styles and animations are attached to nodes. Layout is
-//! constraint-based — no absolute coordinates are stored in the format.
+//! constraint-based — relationships are preferred over raw positions.
+//! `Position { x, y }` is the escape hatch for drag-placed or pinned nodes.
 
 use crate::id::NodeId;
 use petgraph::graph::{DiGraph, NodeIndex};
@@ -309,8 +310,9 @@ pub enum Constraint {
     Offset { from: NodeId, dx: f32, dy: f32 },
     /// Fill the parent with optional padding.
     FillParent { pad: f32 },
-    /// Explicit position (only used after layout resolution or for pinning).
-    Absolute { x: f32, y: f32 },
+    /// Parent-relative position (used for drag-placed or pinned nodes).
+    /// Resolved as `parent.x + x`, `parent.y + y` by the layout solver.
+    Position { x: f32, y: f32 },
 }
 
 // ─── Edges (connections between nodes) ───────────────────────────────────

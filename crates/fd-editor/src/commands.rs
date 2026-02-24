@@ -321,7 +321,8 @@ rect @b2 {
         let text = engine.current_text();
         assert!(!text.contains("group @my_group"));
         assert!(text.contains("rect @b1"));
-        assert!(text.contains("-> absolute: 10, 10"));
+        assert!(text.contains("x: 10"), "should contain inline x position");
+        assert!(text.contains("y: 10"), "should contain inline y position");
     }
 
     #[test]

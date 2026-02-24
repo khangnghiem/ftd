@@ -5,6 +5,13 @@
 
 ## Completed Requirements
 
+### v0.8.11
+
+- **REFACTOR**: Renamed `Constraint::Absolute` → `Constraint::Position` — clarifies parent-relative semantics (was misleadingly named "absolute")
+- **UX**: Emitter now outputs `x:` / `y:` inline instead of top-level `@id -> absolute:` arrows — saves ~4 tokens per positioned node, symmetric round-trip with parser
+- **COMPAT**: Parser accepts both `absolute` and `position` keywords in constraint arrows for backwards compatibility
+- **Tests**: New `roundtrip_inline_position` test verifying symmetric `x:/y:` parse↔emit
+
 ### v0.8.10
 
 - **UX**: Zoom-to-fit now caps at 200% — small designs (single icon, one button) no longer blow up to 1000% on initial load or ⌘0; large designs still zoom out to fit as before
@@ -125,7 +132,7 @@
 
 ### v0.7.3
 
-- **R1.1 fix**: Fixed node/edge drag jitter and reverse-direction movement — `MoveNode` now correctly converts absolute screen coords to parent-relative before storing in `Constraint::Absolute`, and strips conflicting positioning constraints (`CenterIn`, `Offset`, `FillParent`). Skips full layout re-resolve for move-only batches to prevent constraint values from overwriting in-place bounds updates.
+- **R1.1 fix**: Fixed node/edge drag jitter and reverse-direction movement — `MoveNode` now correctly converts absolute screen coords to parent-relative before storing in `Constraint::Position`, and strips conflicting positioning constraints (`CenterIn`, `Offset`, `FillParent`). Skips full layout re-resolve for move-only batches to prevent constraint values from overwriting in-place bounds updates.
 
 ### v0.7.0 (**BREAKING**)
 
