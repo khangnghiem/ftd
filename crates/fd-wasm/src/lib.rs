@@ -6,7 +6,9 @@ mod render2d;
 
 use fd_core::id::NodeId;
 use fd_core::layout::Viewport;
-use fd_core::model::{Annotation, Color, Constraint, NodeKind, Paint, SceneNode, TextAlign, TextVAlign};
+use fd_core::model::{
+    Annotation, Color, Constraint, NodeKind, Paint, SceneNode, TextAlign, TextVAlign,
+};
 use fd_editor::commands::CommandStack;
 use fd_editor::input::{InputEvent, Modifiers};
 use fd_editor::shortcuts::{ShortcutAction, ShortcutMap};
@@ -885,7 +887,10 @@ impl FdCanvas {
                 TextAlign::Center => "center",
                 TextAlign::Right => "right",
             };
-            props.insert("textAlign".into(), serde_json::Value::String(ta_str.to_string()));
+            props.insert(
+                "textAlign".into(),
+                serde_json::Value::String(ta_str.to_string()),
+            );
         }
         if let Some(ref tv) = style.text_valign {
             let tv_str = match tv {
@@ -893,7 +898,10 @@ impl FdCanvas {
                 TextVAlign::Middle => "middle",
                 TextVAlign::Bottom => "bottom",
             };
-            props.insert("textVAlign".into(), serde_json::Value::String(tv_str.to_string()));
+            props.insert(
+                "textVAlign".into(),
+                serde_json::Value::String(tv_str.to_string()),
+            );
         }
 
         serde_json::Value::Object(props).to_string()

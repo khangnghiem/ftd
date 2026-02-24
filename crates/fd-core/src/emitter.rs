@@ -87,6 +87,21 @@ fn emit_style_block(out: &mut String, name: &NodeId, style: &Style, depth: usize
         )
         .unwrap();
     }
+    // Text alignment
+    if style.text_align.is_some() || style.text_valign.is_some() {
+        let h = match style.text_align {
+            Some(TextAlign::Left) => "left",
+            Some(TextAlign::Right) => "right",
+            _ => "center",
+        };
+        let v = match style.text_valign {
+            Some(TextVAlign::Top) => "top",
+            Some(TextVAlign::Bottom) => "bottom",
+            _ => "middle",
+        };
+        indent(out, depth + 1);
+        writeln!(out, "align: {h} {v}").unwrap();
+    }
 
     indent(out, depth);
     out.push_str("}\n");

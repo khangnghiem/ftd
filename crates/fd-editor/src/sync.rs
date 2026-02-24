@@ -849,4 +849,54 @@ rect @box {
         assert_eq!(node2.animations[0].trigger, AnimTrigger::Hover);
         assert_eq!(node2.animations[0].properties.scale, Some(1.1));
     }
+
+    #[test]
+    fn sync_set_style_alignment() {
+        use fd_core::model::{TextAlign, TextVAlign};
+
+        let input = r#"
+text @heading "Hello" {
+  fill: #FFFFFF
+  font: "Inter" 600 24
+}
+"#;
+        let viewport = Viewport {
+            width: 800.0,
+            height: 600.0,
+        };
+        let mut engine = SyncEngine::from_text(input, viewport).unwrap();
+
+        // Verify no alignment initially
+        let node = engine.graph.get_by_id(NodeId::intern("heading")).unwrap();
+        assert!(node.style.text_align.is_none());
+        assert!(node.style.text_valign.is_none());
+
+        // Apply SetStyle mutation with alignment
+        let mut style = engine.graph.resolve_style(node, &[]);
+        style.text_align = Some(TextAlign::Right);
+        style.text_valign = Some(TextVAlign::Bottom);
+        engine.apply_mutation(GraphMutation::SetStyle {
+            id: NodeId::intern("heading"),
+            style,
+        });
+        engine.flush_to_text();
+
+        // Verify graph updated
+        let node = engine.graph.get_by_id(NodeId::intern("heading")).unwrap();
+        assert_eq!(node.style.text_align, Some(TextAlign::Right));
+        assert_eq!(node.style.text_valign, Some(TextVAlign::Bottom));
+
+        // Verify text output contains align property
+        assert!(
+            engine.text.contains("align: right bottom"),
+            "emitted text should contain 'align: right bottom', got:\n{}",
+            engine.text
+        );
+
+        // Verify round-trip
+        let engine2 = SyncEngine::from_text(&engine.text, viewport).unwrap();
+        let node2 = engine2.graph.get_by_id(NodeId::intern("heading")).unwrap();
+        assert_eq!(node2.style.text_align, Some(TextAlign::Right));
+        assert_eq!(node2.style.text_valign, Some(TextVAlign::Bottom));
+    }
 }

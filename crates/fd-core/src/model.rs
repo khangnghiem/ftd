@@ -781,4 +781,33 @@ mod tests {
         assert_eq!(f.weight, 700);
         assert_eq!(f.size, 24.0);
     }
+
+    #[test]
+    fn style_merging_align() {
+        let mut sg = SceneGraph::new();
+        sg.define_style(
+            NodeId::intern("centered"),
+            Style {
+                text_align: Some(TextAlign::Center),
+                text_valign: Some(TextVAlign::Middle),
+                ..Default::default()
+            },
+        );
+
+        // Node with use: centered + inline override of text_align to Right
+        let mut node = SceneNode::new(
+            NodeId::intern("overridden"),
+            NodeKind::Text {
+                content: "hello".into(),
+            },
+        );
+        node.use_styles.push(NodeId::intern("centered"));
+        node.style.text_align = Some(TextAlign::Right);
+
+        let resolved = sg.resolve_style(&node, &[]);
+        // Horizontal should be overridden to Right
+        assert_eq!(resolved.text_align, Some(TextAlign::Right));
+        // Vertical should come from base style (Middle)
+        assert_eq!(resolved.text_valign, Some(TextVAlign::Middle));
+    }
 }

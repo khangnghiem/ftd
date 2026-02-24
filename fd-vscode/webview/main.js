@@ -2781,7 +2781,8 @@ function zoomToFit() {
       (usableW - padding * 2) / Math.max(sceneW, 1),
       (ch - padding * 2) / Math.max(sceneH, 1)
     );
-    zoomLevel = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, fitZoom));
+    const FIT_ZOOM_MAX = 2.0; // Cap fit-zoom at 200% so small designs don't blow up
+    zoomLevel = Math.max(ZOOM_MIN, Math.min(FIT_ZOOM_MAX, fitZoom));
     // Center the scene in the usable area (right of layers panel)
     panX = panelW + (usableW - sceneW * zoomLevel) / 2 - minX * zoomLevel;
     panY = (ch - sceneH * zoomLevel) / 2 - minY * zoomLevel;
