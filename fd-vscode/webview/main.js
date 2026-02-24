@@ -68,6 +68,61 @@ let pointerDownSceneX = 0;
 let pointerDownSceneY = 0;
 let currentToolAtPointerDown = "select";
 
+// ─── Animation Drop State ────────────────────────────────────────────────
+/** Node ID of the drag-over drop target (for animation assignment) */
+let animDropTargetId = null;
+/** Cached bounds of the drop target node */
+let animDropTargetBounds = null;
+/** Whether we are dragging a selected node (for node-on-node drop detection) */
+let isDraggingNode = false;
+/** The ID of the node being dragged */
+let draggedNodeId = null;
+
+// ─── Tween Engine ────────────────────────────────────────────────────────
+/** Active tweens: { nodeId, prop, from, to, startTime, duration, easeFn } */
+const activeTweens = [];
+
+const EASE_FNS = {
+  linear: (t) => t,
+  ease_out: (t) => 1 - Math.pow(1 - t, 3),
+  ease_in: (t) => t * t * t,
+  ease_in_out: (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
+  spring: (t) => {
+    const c4 = (2 * Math.PI) / 3;
+    return t === 0 ? 0 : t === 1 ? 1
+      : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
+  },
+};
+
+function startTween(nodeId, prop, from, to, duration, easeName) {
+  // Remove any existing tween on same node+prop
+  for (let i = activeTweens.length - 1; i >= 0; i--) {
+    if (activeTweens[i].nodeId === nodeId && activeTweens[i].prop === prop) {
+      activeTweens.splice(i, 1);
+    }
+  }
+  activeTweens.push({
+    nodeId, prop, from, to,
+    startTime: performance.now(),
+    duration: duration || 300,
+    easeFn: EASE_FNS[easeName] || EASE_FNS.spring,
+  });
+}
+
+/** Evaluate all active tweens, returning a map of { nodeId → { prop → value } } */
+function evalTweens(now) {
+  const overrides = {};
+  for (let i = activeTweens.length - 1; i >= 0; i--) {
+    const tw = activeTweens[i];
+    let t = (now - tw.startTime) / tw.duration;
+    if (t >= 1) { t = 1; activeTweens.splice(i, 1); }
+    const v = tw.from + (tw.to - tw.from) * tw.easeFn(t);
+    if (!overrides[tw.nodeId]) overrides[tw.nodeId] = {};
+    overrides[tw.nodeId][tw.prop] = v;
+  }
+  return overrides;
+}
+
 // ─── Initialization ──────────────────────────────────────────────────────
 
 async function main() {
@@ -127,6 +182,7 @@ async function main() {
     setupPropertiesPanel();
     setupInlineEditor();
     setupDragAndDrop();
+    setupAnimPicker();
     setupHelpButton();
     setupApplePencilPro();
     setupThemeToggle();
@@ -163,6 +219,31 @@ function render() {
   // Draw grid below shapes
   if (gridEnabled) drawGrid();
   fdCanvas.render(ctx, performance.now());
+
+  // ── Draw animation drop-zone glow ring ──
+  if (animDropTargetId && animDropTargetBounds) {
+    const b = animDropTargetBounds;
+    const pad = 4;
+    ctx.save();
+    ctx.strokeStyle = "#6C5CE7";
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = "#6C5CE7";
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.roundRect(b.x - pad, b.y - pad, b.width + pad * 2, b.height + pad * 2, 8);
+    ctx.stroke();
+    // Double-draw for extra glow intensity
+    ctx.shadowBlur = 24;
+    ctx.globalAlpha = 0.4;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── Tween-driven re-render loop ──
+  if (activeTweens.length > 0) {
+    requestAnimationFrame(() => render());
+  }
+
   ctx.restore();
   // Reposition spec badges when canvas re-renders (node moved, panned, etc.)
   if (viewMode === "spec") refreshSpecView();
@@ -246,6 +327,15 @@ function setupPointerEvents() {
     pointerDownSceneX = x;
     pointerDownSceneY = y;
     currentToolAtPointerDown = fdCanvas.get_tool_name();
+
+    // Track node drag for animation drop detection
+    if (currentToolAtPointerDown === "select") {
+      const selId = fdCanvas.get_selected_id();
+      if (selId) {
+        isDraggingNode = true;
+        draggedNodeId = selId;
+      }
+    }
   });
 
   canvas.addEventListener("pointermove", (e) => {
@@ -294,6 +384,24 @@ function setupPointerEvents() {
             }
           } catch (_) { /* skip */ }
         }
+      }
+    }
+
+    // ── Animation drop-zone detection ──
+    if (isDraggingNode && draggedNodeId && changed) {
+      // Hit-test for a node under pointer that isn't the dragged node
+      const selIds = JSON.parse(fdCanvas.get_selected_ids());
+      const hitId = fdCanvas.hit_test_at(x, y);
+      if (hitId && !selIds.includes(hitId)) {
+        if (animDropTargetId !== hitId) {
+          animDropTargetId = hitId;
+          try {
+            animDropTargetBounds = JSON.parse(fdCanvas.get_node_bounds(hitId));
+          } catch (_) { animDropTargetBounds = null; }
+        }
+      } else {
+        animDropTargetId = null;
+        animDropTargetBounds = null;
       }
     }
   });
@@ -345,6 +453,19 @@ function setupPointerEvents() {
     // Hide dimension tooltip
     pointerIsDown = false;
     hideDimensionTooltip();
+
+    // ── Animation drop: open picker if dropped on a target ──
+    if (isDraggingNode && animDropTargetId && draggedNodeId !== animDropTargetId) {
+      const targetId = animDropTargetId;
+      animDropTargetId = null;
+      animDropTargetBounds = null;
+      render(); // Clear glow ring
+      openAnimPicker(targetId, e.clientX, e.clientY);
+    }
+    isDraggingNode = false;
+    draggedNodeId = null;
+    animDropTargetId = null;
+    animDropTargetBounds = null;
   });
 
   // ── Wheel / Trackpad → Pan or Zoom ──
@@ -1507,6 +1628,180 @@ function setupDragAndDrop() {
       updatePropertiesPanel();
     }
   });
+}
+
+// ─── Animation Picker ────────────────────────────────────────────────────
+
+const ANIM_PRESETS = [
+  {
+    group: "Hover", trigger: "hover", items: [
+      { label: "Scale Up", icon: "↗", props: { scale: 1.1 }, ease: "spring", duration: 300 },
+      { label: "Fade", icon: "◐", props: { opacity: 0.6 }, ease: "ease_in_out", duration: 200 },
+      { label: "Color Shift", icon: "◆", props: { fill: "#D63031" }, ease: "ease_out", duration: 250 },
+      { label: "Rotate", icon: "↻", props: { rotate: 5 }, ease: "spring", duration: 400 },
+      { label: "Lift & Glow", icon: "✦", props: { scale: 1.06 }, ease: "spring", duration: 400 },
+    ]
+  },
+  {
+    group: "Press", trigger: "press", items: [
+      { label: "Squish", icon: "↙", props: { scale: 0.88 }, ease: "spring", duration: 150 },
+      { label: "Dim", icon: "◑", props: { opacity: 0.5 }, ease: "ease_out", duration: 100 },
+      { label: "Flash", icon: "⚡", props: { fill: "#FFF" }, ease: "linear", duration: 80 },
+    ]
+  },
+  {
+    group: "Enter", trigger: "enter", items: [
+      { label: "Fade In", icon: "▶", props: { opacity: 1.0 }, ease: "ease_out", duration: 500 },
+      { label: "Pop In", icon: "◉", props: { scale: 1.0, opacity: 1.0 }, ease: "spring", duration: 600 },
+      { label: "Slide Up", icon: "⬆", props: { opacity: 1.0 }, ease: "ease_in_out", duration: 400 },
+    ]
+  },
+];
+
+let animPickerTargetId = null;
+
+function setupAnimPicker() {
+  const picker = document.getElementById("anim-picker");
+  if (!picker) return;
+
+  // Close button
+  document.getElementById("anim-picker-close")?.addEventListener("click", closeAnimPicker);
+
+  // Close on Escape
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && picker.classList.contains("visible")) {
+      closeAnimPicker();
+    }
+  });
+
+  // Close on click outside
+  document.addEventListener("pointerdown", (e) => {
+    if (picker.classList.contains("visible") && !picker.contains(e.target)) {
+      closeAnimPicker();
+    }
+  });
+}
+
+function closeAnimPicker() {
+  const picker = document.getElementById("anim-picker");
+  if (picker) picker.classList.remove("visible");
+  animPickerTargetId = null;
+}
+
+function openAnimPicker(targetNodeId, clientX, clientY) {
+  if (!fdCanvas) return;
+  const picker = document.getElementById("anim-picker");
+  const body = document.getElementById("anim-picker-body");
+  if (!picker || !body) return;
+
+  animPickerTargetId = targetNodeId;
+  body.innerHTML = "";
+
+  // Show existing animations on this node
+  try {
+    const existing = JSON.parse(fdCanvas.get_node_animations_json(targetNodeId));
+    if (existing.length > 0) {
+      const existLabel = document.createElement("div");
+      existLabel.className = "picker-group-label";
+      existLabel.textContent = "Current Animations";
+      body.appendChild(existLabel);
+
+      for (const anim of existing) {
+        const row = document.createElement("div");
+        row.className = "picker-existing";
+        const trigger = anim.trigger?.Custom || anim.trigger || "?";
+        const triggerName = typeof trigger === "string" ? trigger : Object.keys(trigger)[0]?.toLowerCase() || "?";
+        row.innerHTML = `<span>:${triggerName}</span> <span style="flex:1;opacity:0.6">${anim.duration_ms || 300}ms</span>`;
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "pe-remove";
+        removeBtn.textContent = "✕";
+        removeBtn.addEventListener("click", () => {
+          fdCanvas.remove_node_animations(targetNodeId);
+          render();
+          syncTextToExtension();
+          openAnimPicker(targetNodeId, clientX, clientY); // Refresh
+        });
+        row.appendChild(removeBtn);
+        body.appendChild(row);
+      }
+
+      const sep = document.createElement("div");
+      sep.className = "picker-sep";
+      body.appendChild(sep);
+    }
+  } catch (_) { /* no existing animations */ }
+
+  // Build preset groups
+  for (const group of ANIM_PRESETS) {
+    const groupLabel = document.createElement("div");
+    groupLabel.className = "picker-group-label";
+    groupLabel.textContent = group.group;
+    body.appendChild(groupLabel);
+
+    for (const preset of group.items) {
+      const row = document.createElement("div");
+      row.className = "picker-item";
+      row.innerHTML = `<span class="pi-icon">${preset.icon}</span><span class="pi-label">${preset.label}</span><span class="pi-meta">${preset.duration}ms</span>`;
+
+      // Live preview on hover
+      row.addEventListener("mouseenter", () => {
+        if (preset.props.scale != null) {
+          startTween(targetNodeId, "scale", 1.0, preset.props.scale, preset.duration, preset.ease);
+        }
+        if (preset.props.opacity != null) {
+          startTween(targetNodeId, "opacity", 1.0, preset.props.opacity, preset.duration, preset.ease);
+        }
+        render();
+      });
+
+      row.addEventListener("mouseleave", () => {
+        // Reset tweens back
+        if (preset.props.scale != null) {
+          startTween(targetNodeId, "scale", preset.props.scale, 1.0, 200, "ease_out");
+        }
+        if (preset.props.opacity != null) {
+          startTween(targetNodeId, "opacity", preset.props.opacity, 1.0, 200, "ease_out");
+        }
+        render();
+      });
+
+      // Commit on click
+      row.addEventListener("click", () => {
+        const propsJson = JSON.stringify({
+          ...preset.props,
+          duration: preset.duration,
+          ease: preset.ease,
+        });
+        const changed = fdCanvas.add_animation_to_node(
+          targetNodeId,
+          group.trigger,
+          propsJson
+        );
+        if (changed) {
+          render();
+          syncTextToExtension();
+          updatePropertiesPanel();
+        }
+        closeAnimPicker();
+      });
+
+      body.appendChild(row);
+    }
+  }
+
+  // Position the picker near the drop point
+  const container = document.getElementById("canvas-container");
+  const containerRect = container?.getBoundingClientRect() || { left: 0, top: 0, width: 800, height: 600 };
+  let left = clientX - containerRect.left + 12;
+  let top = clientY - containerRect.top + 12;
+  // Keep within bounds
+  const pw = 260, ph = 400;
+  if (left + pw > containerRect.width) left = containerRect.width - pw - 8;
+  if (top + ph > containerRect.height) top = Math.max(8, containerRect.height - ph - 8);
+
+  picker.style.left = `${left}px`;
+  picker.style.top = `${top}px`;
+  picker.classList.add("visible");
 }
 
 // ─── View Mode Toggle ────────────────────────────────────────────────────

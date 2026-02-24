@@ -196,6 +196,17 @@ fn compute_inverse(engine: &SyncEngine, mutation: &GraphMutation) -> GraphMutati
                 new_group_id: *id,
             }
         }
+        GraphMutation::SetAnimations { id, animations: _ } => {
+            let old_animations = engine
+                .graph
+                .get_by_id(*id)
+                .map(|n| n.animations.clone())
+                .unwrap_or_default();
+            GraphMutation::SetAnimations {
+                id: *id,
+                animations: old_animations,
+            }
+        }
     }
 }
 

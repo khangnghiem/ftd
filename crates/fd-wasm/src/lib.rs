@@ -659,6 +659,123 @@ impl FdCanvas {
         String::new()
     }
 
+    // ─── Animation APIs ──────────────────────────────────────────────────
+
+    /// Add an animation to a node by ID.
+    /// `trigger` is "hover", "press", or "enter".
+    /// `props_json` is a JSON object with optional keys: scale, opacity, rotate, fill, duration, ease.
+    /// Returns `true` on success.
+    pub fn add_animation_to_node(
+        &mut self,
+        node_id: &str,
+        trigger: &str,
+        props_json: &str,
+    ) -> bool {
+        use fd_core::model::{AnimKeyframe, AnimProperties, AnimTrigger, Easing};
+
+        let id = NodeId::intern(node_id);
+        let anim_trigger = match trigger {
+            "hover" => AnimTrigger::Hover,
+            "press" => AnimTrigger::Press,
+            "enter" => AnimTrigger::Enter,
+            other => AnimTrigger::Custom(other.to_string()),
+        };
+
+        // Parse the properties JSON
+        let props_val: serde_json::Value = match serde_json::from_str(props_json) {
+            Ok(v) => v,
+            Err(_) => return false,
+        };
+
+        let mut anim_props = AnimProperties::default();
+        if let Some(s) = props_val.get("scale").and_then(|v| v.as_f64()) {
+            anim_props.scale = Some(s as f32);
+        }
+        if let Some(o) = props_val.get("opacity").and_then(|v| v.as_f64()) {
+            anim_props.opacity = Some(o as f32);
+        }
+        if let Some(r) = props_val.get("rotate").and_then(|v| v.as_f64()) {
+            anim_props.rotate = Some(r as f32);
+        }
+        if let Some(color) = props_val
+            .get("fill")
+            .and_then(|v| v.as_str())
+            .and_then(Color::from_hex)
+        {
+            anim_props.fill = Some(Paint::Solid(color));
+        }
+
+        let duration_ms = props_val
+            .get("duration")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(300) as u32;
+
+        let easing = match props_val.get("ease").and_then(|v| v.as_str()) {
+            Some("linear") => Easing::Linear,
+            Some("ease_in") => Easing::EaseIn,
+            Some("ease_out") => Easing::EaseOut,
+            Some("ease_in_out") => Easing::EaseInOut,
+            _ => Easing::Spring,
+        };
+
+        let keyframe = AnimKeyframe {
+            trigger: anim_trigger,
+            duration_ms,
+            easing,
+            properties: anim_props,
+        };
+
+        // Get current animations and append the new one
+        let mut current_anims = self
+            .engine
+            .graph
+            .get_by_id(id)
+            .map(|n| n.animations.clone())
+            .unwrap_or_default();
+
+        // Remove any existing anim with the same trigger (replace, don't duplicate)
+        current_anims.retain(|a| a.trigger != keyframe.trigger);
+        current_anims.push(keyframe);
+
+        let mutations = vec![GraphMutation::SetAnimations {
+            id,
+            animations: current_anims,
+        }];
+        let changed = self.apply_mutations(mutations);
+        if changed {
+            self.engine.flush_to_text();
+        }
+        changed
+    }
+
+    /// Get animations for a node as a JSON array.
+    /// Returns `[]` if node not found or has no animations.
+    pub fn get_node_animations_json(&self, node_id: &str) -> String {
+        let id = NodeId::intern(node_id);
+        let animations = self
+            .engine
+            .graph
+            .get_by_id(id)
+            .map(|n| &n.animations)
+            .cloned()
+            .unwrap_or_default();
+        serde_json::to_string(&animations).unwrap_or_else(|_| "[]".to_string())
+    }
+
+    /// Remove all animations from a node. Returns `true` if changed.
+    pub fn remove_node_animations(&mut self, node_id: &str) -> bool {
+        let id = NodeId::intern(node_id);
+        let mutations = vec![GraphMutation::SetAnimations {
+            id,
+            animations: Default::default(),
+        }];
+        let changed = self.apply_mutations(mutations);
+        if changed {
+            self.engine.flush_to_text();
+        }
+        changed
+    }
+
     // ─── Properties Panel API ────────────────────────────────────────────
 
     /// Get properties of the currently selected node as JSON.
@@ -913,6 +1030,13 @@ impl FdCanvas {
             );
         }
         "{}".to_string()
+    }
+
+    /// Hit-test at scene-space coordinates. Returns the topmost node ID, or empty string.
+    pub fn hit_test_at(&self, x: f32, y: f32) -> String {
+        self.hit_test(x, y)
+            .map(|id| id.as_str().to_string())
+            .unwrap_or_default()
     }
 
     /// Create a node at a specific position (for drag-and-drop).

@@ -2,10 +2,12 @@
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
 export const __wbg_fdcanvas_free: (a: number, b: number) => void;
+export const fdcanvas_add_animation_to_node: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => number;
 export const fdcanvas_create_node_at: (a: number, b: number, c: number, d: number, e: number) => number;
 export const fdcanvas_delete_selected: (a: number) => number;
 export const fdcanvas_duplicate_selected: (a: number) => number;
 export const fdcanvas_get_annotations_json: (a: number, b: number, c: number) => [number, number];
+export const fdcanvas_get_node_animations_json: (a: number, b: number, c: number) => [number, number];
 export const fdcanvas_get_node_bounds: (a: number, b: number, c: number) => [number, number];
 export const fdcanvas_get_selected_id: (a: number) => [number, number];
 export const fdcanvas_get_selected_ids: (a: number) => [number, number];
@@ -19,9 +21,11 @@ export const fdcanvas_handle_pointer_move: (a: number, b: number, c: number, d: 
 export const fdcanvas_handle_pointer_up: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => [number, number];
 export const fdcanvas_handle_stylus_squeeze: (a: number, b: number, c: number, d: number, e: number) => [number, number];
 export const fdcanvas_has_pending_text_change: (a: number) => number;
+export const fdcanvas_hit_test_at: (a: number, b: number, c: number) => [number, number];
 export const fdcanvas_hit_test_badge: (a: number, b: number, c: number) => [number, number];
 export const fdcanvas_new: (a: number, b: number) => number;
 export const fdcanvas_redo: (a: number) => number;
+export const fdcanvas_remove_node_animations: (a: number, b: number, c: number) => number;
 export const fdcanvas_render: (a: number, b: any, c: number) => void;
 export const fdcanvas_resize: (a: number, b: number, c: number) => void;
 export const fdcanvas_select_by_id: (a: number, b: number, c: number) => number;
