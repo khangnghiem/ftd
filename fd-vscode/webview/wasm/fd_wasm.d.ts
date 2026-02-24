@@ -11,6 +11,13 @@ export class FdCanvas {
     free(): void;
     [Symbol.dispose](): void;
     /**
+     * Add an animation to a node by ID.
+     * `trigger` is "hover", "press", or "enter".
+     * `props_json` is a JSON object with optional keys: scale, opacity, rotate, fill, duration, ease.
+     * Returns `true` on success.
+     */
+    add_animation_to_node(node_id: string, trigger: string, props_json: string): boolean;
+    /**
      * Create a node at a specific position (for drag-and-drop).
      * `kind` is \"rect\", \"ellipse\", or \"text\".
      * Returns `true` if the node was created.
@@ -29,6 +36,11 @@ export class FdCanvas {
      * Returns `[]` if node not found or has no annotations.
      */
     get_annotations_json(node_id: string): string;
+    /**
+     * Get animations for a node as a JSON array.
+     * Returns `[]` if node not found or has no animations.
+     */
+    get_node_animations_json(node_id: string): string;
     /**
      * Get the scene-space bounds of a node by its ID.
      * Returns `{}` if the node is not found.
@@ -99,6 +111,10 @@ export class FdCanvas {
      */
     has_pending_text_change(): boolean;
     /**
+     * Hit-test at scene-space coordinates. Returns the topmost node ID, or empty string.
+     */
+    hit_test_at(x: number, y: number): string;
+    /**
      * Hit-test for annotation badge dots.
      * Returns the node ID if the point hits a badge, or empty string.
      */
@@ -111,6 +127,10 @@ export class FdCanvas {
      * Redo the last undone action.
      */
     redo(): boolean;
+    /**
+     * Remove all animations from a node. Returns `true` if changed.
+     */
+    remove_node_animations(node_id: string): boolean;
     /**
      * Render the scene to a Canvas2D context.
      */
@@ -173,10 +193,12 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly __wbg_fdcanvas_free: (a: number, b: number) => void;
+    readonly fdcanvas_add_animation_to_node: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => number;
     readonly fdcanvas_create_node_at: (a: number, b: number, c: number, d: number, e: number) => number;
     readonly fdcanvas_delete_selected: (a: number) => number;
     readonly fdcanvas_duplicate_selected: (a: number) => number;
     readonly fdcanvas_get_annotations_json: (a: number, b: number, c: number) => [number, number];
+    readonly fdcanvas_get_node_animations_json: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_get_node_bounds: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_get_selected_id: (a: number) => [number, number];
     readonly fdcanvas_get_selected_ids: (a: number) => [number, number];
@@ -190,9 +212,11 @@ export interface InitOutput {
     readonly fdcanvas_handle_pointer_up: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => [number, number];
     readonly fdcanvas_handle_stylus_squeeze: (a: number, b: number, c: number, d: number, e: number) => [number, number];
     readonly fdcanvas_has_pending_text_change: (a: number) => number;
+    readonly fdcanvas_hit_test_at: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_hit_test_badge: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_new: (a: number, b: number) => number;
     readonly fdcanvas_redo: (a: number) => number;
+    readonly fdcanvas_remove_node_animations: (a: number, b: number, c: number) => number;
     readonly fdcanvas_render: (a: number, b: any, c: number) => void;
     readonly fdcanvas_resize: (a: number, b: number, c: number) => void;
     readonly fdcanvas_select_by_id: (a: number, b: number, c: number) => number;

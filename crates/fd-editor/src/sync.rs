@@ -197,6 +197,11 @@ impl SyncEngine {
                     node.annotations = annotations;
                 }
             }
+            GraphMutation::SetAnimations { id, animations } => {
+                if let Some(node) = self.graph.get_by_id_mut(id) {
+                    node.animations = animations;
+                }
+            }
             GraphMutation::DuplicateNode { id } => {
                 if let Some(original) = self.graph.get_by_id(id).cloned() {
                     let new_id = NodeId::anonymous();
@@ -467,6 +472,11 @@ pub enum GraphMutation {
     /// Ungroup a node, extracting its children to the parent.
     UngroupNode {
         id: NodeId,
+    },
+    /// Set animations on a node (for animation picker).
+    SetAnimations {
+        id: NodeId,
+        animations: smallvec::SmallVec<[AnimKeyframe; 2]>,
     },
 }
 
@@ -783,5 +793,60 @@ rect @box {
             matches!(node.constraints[0], Constraint::Absolute { .. }),
             "single constraint should be Absolute"
         );
+    }
+
+    #[test]
+    fn sync_set_animations() {
+        use fd_core::model::{AnimKeyframe, AnimProperties, AnimTrigger, Easing};
+
+        let input = r#"
+rect @box {
+  w: 100
+  h: 50
+  fill: #FF0000
+}
+"#;
+        let viewport = Viewport {
+            width: 800.0,
+            height: 600.0,
+        };
+        let mut engine = SyncEngine::from_text(input, viewport).unwrap();
+
+        // Verify no animations initially
+        let node = engine.graph.get_by_id(NodeId::intern("box")).unwrap();
+        assert!(node.animations.is_empty());
+
+        // Apply SetAnimations mutation
+        let mut anims = smallvec::smallvec![];
+        anims.push(AnimKeyframe {
+            trigger: AnimTrigger::Hover,
+            duration_ms: 300,
+            easing: Easing::Spring,
+            properties: AnimProperties {
+                scale: Some(1.1),
+                ..Default::default()
+            },
+        });
+        engine.apply_mutation(GraphMutation::SetAnimations {
+            id: NodeId::intern("box"),
+            animations: anims,
+        });
+        engine.flush_to_text();
+
+        // Verify graph updated
+        let node = engine.graph.get_by_id(NodeId::intern("box")).unwrap();
+        assert_eq!(node.animations.len(), 1);
+        assert_eq!(node.animations[0].trigger, AnimTrigger::Hover);
+
+        // Verify text contains anim block
+        assert!(engine.text.contains("anim :hover"));
+        assert!(engine.text.contains("scale:"));
+
+        // Verify round-trip: re-parse from text
+        let engine2 = SyncEngine::from_text(&engine.text, viewport).unwrap();
+        let node2 = engine2.graph.get_by_id(NodeId::intern("box")).unwrap();
+        assert_eq!(node2.animations.len(), 1);
+        assert_eq!(node2.animations[0].trigger, AnimTrigger::Hover);
+        assert_eq!(node2.animations[0].properties.scale, Some(1.1));
     }
 }

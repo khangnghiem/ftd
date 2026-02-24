@@ -5,6 +5,15 @@
 
 ## Completed Requirements
 
+### v0.8.7
+
+- **NEW**: Drag-and-drop animation picker — drag a node onto another node to assign animations via a glassmorphism popover with 11 presets across 3 trigger groups (Hover, Press, Enter)
+- **NEW**: Magnetic glow ring — purple pulsing border appears on the target node during drag-over
+- **NEW**: Live animation preview — hovering picker presets plays a tween preview on the target node in real-time
+- **NEW**: WASM API: `add_animation_to_node`, `get_node_animations_json`, `remove_node_animations`, `hit_test_at`
+- **NEW**: `SetAnimations` mutation with full undo/redo support
+- **INFRA**: WASM rebuild with animation APIs
+
 ### v0.8.6
 
 - **UX fix**: Inline text editor now uses the node's fill color as background with auto-contrasting text color (was hardcoded white overlay that hid the node)

@@ -18,6 +18,26 @@ export class FdCanvas {
         wasm.__wbg_fdcanvas_free(ptr, 0);
     }
     /**
+     * Add an animation to a node by ID.
+     * `trigger` is "hover", "press", or "enter".
+     * `props_json` is a JSON object with optional keys: scale, opacity, rotate, fill, duration, ease.
+     * Returns `true` on success.
+     * @param {string} node_id
+     * @param {string} trigger
+     * @param {string} props_json
+     * @returns {boolean}
+     */
+    add_animation_to_node(node_id, trigger, props_json) {
+        const ptr0 = passStringToWasm0(node_id, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(trigger, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len1 = WASM_VECTOR_LEN;
+        const ptr2 = passStringToWasm0(props_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len2 = WASM_VECTOR_LEN;
+        const ret = wasm.fdcanvas_add_animation_to_node(this.__wbg_ptr, ptr0, len0, ptr1, len1, ptr2, len2);
+        return ret !== 0;
+    }
+    /**
      * Create a node at a specific position (for drag-and-drop).
      * `kind` is \"rect\", \"ellipse\", or \"text\".
      * Returns `true` if the node was created.
@@ -61,6 +81,26 @@ export class FdCanvas {
             const ptr0 = passStringToWasm0(node_id, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
             const len0 = WASM_VECTOR_LEN;
             const ret = wasm.fdcanvas_get_annotations_json(this.__wbg_ptr, ptr0, len0);
+            deferred2_0 = ret[0];
+            deferred2_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+        }
+    }
+    /**
+     * Get animations for a node as a JSON array.
+     * Returns `[]` if node not found or has no animations.
+     * @param {string} node_id
+     * @returns {string}
+     */
+    get_node_animations_json(node_id) {
+        let deferred2_0;
+        let deferred2_1;
+        try {
+            const ptr0 = passStringToWasm0(node_id, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+            const len0 = WASM_VECTOR_LEN;
+            const ret = wasm.fdcanvas_get_node_animations_json(this.__wbg_ptr, ptr0, len0);
             deferred2_0 = ret[0];
             deferred2_1 = ret[1];
             return getStringFromWasm0(ret[0], ret[1]);
@@ -296,6 +336,24 @@ export class FdCanvas {
         return ret !== 0;
     }
     /**
+     * Hit-test at scene-space coordinates. Returns the topmost node ID, or empty string.
+     * @param {number} x
+     * @param {number} y
+     * @returns {string}
+     */
+    hit_test_at(x, y) {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.fdcanvas_hit_test_at(this.__wbg_ptr, x, y);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
      * Hit-test for annotation badge dots.
      * Returns the node ID if the point hits a badge, or empty string.
      * @param {number} x
@@ -331,6 +389,17 @@ export class FdCanvas {
      */
     redo() {
         const ret = wasm.fdcanvas_redo(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * Remove all animations from a node. Returns `true` if changed.
+     * @param {string} node_id
+     * @returns {boolean}
+     */
+    remove_node_animations(node_id) {
+        const ptr0 = passStringToWasm0(node_id, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.fdcanvas_remove_node_animations(this.__wbg_ptr, ptr0, len0);
         return ret !== 0;
     }
     /**

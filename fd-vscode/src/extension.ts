@@ -1549,6 +1549,110 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       margin: 4px 8px;
     }
 
+    /* ── Animation Picker (glassmorphism popover) ── */
+    #anim-picker {
+      display: none;
+      position: absolute;
+      z-index: 250;
+      width: 260px;
+      background: var(--fd-surface);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 0.5px solid var(--fd-border);
+      border-radius: 12px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.16), 0 4px 14px rgba(0,0,0,0.08);
+      font-size: 13px;
+      color: var(--fd-text);
+      overflow: hidden;
+    }
+    .dark-theme #anim-picker {
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 4px 14px rgba(0,0,0,0.3);
+    }
+    #anim-picker.visible { display: block; }
+    .picker-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 14px 8px;
+      font-weight: 600;
+      font-size: 13px;
+      border-bottom: 0.5px solid var(--fd-border);
+      letter-spacing: -0.01em;
+    }
+    .picker-icon { font-size: 14px; }
+    .picker-close {
+      margin-left: auto;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: var(--fd-text-secondary);
+      font-size: 16px;
+      opacity: 0.6;
+      transition: opacity 0.15s;
+      padding: 0 2px;
+    }
+    .picker-close:hover { opacity: 1; }
+    .picker-body { padding: 4px 0; max-height: 380px; overflow-y: auto; }
+    .picker-group-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--fd-text-secondary);
+      padding: 8px 14px 4px;
+      font-weight: 600;
+    }
+    .picker-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 14px;
+      cursor: default;
+      border-radius: 6px;
+      margin: 1px 4px;
+      transition: background 0.1s;
+    }
+    .picker-item:hover {
+      background: var(--fd-accent);
+      color: var(--fd-accent-fg);
+    }
+    .picker-item .pi-icon {
+      width: 18px;
+      text-align: center;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .picker-item .pi-label { flex: 1; font-size: 12px; }
+    .picker-item .pi-meta {
+      font-size: 10px;
+      color: var(--fd-text-tertiary);
+      font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
+    }
+    .picker-item:hover .pi-meta { color: rgba(255,255,255,0.55); }
+    .picker-sep {
+      height: 1px;
+      background: var(--fd-border);
+      margin: 4px 12px;
+    }
+    .picker-existing {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 14px;
+      font-size: 11px;
+      color: var(--fd-text-secondary);
+    }
+    .picker-existing .pe-remove {
+      margin-left: auto;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: var(--fd-text-tertiary);
+      font-size: 14px;
+      opacity: 0.6;
+      transition: opacity 0.15s;
+    }
+    .picker-existing .pe-remove:hover { opacity: 1; color: var(--fd-accent); }
+
     /* ── Shortcut Help (Apple sheet) ── */
     #shortcut-help {
       display: none;
@@ -1791,6 +1895,10 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
     <div class="menu-item" id="ctx-group" data-action="group"><span class="menu-icon">◫</span><span class="menu-label">Group</span><span class="menu-shortcut">⌘G</span></div>
     <div class="menu-item" id="ctx-ungroup" data-action="ungroup"><span class="menu-icon">◻</span><span class="menu-label">Ungroup</span><span class="menu-shortcut">⇧⌘G</span></div>
     <div class="menu-item" id="ctx-delete" data-action="delete"><span class="menu-icon">⊖</span><span class="menu-label">Delete</span><span class="menu-shortcut">⌫</span></div>
+  </div>
+  <div id="anim-picker">
+    <div class="picker-header"><span class="picker-icon">⚡</span> Add Animation <button class="picker-close" id="anim-picker-close">×</button></div>
+    <div class="picker-body" id="anim-picker-body"></div>
   </div>
 
   <script nonce="${nonce}">
