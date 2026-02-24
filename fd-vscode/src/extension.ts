@@ -904,6 +904,65 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       background: var(--fd-accent-dim);
       color: var(--fd-accent);
     }
+    .spec-header-actions {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      margin-left: auto;
+    }
+    .spec-action-btn {
+      background: none;
+      border: 1px solid var(--fd-border);
+      border-radius: 4px;
+      color: var(--fd-text-secondary);
+      font-size: 12px;
+      padding: 2px 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .spec-action-btn:hover {
+      background: var(--fd-surface-hover);
+      color: var(--fd-text-primary);
+    }
+    .spec-bulk-status {
+      background: var(--fd-surface);
+      border: 1px solid var(--fd-border);
+      border-radius: 4px;
+      color: var(--fd-text-secondary);
+      font-size: 10px;
+      padding: 2px 4px;
+      cursor: pointer;
+    }
+    .spec-filter-tabs {
+      display: flex;
+      gap: 2px;
+      padding: 4px 8px;
+      border-bottom: 1px solid var(--fd-border);
+    }
+    .spec-filter-btn {
+      background: none;
+      border: none;
+      border-radius: 4px;
+      color: var(--fd-text-secondary);
+      font-size: 10px;
+      padding: 3px 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .spec-filter-btn:hover {
+      background: var(--fd-surface-hover);
+    }
+    .spec-filter-btn.active {
+      background: var(--fd-accent-dim);
+      color: var(--fd-accent);
+      font-weight: 600;
+    }
+    .spec-filter-count {
+      opacity: 0.5;
+      font-size: 9px;
+      margin-left: 2px;
+    }
 
     /* ── Theme Toggle (Apple pill) ── */
     #theme-toggle-btn {
