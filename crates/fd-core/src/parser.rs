@@ -621,25 +621,25 @@ fn parse_node_property(
     match prop_name {
         "x" => {
             let x_val = parse_number.parse_next(input)?;
-            // Replace existing Absolute constraint if present, else push new
-            if let Some(Constraint::Absolute { x, .. }) = constraints
+            // Replace existing Position constraint if present, else push new
+            if let Some(Constraint::Position { x, .. }) = constraints
                 .iter_mut()
-                .find(|c| matches!(c, Constraint::Absolute { .. }))
+                .find(|c| matches!(c, Constraint::Position { .. }))
             {
                 *x = x_val;
             } else {
-                constraints.push(Constraint::Absolute { x: x_val, y: 0.0 });
+                constraints.push(Constraint::Position { x: x_val, y: 0.0 });
             }
         }
         "y" => {
             let y_val = parse_number.parse_next(input)?;
-            if let Some(Constraint::Absolute { y, .. }) = constraints
+            if let Some(Constraint::Position { y, .. }) = constraints
                 .iter_mut()
-                .find(|c| matches!(c, Constraint::Absolute { .. }))
+                .find(|c| matches!(c, Constraint::Position { .. }))
             {
                 *y = y_val;
             } else {
-                constraints.push(Constraint::Absolute { x: 0.0, y: y_val });
+                constraints.push(Constraint::Position { x: 0.0, y: y_val });
             }
         }
         "w" | "width" => {
@@ -1074,17 +1074,17 @@ fn parse_constraint_line(input: &mut &str) -> ModalResult<(NodeId, Constraint)> 
             let pad = opt(parse_number).parse_next(input)?.unwrap_or(0.0);
             Constraint::FillParent { pad }
         }
-        "absolute" => {
+        "absolute" | "position" => {
             let x = parse_number.parse_next(input)?;
             skip_space(input);
             let _ = ','.parse_next(input)?;
             skip_space(input);
             let y = parse_number.parse_next(input)?;
-            Constraint::Absolute { x, y }
+            Constraint::Position { x, y }
         }
         _ => {
             let _ = take_till::<_, _, ContextError>(0.., '\n').parse_next(input);
-            Constraint::Absolute { x: 0.0, y: 0.0 }
+            Constraint::Position { x: 0.0, y: 0.0 }
         }
     };
 

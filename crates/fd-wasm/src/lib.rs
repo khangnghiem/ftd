@@ -1112,7 +1112,7 @@ impl FdCanvas {
             _ => return false,
         };
         let mut node = SceneNode::new(id, node_kind);
-        node.constraints.push(Constraint::Absolute { x, y });
+        node.constraints.push(Constraint::Position { x, y });
 
         // Set a default fill for shapes
         if kind != "text" {

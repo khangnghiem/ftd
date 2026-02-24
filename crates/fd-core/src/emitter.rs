@@ -35,10 +35,13 @@ pub fn emit_document(graph: &SceneGraph) -> String {
         out.push('\n');
     }
 
-    // Emit top-level constraints (constraints on nodes that reference non-parent targets)
+    // Emit top-level constraints (skip Position — emitted inline as x:/y:)
     for idx in graph.graph.node_indices() {
         let node = &graph.graph[idx];
         for constraint in &node.constraints {
+            if matches!(constraint, Constraint::Position { .. }) {
+                continue; // emitted inline inside node block
+            }
             emit_constraint(&mut out, &node.id, constraint);
         }
     }
@@ -296,6 +299,20 @@ fn emit_node(out: &mut String, graph: &SceneGraph, idx: NodeIndex, depth: usize)
         writeln!(out, "align: {h} {v}").unwrap();
     }
 
+    // Inline position (x: / y:) — emitted here for token efficiency
+    for constraint in &node.constraints {
+        if let Constraint::Position { x, y } = constraint {
+            if *x != 0.0 {
+                indent(out, depth + 1);
+                writeln!(out, "x: {}", format_num(*x)).unwrap();
+            }
+            if *y != 0.0 {
+                indent(out, depth + 1);
+                writeln!(out, "y: {}", format_num(*y)).unwrap();
+            }
+        }
+    }
+
     // Children
     let children = graph.children(idx);
     for child_idx in &children {
@@ -450,15 +467,8 @@ fn emit_constraint(out: &mut String, node_id: &NodeId, constraint: &Constraint) 
             )
             .unwrap();
         }
-        Constraint::Absolute { x, y } => {
-            writeln!(
-                out,
-                "@{} -> absolute: {}, {}",
-                node_id.as_str(),
-                format_num(*x),
-                format_num(*y)
-            )
-            .unwrap();
+        Constraint::Position { .. } => {
+            // Emitted inline as x: / y: inside node block — skip here
         }
     }
 }
@@ -1377,5 +1387,53 @@ rect @panel {
         assert_eq!(node.comments.len(), 2);
         assert_eq!(node.comments[0], "Header section");
         assert_eq!(node.comments[1], "Subheading");
+    }
+
+    #[test]
+    fn roundtrip_inline_position() {
+        let input = r#"
+rect @placed {
+  x: 100
+  y: 200
+  w: 50 h: 50
+  fill: #FF0000
+}
+"#;
+        let graph = parse_document(input).unwrap();
+        let node = graph.get_by_id(NodeId::intern("placed")).unwrap();
+
+        // Should have a Position constraint from x:/y: parsing
+        assert!(
+            node.constraints
+                .iter()
+                .any(|c| matches!(c, Constraint::Position { .. })),
+            "should have Position constraint"
+        );
+
+        // Emit and verify x:/y: appear inline (not as top-level arrow)
+        let output = emit_document(&graph);
+        assert!(output.contains("x: 100"), "should emit x: inline");
+        assert!(output.contains("y: 200"), "should emit y: inline");
+        assert!(
+            !output.contains("-> absolute"),
+            "should NOT emit old absolute arrow"
+        );
+        assert!(
+            !output.contains("-> position"),
+            "should NOT emit position arrow"
+        );
+
+        // Round-trip: re-parse emitted output
+        let graph2 = parse_document(&output).expect("re-parse of inline position failed");
+        let node2 = graph2.get_by_id(NodeId::intern("placed")).unwrap();
+        let pos = node2
+            .constraints
+            .iter()
+            .find_map(|c| match c {
+                Constraint::Position { x, y } => Some((*x, *y)),
+                _ => None,
+            })
+            .expect("Position constraint missing after roundtrip");
+        assert_eq!(pos, (100.0, 200.0));
     }
 }
