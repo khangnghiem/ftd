@@ -39,7 +39,7 @@ export class FdCanvas {
     }
     /**
      * Create a node at a specific position (for drag-and-drop).
-     * `kind` is \"rect\", \"ellipse\", or \"text\".
+     * `kind` is "rect", "ellipse", "text", or "frame".
      * Returns `true` if the node was created.
      * @param {string} kind
      * @param {number} x
