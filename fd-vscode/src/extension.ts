@@ -1127,9 +1127,8 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
     #selection-bar {
       display: none;
       position: absolute;
-      bottom: 12px;
-      left: 50%;
-      transform: translateX(-50%);
+      top: 8px;
+      right: 16px;
       padding: 5px 14px;
       background: var(--fd-surface);
       backdrop-filter: blur(20px) saturate(180%);
@@ -1382,11 +1381,11 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
     /* ── Shape Palette (Freeform-style) ── */
     #shape-palette {
       position: absolute;
-      top: 50%;
-      left: 12px;
-      transform: translateY(-50%);
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       gap: 2px;
       z-index: 50;
       background: var(--fd-surface);
@@ -1396,6 +1395,15 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       border-radius: 12px;
       padding: 5px;
       box-shadow: var(--fd-shadow-md);
+      align-items: center;
+    }
+    .palette-sep {
+      width: 1px;
+      height: 24px;
+      background: var(--fd-border);
+      margin: 0 3px;
+      opacity: 0.6;
+      flex-shrink: 0;
     }
     .palette-item {
       width: 38px;
@@ -1409,6 +1417,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       font-size: 18px;
       transition: all 0.18s cubic-bezier(0.25, 0.1, 0.25, 1);
       user-select: none;
+      position: relative;
     }
     .palette-item:hover {
       background: var(--fd-surface-hover);
@@ -1422,7 +1431,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
     .palette-item .palette-label {
       display: none;
       position: absolute;
-      left: 52px;
+      bottom: 46px;
       background: var(--fd-surface-solid);
       padding: 4px 10px;
       border-radius: 6px;
@@ -1809,6 +1818,10 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       <div class="palette-item" draggable="true" data-shape="rect">▢<span class="palette-label">Rectangle</span></div>
       <div class="palette-item" draggable="true" data-shape="ellipse">◯<span class="palette-label">Ellipse</span></div>
       <div class="palette-item" draggable="true" data-shape="text">T<span class="palette-label">Text</span></div>
+      <div class="palette-sep"></div>
+      <div class="palette-item" draggable="true" data-shape="frame">▣<span class="palette-label">Frame</span></div>
+      <div class="palette-item" draggable="true" data-shape="line">━<span class="palette-label">Line</span></div>
+      <div class="palette-item" draggable="true" data-shape="arrow">→<span class="palette-label">Arrow</span></div>
     </div>
     <canvas id="fd-canvas" class="tool-select"></canvas>
     <div id="dimension-tooltip"></div>

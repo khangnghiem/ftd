@@ -55,6 +55,9 @@ let viewMode = "design";
 /** Current spec filter: "all" | "draft" | "in_progress" | "done" */
 let specFilter = "all";
 
+/** Hash of the last rendered layer tree, used to skip redundant DOM rebuilds */
+let lastLayerHash = "";
+
 /** Grid overlay state */
 let gridEnabled = false;
 const GRID_BASE_SPACING = 20;
@@ -1649,7 +1652,14 @@ function openInlineEditor(nodeId, propKey, currentValue) {
 // ─── Drag & Drop ─────────────────────────────────────────────────────────
 
 /** Default dimensions for shapes when dropped from palette. */
-const DEFAULT_SHAPE_SIZES = { rect: [100, 80], ellipse: [100, 80], text: [80, 24] };
+const DEFAULT_SHAPE_SIZES = {
+  rect: [100, 80],
+  ellipse: [100, 80],
+  text: [80, 24],
+  frame: [200, 150],
+  line: [120, 4],
+  arrow: [120, 4],
+};
 
 function setupDragAndDrop() {
   // Palette items — create custom drag images sized to default node dimensions
@@ -1677,6 +1687,24 @@ function setupDragAndDrop() {
         gc.font = "14px -apple-system, BlinkMacSystemFont, sans-serif";
         gc.fillStyle = "rgba(80, 80, 90, 0.9)";
         gc.fillText("Text", 8, h / 2 + 5);
+      } else if (shape === "frame") {
+        gc.strokeStyle = "rgba(120, 120, 140, 0.8)";
+        gc.setLineDash([4, 3]);
+        gc.strokeRect(1, 1, w - 2, h - 2);
+      } else if (shape === "line" || shape === "arrow") {
+        gc.strokeStyle = "rgba(80, 80, 100, 0.9)";
+        gc.lineWidth = 2;
+        gc.beginPath();
+        gc.moveTo(4, h / 2);
+        gc.lineTo(w - 4, h / 2);
+        gc.stroke();
+        if (shape === "arrow") {
+          gc.beginPath();
+          gc.moveTo(w - 12, h / 2 - 5);
+          gc.lineTo(w - 4, h / 2);
+          gc.lineTo(w - 12, h / 2 + 5);
+          gc.stroke();
+        }
       } else {
         gc.beginPath();
         gc.roundRect(1, 1, w - 2, h - 2, 6);
@@ -1708,6 +1736,25 @@ function setupDragAndDrop() {
     // Adjust for pan offset to place node in scene-space coords
     const x = ((e.clientX - rect.left) - panX) / zoomLevel;
     const y = ((e.clientY - rect.top) - panY) / zoomLevel;
+
+    // Line & arrow: create as thin rect with stroke-only styling
+    if (shape === "line" || shape === "arrow") {
+      const changed = fdCanvas.create_node_at("rect", x, y);
+      if (changed) {
+        // Restyle to a thin line: narrow height, no fill, black stroke
+        const selId = fdCanvas.get_selected_id();
+        if (selId) {
+          fdCanvas.set_node_prop("width", "120");
+          fdCanvas.set_node_prop("height", "2");
+          fdCanvas.set_node_prop("fill", "#000000");
+          fdCanvas.set_node_prop("cornerRadius", "0");
+        }
+        render();
+        syncTextToExtension();
+        updatePropertiesPanel();
+      }
+      return;
+    }
 
     const changed = fdCanvas.create_node_at(shape, x, y);
     if (changed) {
@@ -2481,13 +2528,20 @@ function refreshLayersPanel() {
 
   // In Spec mode, show requirements summary instead of layers
   if (viewMode === "spec") {
+    lastLayerHash = "";
     refreshSpecSummary(panel);
     return;
   }
 
   const source = fdCanvas.get_text();
-  const tree = parseLayerTree(source);
   const selectedId = fdCanvas.get_selected_id() || "";
+
+  // Skip DOM rebuild if nothing changed (prevents destroying click handlers mid-interaction)
+  const hash = source + "||" + selectedId;
+  if (hash === lastLayerHash) return;
+  lastLayerHash = hash;
+
+  const tree = parseLayerTree(source);
 
   // Count total nodes
   const countNodes = (nodes) => nodes.reduce((sum, n) => sum + 1 + countNodes(n.children), 0);
@@ -3308,8 +3362,17 @@ function updateSelectionBar() {
       return;
     }
 
-    const w = Math.round(props.w || 0);
-    const h = Math.round(props.h || 0);
+    // Use intrinsic width/height; fallback to bounds for groups/text/path
+    let w = Math.round(props.width || 0);
+    let h = Math.round(props.height || 0);
+    if (w === 0 && h === 0) {
+      try {
+        const boundsJson = fdCanvas.get_node_bounds(selectedId);
+        const b = JSON.parse(boundsJson);
+        w = Math.round(b.width || 0);
+        h = Math.round(b.height || 0);
+      } catch (_) { /* no bounds */ }
+    }
     const x = Math.round(props.x || 0);
     const y = Math.round(props.y || 0);
 
