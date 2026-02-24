@@ -77,4 +77,7 @@ cd fd-vscode && pnpm ovsx publish -p <VSX_PAT from .env>
    git tag v0.x.y && git push origin v0.x.y
    ```
 
+   > This also triggers the **Zed extension update** automatically via `huacnlee/zed-extension-action`.
+   > It creates a PR to `zed-industries/extensions` with the updated submodule pointer.
+
 6. Report publish results to user.

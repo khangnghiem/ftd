@@ -7,7 +7,8 @@ mod render2d;
 use fd_core::id::NodeId;
 use fd_core::layout::Viewport;
 use fd_core::model::{
-    Annotation, Color, Constraint, NodeKind, Paint, SceneNode, TextAlign, TextVAlign,
+    Annotation, Color, Constraint, LayoutMode, NodeKind, Paint, SceneNode, Stroke, StrokeCap,
+    StrokeJoin, TextAlign, TextVAlign,
 };
 use fd_editor::commands::CommandStack;
 use fd_editor::input::{InputEvent, Modifiers};
@@ -1096,7 +1097,7 @@ impl FdCanvas {
     }
 
     /// Create a node at a specific position (for drag-and-drop).
-    /// `kind` is \"rect\", \"ellipse\", or \"text\".
+    /// `kind` is "rect", "ellipse", "text", or "frame".
     /// Returns `true` if the node was created.
     pub fn create_node_at(&mut self, kind: &str, x: f32, y: f32) -> bool {
         let id = NodeId::anonymous();
@@ -1109,13 +1110,27 @@ impl FdCanvas {
             "text" => NodeKind::Text {
                 content: "Text".to_string(),
             },
+            "frame" => NodeKind::Frame {
+                width: 200.0,
+                height: 150.0,
+                clip: false,
+                layout: LayoutMode::Free,
+            },
             _ => return false,
         };
         let mut node = SceneNode::new(id, node_kind);
         node.constraints.push(Constraint::Position { x, y });
 
         // Set a default fill for shapes
-        if kind != "text" {
+        if kind == "frame" {
+            node.style.fill = Some(Paint::Solid(Color::rgba(0.95, 0.95, 0.97, 1.0)));
+            node.style.stroke = Some(Stroke {
+                paint: Paint::Solid(Color::rgba(0.75, 0.75, 0.8, 1.0)),
+                width: 1.0,
+                cap: StrokeCap::Butt,
+                join: StrokeJoin::Miter,
+            });
+        } else if kind != "text" {
             node.style.fill = Some(Paint::Solid(Color::rgba(0.8, 0.8, 0.85, 1.0)));
         }
 

@@ -44,3 +44,15 @@ jobs:
         with:
           name: fd-vscode.vsix
           path: fd-vscode/*.vsix
+
+  zed:
+    name: Update Zed Extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: huacnlee/zed-extension-action@v2
+        with:
+          extension-name: fd
+          extension-path: extensions/fd
+          push-to: khangnghiem/extensions
+        env:
+          COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}

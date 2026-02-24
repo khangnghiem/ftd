@@ -5,6 +5,15 @@
 
 ## Completed Requirements
 
+### v0.8.13
+
+- **BUG FIX**: Layer selection in canvas mode now works — `refreshLayersPanel()` skips DOM rebuild when source + selection unchanged, preventing click handlers from being destroyed mid-interaction
+- **BUG FIX**: Selection info bar now shows correct dimensions — was reading `props.w/h` (undefined) instead of `props.width/height`; also uses bounds fallback for groups/text/path nodes
+- **UI**: Shape palette moved from left-side vertical bar to bottom-center horizontal pill (Apple FreeForm style)
+- **UI**: Shape palette expanded with Frame, Line, and Arrow tools (was only Rectangle, Ellipse, Text)
+- **UI**: Selection info bar relocated from bottom-center to top-right to avoid overlap with new bottom toolbar
+- **WASM**: `create_node_at` now supports `frame` kind — creates a 200×150 frame container with light fill and border
+
 ### v0.8.12
 
 - **UX fix**: Inline editor on ellipse nodes now uses `border-radius: 50%` instead of `4px` — the textarea overlay matches the circular shape instead of appearing as a rectangle
