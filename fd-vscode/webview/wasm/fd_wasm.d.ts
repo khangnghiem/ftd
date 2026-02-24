@@ -19,7 +19,7 @@ export class FdCanvas {
     add_animation_to_node(node_id: string, trigger: string, props_json: string): boolean;
     /**
      * Create a node at a specific position (for drag-and-drop).
-     * `kind` is \"rect\", \"ellipse\", or \"text\".
+     * `kind` is "rect", "ellipse", "text", or "frame".
      * Returns `true` if the node was created.
      */
     create_node_at(kind: string, x: number, y: number): boolean;

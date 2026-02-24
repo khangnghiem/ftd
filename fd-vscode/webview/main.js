@@ -1577,7 +1577,7 @@ function openInlineEditor(nodeId, propKey, currentValue) {
     `padding:${padTop}px 6px 4px 6px`,
     `font:${fontWeight} ${fontSize}px ${fontFamily},system-ui,sans-serif`,
     `border:2px solid #4FC3F7`,
-    `border-radius:${props.kind === 'ellipse' ? '50%' : '4px'}`,
+    `border-radius:8px`,
     `background:${bgColor}`,
     `color:${textColor}`,
     `resize:none`,
@@ -2568,13 +2568,18 @@ function refreshLayersPanel() {
       const nodeId = item.getAttribute("data-node-id");
       if (nodeId && fdCanvas) {
         if (fdCanvas.select_by_id(nodeId)) {
+          // Pre-set the hash so that render() → refreshLayersPanel() skips the DOM rebuild.
+          // This keeps our DOM references valid for the highlight update below.
+          const source = fdCanvas.get_text();
+          lastLayerHash = source + "||" + nodeId;
           render();
-          // Update selection highlight in layers
+          // Update selection highlight in layers (DOM still intact because rebuild was skipped)
           panel.querySelectorAll(".layer-item").forEach((el) => {
             el.classList.toggle("selected", el.getAttribute("data-node-id") === nodeId);
           });
           // Notify extension of selection
           vscode.postMessage({ type: "nodeSelected", id: nodeId });
+          updatePropertiesPanel();
         }
       }
     });

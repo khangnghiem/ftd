@@ -5,6 +5,11 @@
 
 ## Completed Requirements
 
+### v0.8.14
+
+- **BUG FIX**: Layer selection now works — click handler pre-sets `lastLayerHash` before calling `render()`, so `refreshLayersPanel()` skips DOM rebuild and preserves the click handler's DOM references for visual highlight update
+- **BUG FIX**: Ellipse inline editor no longer deforms the shape — uses standard `8px` border-radius instead of `50%`, matching Figma's approach of a clean rectangular overlay that doesn't clip content
+
 ### v0.8.13
 
 - **BUG FIX**: Layer selection in canvas mode now works — `refreshLayersPanel()` skips DOM rebuild when source + selection unchanged, preventing click handlers from being destroyed mid-interaction
