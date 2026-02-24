@@ -52,6 +52,9 @@ let contextMenuNodeId = null;
 /** Current view mode: "design" | "spec" */
 let viewMode = "design";
 
+/** Current spec filter: "all" | "draft" | "in_progress" | "done" */
+let specFilter = "all";
+
 /** Grid overlay state */
 let gridEnabled = false;
 const GRID_BASE_SPACING = 20;
@@ -518,6 +521,20 @@ document.addEventListener("keydown", (e) => {
   if ((e.metaKey || e.ctrlKey) && (e.key === "a" || e.key === "A") && !e.shiftKey) {
     e.preventDefault();
     selectAllNodes();
+    return;
+  }
+
+  // ── Add/Edit spec annotation (⌘I / Ctrl+I) ──
+  if ((e.metaKey || e.ctrlKey) && (e.key === "i" || e.key === "I") && !e.shiftKey) {
+    e.preventDefault();
+    const selId = fdCanvas?.get_selected_id();
+    if (selId) {
+      const boundsJson = fdCanvas.get_node_bounds(selId);
+      const b = JSON.parse(boundsJson);
+      const cx = (b.x + b.width / 2 + panX) * currentZoom;
+      const cy = (b.y + panY) * currentZoom;
+      openAnnotationCard(selId, cx, cy);
+    }
     return;
   }
 
@@ -1778,23 +1795,78 @@ function refreshSpecSummary(panel) {
   const annotated = parseAnnotatedNodes(source);
   const selectedId = fdCanvas.get_selected_id() || "";
 
+  // Count total meaningful nodes for coverage %
+  const tree = parseLayerTree(source);
+  const countNodes = (nodes) => nodes.reduce((sum, n) => sum + 1 + countNodes(n.children), 0);
+  const totalNodes = countNodes(tree);
+  const coveragePct = totalNodes > 0 ? Math.round((annotated.length / totalNodes) * 100) : 0;
+
+  // Header with coverage % and action buttons
   let html = `<div class="layers-header">`;
   html += `<span class="layers-title">Requirements</span>`;
-  html += `<span class="layers-count">${annotated.length}</span>`;
+  html += `<span class="layers-count" title="${annotated.length} of ${totalNodes} nodes have specs">${coveragePct}%</span>`;
+  html += `<div class="spec-header-actions">`;
+  html += `<button class="spec-action-btn" id="spec-export-btn" title="Export spec report (copies markdown to clipboard)">↗</button>`;
+  html += `<select class="spec-bulk-status" id="spec-bulk-status" title="Set status on all visible specs">`;
+  html += `<option value="">Bulk…</option>`;
+  html += `<option value="draft">→ Draft</option>`;
+  html += `<option value="in_progress">→ In Progress</option>`;
+  html += `<option value="done">→ Done</option>`;
+  html += `</select>`;
+  html += `</div>`;
   html += `</div>`;
 
-  if (annotated.length === 0) {
+  // Filter tabs
+  const filters = [
+    { key: "all", label: "All" },
+    { key: "draft", label: "Draft" },
+    { key: "in_progress", label: "In Prog" },
+    { key: "done", label: "Done" },
+  ];
+  html += `<div class="spec-filter-tabs">`;
+  for (const f of filters) {
+    const active = specFilter === f.key ? " active" : "";
+    // Count per filter
+    let count;
+    if (f.key === "all") {
+      count = annotated.length;
+    } else {
+      count = annotated.filter(n =>
+        n.annotations.some(a => a.type === "status" && a.value === f.key)
+      ).length;
+    }
+    html += `<button class="spec-filter-btn${active}" data-filter="${f.key}">${f.label} <span class="spec-filter-count">${count}</span></button>`;
+  }
+  html += `</div>`;
+
+  // Filter nodes by status
+  const filtered = specFilter === "all"
+    ? annotated
+    : annotated.filter(n =>
+      n.annotations.some(a => a.type === "status" && a.value === specFilter)
+    );
+
+  if (filtered.length === 0 && annotated.length === 0) {
     html += `<div class="spec-empty-state">`;
     html += `<div style="font-size:24px;margin-bottom:8px;opacity:0.4">◇</div>`;
     html += `<div style="opacity:0.5;font-size:12px">No spec annotations yet</div>`;
-    html += `<div style="opacity:0.35;font-size:11px;margin-top:4px">Right-click a node → Add Annotation</div>`;
+    html += `<div style="opacity:0.35;font-size:11px;margin-top:4px">Right-click a node → Add Annotation, or press ⌘I</div>`;
     html += `</div>`;
     panel.innerHTML = html;
     return;
   }
 
+  if (filtered.length === 0) {
+    html += `<div class="spec-empty-state">`;
+    html += `<div style="opacity:0.5;font-size:12px">No specs with this status</div>`;
+    html += `</div>`;
+    panel.innerHTML = html;
+    wireSpecPanelHandlers(panel, annotated);
+    return;
+  }
+
   html += `<div class="layers-body">`;
-  for (const node of annotated) {
+  for (const node of filtered) {
     const isSelected = node.id === selectedId;
     const descriptions = node.annotations.filter(a => a.type === "description");
     const statuses = node.annotations.filter(a => a.type === "status");
@@ -1803,20 +1875,15 @@ function refreshSpecSummary(panel) {
     const tags = node.annotations.filter(a => a.type === "tag");
 
     html += `<div class="spec-summary-card${isSelected ? ' selected' : ''}" data-spec-id="${escapeAttr(node.id)}">`;
-    // Header row: @id + kind
     html += `<div class="spec-card-header">`;
     html += `<span class="spec-card-id">@${escapeHtml(node.id)}</span>`;
     if (node.kind) {
       html += `<span class="spec-card-kind">${escapeHtml(node.kind)}</span>`;
     }
     html += `</div>`;
-
-    // Description
     if (descriptions.length > 0) {
       html += `<div class="spec-card-desc">${escapeHtml(descriptions[0].value)}</div>`;
     }
-
-    // Status + Priority badges
     if (statuses.length > 0 || priorities.length > 0) {
       html += `<div class="spec-card-badges">`;
       for (const s of statuses) {
@@ -1827,8 +1894,6 @@ function refreshSpecSummary(panel) {
       }
       html += `</div>`;
     }
-
-    // Accept criteria
     if (accepts.length > 0) {
       html += `<div class="spec-card-accepts">`;
       for (const a of accepts) {
@@ -1836,8 +1901,6 @@ function refreshSpecSummary(panel) {
       }
       html += `</div>`;
     }
-
-    // Tags
     if (tags.length > 0) {
       html += `<div class="spec-card-tags">`;
       for (const t of tags) {
@@ -1845,30 +1908,114 @@ function refreshSpecSummary(panel) {
       }
       html += `</div>`;
     }
-
     html += `</div>`;
   }
   html += `</div>`;
 
   panel.innerHTML = html;
+  wireSpecPanelHandlers(panel, annotated);
+}
 
-  // Wire click handlers
+function wireSpecPanelHandlers(panel, annotated) {
+  // Filter tab handlers
+  panel.querySelectorAll(".spec-filter-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      specFilter = btn.getAttribute("data-filter") || "all";
+      refreshSpecSummary(panel);
+    });
+  });
+
+  // Card click handlers
   panel.querySelectorAll(".spec-summary-card").forEach(card => {
     card.addEventListener("click", (e) => {
       e.stopPropagation();
       const nodeId = card.getAttribute("data-spec-id");
       if (nodeId && fdCanvas) {
         if (fdCanvas.select_by_id(nodeId)) render();
-        // Open annotation card near the card
         const rect = card.getBoundingClientRect();
         openAnnotationCard(nodeId, rect.right + 8, rect.top);
-        // Highlight
         panel.querySelectorAll(".spec-summary-card").forEach(c =>
           c.classList.toggle("selected", c.getAttribute("data-spec-id") === nodeId)
         );
       }
     });
   });
+
+  // Export button
+  document.getElementById("spec-export-btn")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    exportSpecReport(annotated);
+  });
+
+  // Bulk status dropdown
+  document.getElementById("spec-bulk-status")?.addEventListener("change", (e) => {
+    e.stopPropagation();
+    const newStatus = e.target.value;
+    if (newStatus) {
+      bulkSetStatus(annotated, newStatus);
+      e.target.value = "";
+    }
+  });
+}
+
+function exportSpecReport(annotated) {
+  if (!fdCanvas) return;
+  let md = `# Spec Report\n\n`;
+  md += `> Generated from FD canvas\n\n`;
+
+  for (const node of annotated) {
+    const desc = node.annotations.find(a => a.type === "description");
+    const status = node.annotations.find(a => a.type === "status");
+    const priority = node.annotations.find(a => a.type === "priority");
+    const accepts = node.annotations.filter(a => a.type === "accept");
+    const tags = node.annotations.filter(a => a.type === "tag");
+
+    md += `## @${node.id}`;
+    if (node.kind) md += ` (${node.kind})`;
+    md += `\n\n`;
+    if (desc) md += `${desc.value}\n\n`;
+    if (status) md += `**Status:** ${status.value}\n`;
+    if (priority) md += `**Priority:** ${priority.value}\n`;
+    if (status || priority) md += `\n`;
+    if (accepts.length > 0) {
+      md += `**Acceptance Criteria:**\n`;
+      for (const a of accepts) md += `- [ ] ${a.value}\n`;
+      md += `\n`;
+    }
+    if (tags.length > 0) {
+      md += `**Tags:** ${tags.map(t => t.value).join(", ")}\n\n`;
+    }
+    md += `---\n\n`;
+  }
+
+  navigator.clipboard.writeText(md).then(() => {
+    vscode.postMessage({ type: "info", text: `Spec report copied to clipboard (${annotated.length} nodes)` });
+  });
+}
+
+function bulkSetStatus(annotated, newStatus) {
+  if (!fdCanvas) return;
+  // Apply status to currently visible (filtered) nodes
+  const targets = specFilter === "all"
+    ? annotated
+    : annotated.filter(n =>
+      n.annotations.some(a => a.type === "status" && a.value === specFilter)
+    );
+
+  for (const node of targets) {
+    const json = fdCanvas.get_annotations_json(node.id);
+    const anns = JSON.parse(json);
+    // Remove existing status, add new
+    const filtered = anns.filter(a => a.Status === undefined);
+    filtered.push({ Status: newStatus });
+    fdCanvas.set_annotations_json(node.id, JSON.stringify(filtered));
+  }
+  render();
+  syncTextToExtension();
+  // Refresh to show updated statuses
+  const panel = document.getElementById("layers-panel");
+  if (panel) refreshSpecSummary(panel);
 }
 
 function refreshLayersPanel() {

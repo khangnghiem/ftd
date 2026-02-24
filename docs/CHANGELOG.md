@@ -5,6 +5,15 @@
 
 ## Completed Requirements
 
+### v0.8.0
+
+- **NEW**: ⌘I / Ctrl+I keyboard shortcut to add/edit spec annotation on selected node
+- **NEW**: Status filter tabs in Spec Summary (All / Draft / In Prog / Done) with per-filter counts
+- **NEW**: Spec coverage % indicator in header — shows annotated/total nodes ratio
+- **NEW**: Export spec report ↗ button — copies full markdown spec report to clipboard
+- **NEW**: Bulk status dropdown — set Draft/In Progress/Done on all visible specs at once
+- **UX**: Empty state message now mentions ⌘I shortcut
+
 ### v0.7.9
 
 - **NEW**: Spec Summary Panel — layers panel becomes requirements overview in Spec mode, showing all annotated nodes as cards with description, status/priority badges, accept criteria, and tags
