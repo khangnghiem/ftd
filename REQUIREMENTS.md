@@ -24,6 +24,7 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R1.14**: Namespaced imports — `import "path.fd" as ns` for cross-file style/node reuse with `ns.style_name` references
 - **R1.15**: Background shorthand — `bg: #FFF corner=12 shadow=(0,4,20,#0002)` for combined fill, corner, and shadow in one line
 - **R1.16**: Comment preservation — `# text` lines attached to the following node survive all parse/emit round-trips and format passes
+- **R1.17**: Text alignment — `align: left|center|right [top|middle|bottom]` property on text and shape nodes; defaults to `center middle`; reusable via `style` blocks and `use:` inheritance
 
 ### R2: Bidirectional Sync
 
@@ -58,7 +59,7 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R3.21**: Grid overlay: Toggleable dot/line grid with configurable spacing; shapes snap to grid when enabled
 - **R3.22**: Pressure-sensitive stroke width: Pen tool maps pointer pressure to stroke thickness in real-time (Apple Pencil + Wacom); width range configurable
 - **R3.23**: Freehand shape recognition: After pen stroke completes, detect near-rectangular/elliptical/linear shapes and offer a one-click "Snap to Shape" action — converting freehand to a clean geometric node
-- **R3.28**: Inline text editing: Double-click a text node or shape to open a floating textarea overlay; background matches the node's fill (shape) or uses themed default (text node); live sync — every keystroke updates Code Mode in real-time; Enter confirms, Esc reverts to original value, click-outside commits
+- **R3.28**: Inline text editing: Double-click a text node or shape to open a floating textarea overlay; background matches the node's fill (shape) or uses themed default (text node); live sync — every keystroke updates Code Mode in real-time; Enter confirms, Esc reverts to original value, click-outside commits; 3×3 alignment grid picker in properties panel for `align:` (R1.17)
 - **R3.29**: Animation drop: Drag a node onto another to assign animations — magnetic glow ring on hover, release opens a glassmorphism Animation Picker popover with preset groups (Hover/Press/Enter), live preview on hover, click to commit `anim` block to Code Mode
 
 ### R4: AI Editing (Text)
@@ -152,3 +153,4 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 | rendering          | R5.1, R5.2, R5.4, R5.5                |
 | platform           | R6.1, R6.2, R6.3, R6.4                |
 | inline editing     | R3.28                                 |
+| text alignment     | R1.17, R3.28                          |

@@ -14,6 +14,9 @@
 - **WASM**: `textAlign`/`textVAlign` exposed in node props and settable via `set_node_prop`
 - **Parser/Emitter**: Full `align:` round-trip support with test
 - **Renderer**: `draw_text` uses 9-position alignment based on `TextAlign × TextVAlign`
+- **Bugfix**: `emit_style_block` now emits `align:` in `style { }` blocks (was only emitted on nodes)
+- **Tests**: 4 new tests — `parse_align_center_only`, `roundtrip_align_in_style_block`, `style_merging_align`, `sync_set_style_alignment`
+- **Docs**: Added R1.17 (text alignment format property), updated R3.28 cross-ref, added `text alignment` tag to requirement index
 
 ### v0.8.8
 

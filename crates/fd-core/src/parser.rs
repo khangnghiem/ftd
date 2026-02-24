@@ -808,9 +808,7 @@ fn parse_align_value(input: &mut &str, style: &mut Style) -> ModalResult<()> {
         || input.starts_with('\n')
         || input.starts_with(';')
         || input.starts_with('}');
-    if !at_end
-        && let Ok(second) = parse_identifier.parse_next(input)
-    {
+    if !at_end && let Ok(second) = parse_identifier.parse_next(input) {
         style.text_valign = Some(match second {
             "top" => TextVAlign::Top,
             "bottom" => TextVAlign::Bottom,
@@ -1415,10 +1413,7 @@ text @title "Hello" {
         let node = graph
             .get_by_id(crate::id::NodeId::intern("title"))
             .expect("node not found");
-        assert_eq!(
-            node.style.text_align,
-            Some(crate::model::TextAlign::Right)
-        );
+        assert_eq!(node.style.text_align, Some(crate::model::TextAlign::Right));
         assert_eq!(
             node.style.text_valign,
             Some(crate::model::TextVAlign::Bottom)
@@ -1432,13 +1427,69 @@ text @title "Hello" {
         let node2 = reparsed
             .get_by_id(crate::id::NodeId::intern("title"))
             .expect("node not found after roundtrip");
-        assert_eq!(
-            node2.style.text_align,
-            Some(crate::model::TextAlign::Right)
-        );
+        assert_eq!(node2.style.text_align, Some(crate::model::TextAlign::Right));
         assert_eq!(
             node2.style.text_valign,
             Some(crate::model::TextVAlign::Bottom)
         );
+    }
+
+    #[test]
+    fn parse_align_center_only() {
+        let src = r#"
+text @heading "Welcome" {
+  align: center
+}
+"#;
+        let graph = parse_document(src).unwrap();
+        let node = graph
+            .get_by_id(crate::id::NodeId::intern("heading"))
+            .expect("node not found");
+        assert_eq!(node.style.text_align, Some(crate::model::TextAlign::Center));
+        // Vertical not specified — should be None
+        assert_eq!(node.style.text_valign, None);
+    }
+
+    #[test]
+    fn roundtrip_align_in_style_block() {
+        let src = r#"
+style heading_style {
+  fill: #333333
+  font: "Inter" 700 32
+  align: left top
+}
+
+text @main_title "Hello" {
+  use: heading_style
+}
+"#;
+        let graph = parse_document(src).unwrap();
+
+        // Style definition should have alignment
+        let style = graph
+            .styles
+            .get(&crate::id::NodeId::intern("heading_style"))
+            .expect("style not found");
+        assert_eq!(style.text_align, Some(crate::model::TextAlign::Left));
+        assert_eq!(style.text_valign, Some(crate::model::TextVAlign::Top));
+
+        // Node using the style should inherit alignment
+        let node = graph
+            .get_by_id(crate::id::NodeId::intern("main_title"))
+            .expect("node not found");
+        let resolved = graph.resolve_style(node, &[]);
+        assert_eq!(resolved.text_align, Some(crate::model::TextAlign::Left));
+        assert_eq!(resolved.text_valign, Some(crate::model::TextVAlign::Top));
+
+        // Emit and re-parse
+        let emitted = crate::emitter::emit_document(&graph);
+        assert!(emitted.contains("align: left top"));
+        let reparsed = parse_document(&emitted).unwrap();
+        let style2 = reparsed
+            .styles
+            .get(&crate::id::NodeId::intern("heading_style"))
+            .expect("style not found after roundtrip");
+        assert_eq!(style2.text_align, Some(crate::model::TextAlign::Left));
+        assert_eq!(style2.text_valign, Some(crate::model::TextVAlign::Top));
     }
 }
