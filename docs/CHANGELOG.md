@@ -5,6 +5,13 @@
 
 ## Completed Requirements
 
+### v0.8.8
+
+- **UX fix**: Inline editor background now matches node context — shape nodes use their fill color, text nodes use themed background (`#1E1E2E` dark / `#FFFFFF` light), shapes without fill use themed fallback; eliminates the white-over-dark-node bug
+- **NEW**: Live text sync — typing in the inline editor updates Code Mode in real time (every keystroke syncs via `set_node_prop`)
+- **NEW**: Esc to cancel — pressing Escape reverts the text to the original value before editing started and syncs
+- **UX**: Enter confirms and closes the editor (unchanged), click-outside also commits (unchanged)
+
 ### v0.8.7
 
 - **NEW**: Drag-and-drop animation picker — drag a node onto another node to assign animations via a glassmorphism popover with 11 presets across 3 trigger groups (Hover, Press, Enter)

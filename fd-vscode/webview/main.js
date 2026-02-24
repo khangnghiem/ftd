@@ -1481,20 +1481,36 @@ function openInlineEditor(nodeId, propKey, currentValue) {
   fdCanvas.select_by_id(nodeId);
   const propsJson = fdCanvas.get_selected_node_props();
   const props = JSON.parse(propsJson);
-  let bgColor = "transparent";
-  let textColor = "#1C1C1E";
 
-  if (props.fill) {
+  // Determine background & text color based on node kind
+  let bgColor;
+  let textColor;
+  const isDark = document.body.classList.contains("dark-theme");
+  const isTextNode = props.kind === "text";
+
+  if (isTextNode) {
+    // Text node: fill = text color, not background
+    // Use themed background, and the node's fill as text color
+    bgColor = isDark ? "#1E1E2E" : "#FFFFFF";
+    textColor = props.fill || (isDark ? "#E0E0E0" : "#1C1C1E");
+  } else if (props.fill) {
+  // Shape node with fill: use as background
     bgColor = props.fill;
-    // Use white text on dark backgrounds, black on light
     const lum = hexLuminance(props.fill);
     textColor = lum < 0.4 ? "#FFFFFF" : "#1C1C1E";
+  } else {
+    // Shape without fill: themed fallback
+    bgColor = isDark ? "#2D2D44" : "#F5F5F7";
+    textColor = isDark ? "#E0E0E0" : "#1C1C1E";
   }
 
   // Get font info from node props
   const fontSize = props.fontSize ? Math.round(props.fontSize * zoomLevel) : Math.round(14 * zoomLevel);
   const fontFamily = props.fontFamily || "Inter";
   const fontWeight = props.fontWeight || 400;
+
+  // Store original value for Esc rollback
+  const originalValue = currentValue;
 
   const textarea = document.createElement("textarea");
   textarea.value = currentValue;
@@ -1522,13 +1538,26 @@ function openInlineEditor(nodeId, propKey, currentValue) {
   textarea.focus();
   textarea.select();
 
+  /** Live-sync text to Code Mode on every keystroke */
+  let lastSyncedValue = currentValue;
+  textarea.addEventListener("input", () => {
+    const val = textarea.value;
+    if (val === lastSyncedValue) return;
+    lastSyncedValue = val;
+    fdCanvas.select_by_id(nodeId);
+    fdCanvas.set_node_prop(propKey, val);
+    render();
+    syncTextToExtension();
+  });
+
+  /** Commit: close editor, set final prop, sync */
   const commit = () => {
     if (!inlineEditorActive) return;
     inlineEditorActive = false;
     const newVal = textarea.value;
     if (textarea.parentNode) textarea.parentNode.removeChild(textarea);
     if (!fdCanvas) return;
-    // Re-select the node in case selection was lost
+    // Re-select and set final value (in case of any race)
     fdCanvas.select_by_id(nodeId);
     const changed = fdCanvas.set_node_prop(propKey, newVal);
     if (changed) {
@@ -1540,8 +1569,14 @@ function openInlineEditor(nodeId, propKey, currentValue) {
 
   textarea.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      // Cancel: revert to original value
       inlineEditorActive = false;
       if (textarea.parentNode) textarea.parentNode.removeChild(textarea);
+      // Restore original text in the node
+      fdCanvas.select_by_id(nodeId);
+      fdCanvas.set_node_prop(propKey, originalValue);
+      render();
+      syncTextToExtension();
       e.stopPropagation();
       return;
     }
