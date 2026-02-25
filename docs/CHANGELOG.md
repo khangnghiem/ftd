@@ -5,6 +5,12 @@
 
 ## Completed Requirements
 
+### v0.8.23
+
+- **UX**: Group Node Visibility & Drill-down (R3.24) — Group nodes now render a dashed blue border on hover and a solid blue border with a `"Group @id"` badge when selected.
+- **UX**: Clicking a child node of an unselected group now selects the parent Group by default. Clicking the child node again (when the group is already selected) "drills down" to select the child, matching standard design tool (Figma/Sketch) behavior.
+- **WASM**: Added `effective_target` to `SceneGraph` for drill-down hit testing and wired it into pointer and marquee selection events.
+
 ### v0.8.22
 
 - **BUG FIX**: Fixed an issue where deleting a node in the Canvas would mess up the Z-order of other nodes. Replacing `petgraph::DiGraph` with `petgraph::stable_graph::StableDiGraph` prevents node index swapping on deletion.
