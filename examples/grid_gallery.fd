@@ -26,7 +26,7 @@ group @gallery {
       w: 260 h: 200
       fill: #FF6B6B
       corner: 12
-      text @_anon_9 "Sunset" {
+      text @sunset "Sunset" {
         use: card_text
       }
       anim :hover {
@@ -139,7 +139,7 @@ group @gallery {
       w: 260 h: 200
       fill: #74B9FF
       corner: 12
-      text @_anon_17 "Stars" {
+      text @Alo "Stars" {
         use: card_text
       }
       anim :hover {
