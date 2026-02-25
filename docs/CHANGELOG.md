@@ -5,6 +5,11 @@
 
 ## Completed Requirements
 
+### v0.8.31
+
+- **TESTING**: Expanded E2E UX test suite from 52 to 71 tests (+19) — added coverage for complex card document parsing, Drawio-style edge annotations, frame nodes, 3-level nested groups, spec fold ranges, panel column resolution, layer ordering, and rename sanitization edge cases
+- **TESTING**: Browser E2E validation of 6 real-world scenarios (Figma card build, Drawio rapid shapes, Sketch multi-select, Figma duplicate, Excalidraw rapid draw, Miro navigation) via Codespace
+
 ### v0.8.30
 
 - **BUG FIX**: Fixed `parseSpecNodes` annotation bleed — `lines.indexOf()` found the first occurrence of identical spec block lines, causing annotations from earlier nodes to leak into later nodes; switched to indexed `for` loop (fixes Spec View filtering accuracy)
