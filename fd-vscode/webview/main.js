@@ -1658,6 +1658,11 @@ function openInlineEditor(nodeId, propKey, currentValue) {
     const newVal = textarea.value;
     if (textarea.parentNode) textarea.parentNode.removeChild(textarea);
     if (!fdCanvas) return;
+    // Skip mutation if value unchanged — avoids SetStyle flattening inherited styles
+    if (newVal === originalValue) {
+      render();
+      return;
+    }
     // Re-select and set final value (in case of any race)
     fdCanvas.select_by_id(nodeId);
     const changed = fdCanvas.set_node_prop(propKey, newVal);
