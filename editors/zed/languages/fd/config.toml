@@ -12,3 +12,6 @@ brackets = [
 ]
 autoclose_before = ";:.,=}])>"
 word_characters = ["@", "#"]
+
+[lsp.fd-lsp]
+format_on_save = "off"
