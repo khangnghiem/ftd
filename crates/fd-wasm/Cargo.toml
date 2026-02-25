@@ -20,6 +20,7 @@ web-sys = { workspace = true, features = [
     "CanvasRenderingContext2d",
     "CanvasGradient",
     "HtmlCanvasElement",
+    "TextMetrics",
     "console",
 ] }
 js-sys = { workspace = true }

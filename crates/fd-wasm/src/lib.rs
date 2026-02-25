@@ -163,7 +163,8 @@ impl FdCanvas {
             meta,
         };
         let event = InputEvent::from_pointer_down(x, y, pressure, mods);
-        let hit = self.hit_test(x, y);
+        let raw_hit = self.hit_test(x, y);
+        let hit = raw_hit.map(|id| self.engine.graph.effective_target(id, &self.select_tool.selected));
 
         let prev_pressed = self.pressed_id;
         self.pressed_id = hit;
@@ -219,7 +220,8 @@ impl FdCanvas {
             meta,
         };
         let event = InputEvent::from_pointer_move(x, y, pressure, mods);
-        let hit = self.hit_test(x, y);
+        let raw_hit = self.hit_test(x, y);
+        let hit = raw_hit.map(|id| self.engine.graph.effective_target(id, &self.select_tool.selected));
 
         let prev_hovered = self.hovered_id;
         self.hovered_id = hit;
@@ -271,13 +273,21 @@ impl FdCanvas {
                 );
                 if mods.shift {
                     // Shift: add to existing selection
-                    for id in hits {
+                    for raw_id in hits {
+                        let id = self.engine.graph.effective_target(raw_id, &self.select_tool.selected);
                         if !self.select_tool.selected.contains(&id) {
                             self.select_tool.selected.push(id);
                         }
                     }
                 } else {
-                    self.select_tool.selected = hits;
+                    let mut new_selection = Vec::new();
+                    for raw_id in hits {
+                        let id = self.engine.graph.effective_target(raw_id, &new_selection);
+                        if !new_selection.contains(&id) {
+                            new_selection.push(id);
+                        }
+                    }
+                    self.select_tool.selected = new_selection;
                 }
             }
             self.select_tool.marquee_start = None;
@@ -293,7 +303,9 @@ impl FdCanvas {
         self.pressed_id = None;
         let pressed_changed = prev_pressed != self.pressed_id;
 
-        let hit = self.hit_test(x, y);
+        let raw_hit = self.hit_test(x, y);
+        let hit = raw_hit.map(|id| self.engine.graph.effective_target(id, &self.select_tool.selected));
+        
         let prev_hovered = self.hovered_id;
         self.hovered_id = hit;
         let hovered_changed = prev_hovered != self.hovered_id;

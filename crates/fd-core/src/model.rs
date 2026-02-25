@@ -638,6 +638,39 @@ impl SceneGraph {
 
         resolved
     }
+
+    /// Find the highest `Group` or `Frame` ancestor that is NOT currently selected.
+    /// If all ancestors are selected (or it has no group ancestor), returns `leaf_id`.
+    /// This enables "drill-down" selection: clicking a child of an unselected group
+    /// selects the group. Clicking again (when the group is selected) selects the child.
+    pub fn effective_target(&self, leaf_id: NodeId, selected: &[NodeId]) -> NodeId {
+        let mut current_idx = match self.index_of(leaf_id) {
+            Some(idx) => idx,
+            None => return leaf_id,
+        };
+
+        let mut highest_unselected_group: Option<NodeId> = None;
+
+        while let Some(parent_idx) = self.parent(current_idx) {
+            let parent_node = &self.graph[parent_idx];
+            
+            // Stop at root
+            if matches!(parent_node.kind, NodeKind::Root) {
+                break;
+            }
+
+            // If the parent is a Group or Frame, check if it's selected
+            if matches!(parent_node.kind, NodeKind::Group { .. } | NodeKind::Frame { .. }) {
+                if !selected.contains(&parent_node.id) {
+                    highest_unselected_group = Some(parent_node.id);
+                }
+            }
+            
+            current_idx = parent_idx;
+        }
+
+        highest_unselected_group.unwrap_or(leaf_id)
+    }
 }
 
 impl Default for SceneGraph {
@@ -802,5 +835,36 @@ mod tests {
         assert_eq!(resolved.text_align, Some(TextAlign::Right));
         // Vertical should come from base style (Middle)
         assert_eq!(resolved.text_valign, Some(TextVAlign::Middle));
+    }
+
+    #[test]
+    fn test_effective_target_drill_down() {
+        let mut sg = SceneGraph::new();
+        
+        // Root -> Group -> Rect
+        let group_id = NodeId::intern("my_group");
+        let rect_id = NodeId::intern("my_rect");
+
+        let group = SceneNode::new(group_id, NodeKind::Group { layout: LayoutMode::Free });
+        let rect = SceneNode::new(rect_id, NodeKind::Rect { width: 10.0, height: 10.0 });
+
+        let group_idx = sg.add_node(sg.root, group);
+        sg.add_node(group_idx, rect);
+
+        // 1. Nothing selected. Hitting rect should bubble up to group.
+        let target1 = sg.effective_target(rect_id, &[]);
+        assert_eq!(target1, group_id);
+
+        // 2. Group is selected. Hitting rect should drill down to rect itself.
+        let target2 = sg.effective_target(rect_id, &[group_id]);
+        assert_eq!(target2, rect_id);
+
+        // 3. Rect is selected (somehow). Hitting rect should still return rect
+        // (because the rule says if ALL group ancestors are selected... wait, 
+        // the rect is selected, but the group is NOT. So it bubbles to group!)
+        // This is correct Figma behavior: clicking a child of an unselected group 
+        // selects the group, even if the child was somehow already selected.
+        let target3 = sg.effective_target(rect_id, &[rect_id]);
+        assert_eq!(target3, group_id);
     }
 }
