@@ -3658,6 +3658,9 @@ async function pasteFromClipboard() {
   if (!clipText.trim()) return;
 
   // Generate a new unique ID to avoid conflicts
+  // TODO: recursively rename ALL @ids inside the pasted block, not just the root.
+  // Currently, pasting a group only renames @group_id but child IDs like @bg
+  // keep their original names, which can cause ID collisions.
   const idMatch = clipText.match(/@(\w+)/);
   if (!idMatch) return;
   const oldId = idMatch[1];

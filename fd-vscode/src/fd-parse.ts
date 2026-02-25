@@ -70,7 +70,8 @@ export function parseSpecNodes(source: string): SpecResult {
   let currentEdge: SpecEdge | null = null;
   let insideEdge = false;
 
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const trimmed = line.trim();
     if (!trimmed) continue;
 
@@ -99,7 +100,7 @@ export function parseSpecNodes(source: string): SpecResult {
         specDepth -= (trimmed.match(/\}/g) || []).length;
         // Read lines until we close the spec block
         const specLines: string[] = [];
-        const lineIdx = lines.indexOf(line);
+        const lineIdx = i;
         let j = lineIdx + 1;
         while (j < lines.length && specDepth > 0) {
           const specLine = lines[j].trim();
