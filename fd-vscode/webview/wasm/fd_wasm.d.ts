@@ -18,6 +18,13 @@ export class FdCanvas {
      */
     add_animation_to_node(node_id: string, trigger: string, props_json: string): boolean;
     /**
+     * Clear the pressed interaction state.
+     *
+     * Called from JS when entering inline text editing to suppress
+     * press animations that cause a visual shape jump on double-click.
+     */
+    clear_pressed(): void;
+    /**
      * Create a node at a specific position (for drag-and-drop).
      * `kind` is "rect", "ellipse", "text", or "frame".
      * Returns `true` if the node was created.
@@ -194,6 +201,7 @@ export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly __wbg_fdcanvas_free: (a: number, b: number) => void;
     readonly fdcanvas_add_animation_to_node: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => number;
+    readonly fdcanvas_clear_pressed: (a: number) => void;
     readonly fdcanvas_create_node_at: (a: number, b: number, c: number, d: number, e: number) => number;
     readonly fdcanvas_delete_selected: (a: number) => number;
     readonly fdcanvas_duplicate_selected: (a: number) => number;

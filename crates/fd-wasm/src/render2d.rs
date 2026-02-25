@@ -140,20 +140,20 @@ fn render_node(
         }
         NodeKind::Group { .. } => {
             draw_group_bg(ctx, node_bounds, &style);
-            
+
             // Draw hover/selection borders for groups
             if is_selected || Some(node.id.as_str()) == hovered_id {
                 ctx.save();
-                
+
                 let (x, y, w, h) = (
                     node_bounds.x as f64,
                     node_bounds.y as f64,
                     node_bounds.width as f64,
                     node_bounds.height as f64,
                 );
-                
+
                 ctx.set_stroke_style_str("#4FC3F7"); // Blue selection color
-                
+
                 if is_selected {
                     ctx.set_line_width(2.0);
                     // Draw node ID badge for selected groups
@@ -161,10 +161,10 @@ fn render_node(
                     ctx.set_fill_style_str("#4FC3F7");
                     let badge_text = format!("Group @{}", node.id.as_str());
                     let text_w = ctx.measure_text(&badge_text).unwrap().width();
-                    
+
                     // Draw badge background
                     ctx.fill_rect(x - 1.0, y - 16.0, text_w + 8.0, 16.0);
-                    
+
                     // Draw text
                     ctx.set_fill_style_str("#1C1C1E"); // Dark text
                     ctx.set_text_align("left");
@@ -178,11 +178,18 @@ fn render_node(
                         &wasm_bindgen::JsValue::from_f64(4.0),
                     ));
                 }
-                
+
                 // Draw the bounding box
-                rounded_rect_path(ctx, x - 1.0, y - 1.0, w + 2.0, h + 2.0, style.corner_radius.unwrap_or(0.0) as f64);
+                rounded_rect_path(
+                    ctx,
+                    x - 1.0,
+                    y - 1.0,
+                    w + 2.0,
+                    h + 2.0,
+                    style.corner_radius.unwrap_or(0.0) as f64,
+                );
                 ctx.stroke();
-                
+
                 ctx.restore();
             }
         }

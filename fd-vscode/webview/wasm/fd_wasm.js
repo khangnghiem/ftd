@@ -38,6 +38,15 @@ export class FdCanvas {
         return ret !== 0;
     }
     /**
+     * Clear the pressed interaction state.
+     *
+     * Called from JS when entering inline text editing to suppress
+     * press animations that cause a visual shape jump on double-click.
+     */
+    clear_pressed() {
+        wasm.fdcanvas_clear_pressed(this.__wbg_ptr);
+    }
+    /**
      * Create a node at a specific position (for drag-and-drop).
      * `kind` is "rect", "ellipse", "text", or "frame".
      * Returns `true` if the node was created.
