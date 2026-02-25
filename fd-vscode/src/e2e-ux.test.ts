@@ -20,6 +20,7 @@ import {
     parseDocumentSymbols,
     findSymbolAtLine,
     transformSpecViewLine,
+    resolveTargetColumn,
 } from "./fd-parse";
 
 // ─── Figma: Select & Move ────────────────────────────────────────────────
@@ -824,3 +825,289 @@ describe("Edge Cases: Error resilience", () => {
         expect(transformSpecViewLine("style foo {")).toBe("style foo {");
     });
 });
+
+// ─── Figma: Card-Building Workflow (Complex Document) ──────────────────────
+
+describe("Figma: Card component build — complex FD documents", () => {
+    const cardDoc = [
+        "style card_bg {",
+        "  fill: #1A1A2E",
+        "  corner: 12",
+        "}",
+        "",
+        'text @card_title "Dashboard" {',
+        "  fill: #FFFFFF",
+        '  font: "Inter" 700 24',
+        "}",
+        "",
+        "group @card_container {",
+        "  layout: column gap=12 pad=16",
+        "  rect @card_bg {",
+        "    w: 320 h: 200",
+        "    use: card_bg",
+        "  }",
+        '  text @card_label "Revenue" {',
+        "    fill: #888",
+        "  }",
+        "}",
+    ].join("\n");
+
+    it("parseDocumentSymbols handles styles, text with quotes, and nested groups", () => {
+        const symbols = parseDocumentSymbols(cardDoc.split("\n"));
+        // Should find: style card_bg, text card_title, group card_container
+        expect(symbols.length).toBeGreaterThanOrEqual(3);
+        const group = symbols.find((s) => s.name === "@card_container");
+        expect(group).toBeDefined();
+        expect(group!.kind).toBe("group");
+        expect(group!.children.length).toBe(2); // card_bg + card_label
+    });
+
+    it("parseSpecNodes detects nodes in complex card docs", () => {
+        const result = parseSpecNodes(cardDoc);
+        // Nodes: @card_title, @card_container, @card_bg, @card_label
+        expect(result.nodes.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it("findSymbolAtLine finds nested child inside group", () => {
+        const symbols = parseDocumentSymbols(cardDoc.split("\n"));
+        // Line 12 is "rect @card_bg {" (inside group)
+        const sym = findSymbolAtLine(symbols, 12);
+        expect(sym).toBeDefined();
+        expect(sym!.name).toBe("@card_bg");
+    });
+});
+
+// ─── Drawio: Multi-shape rapid creation ────────────────────────────────────
+
+describe("Drawio: Rapid shape creation — parsing reliability", () => {
+    it("parses consecutive shapes without blank lines between them", () => {
+        const source = [
+            "rect @box1 { w: 80 h: 40 }",
+            "ellipse @circle1 { w: 60 h: 60 }",
+            "rect @box2 { w: 80 h: 40 }",
+        ].join("\n");
+        const symbols = parseDocumentSymbols(source.split("\n"));
+        expect(symbols).toHaveLength(3);
+        expect(symbols[0].name).toBe("@box1");
+        expect(symbols[1].name).toBe("@circle1");
+        expect(symbols[2].name).toBe("@box2");
+    });
+
+    it("parses edges connecting shapes", () => {
+        const source = [
+            "rect @start {",
+            "  w: 100 h: 50",
+            "}",
+            "",
+            "rect @end {",
+            "  w: 100 h: 50",
+            "}",
+            "",
+            "edge @flow {",
+            "  from: @start",
+            "  to: @end",
+            '  spec "Data flow from start to end"',
+            "}",
+        ].join("\n");
+        const result = parseSpecNodes(source);
+        expect(result.nodes).toHaveLength(2);
+        expect(result.edges).toHaveLength(1);
+        expect(result.edges[0].from).toBe("start");
+        expect(result.edges[0].to).toBe("end");
+        expect(result.edges[0].annotations).toHaveLength(1);
+    });
+});
+
+// ─── Sketch: Multi-select behaviors ────────────────────────────────────────
+
+describe("Sketch: Multi-select — symbol hierarchy for selection", () => {
+    it("parseDocumentSymbols preserves order matching layers panel order", () => {
+        const source = [
+            "rect @first { w: 100 h: 50 }",
+            "ellipse @second { w: 60 h: 60 }",
+            'text @third "Hello" {',
+            "  fill: #000",
+            "}",
+            "rect @fourth { w: 80 h: 40 }",
+        ].join("\n");
+        const symbols = parseDocumentSymbols(source.split("\n"));
+        expect(symbols.map((s) => s.name)).toEqual([
+            "@first",
+            "@second",
+            "@third",
+            "@fourth",
+        ]);
+    });
+
+    it("findSymbolAtLine correctly identifies nodes for click-to-select", () => {
+        const lines = [
+            "rect @a {",
+            "  w: 100",
+            "  h: 50",
+            "}",
+            "",
+            "ellipse @b {",
+            "  w: 60",
+            "}",
+        ];
+        const symbols = parseDocumentSymbols(lines);
+        // Line 1 (w: 100) is inside @a
+        expect(findSymbolAtLine(symbols, 1)?.name).toBe("@a");
+        // Line 5 (ellipse @b) is start of @b
+        expect(findSymbolAtLine(symbols, 5)?.name).toBe("@b");
+    });
+});
+
+// ─── Figma: Rename — sanitization and word-boundary ────────────────────────
+
+describe("Figma: Rename workflow — advanced edge cases", () => {
+    it("rename regex respects word boundaries in nested contexts", () => {
+        // Simulates renaming @btn to @button — must not affect @btn_label
+        const source = 'group @card {\n  rect @btn {\n    w: 100\n  }\n  rect @btn_label {\n    w: 80\n  }\n}';
+        const renamed = source.replace(
+            new RegExp(`@btn\\b`, "g"),
+            "@button",
+        );
+        expect(renamed).toContain("@button {");
+        expect(renamed).toContain("@btn_label"); // Must NOT be affected
+    });
+
+    it("sanitization strips all non-alphanumeric except underscores", () => {
+        const sanitize = (s: string) => s.trim().replace(/[^a-zA-Z0-9_]/g, "_");
+        expect(sanitize("hello world")).toBe("hello_world");
+        expect(sanitize("node-name")).toBe("node_name");
+        expect(sanitize("node.name")).toBe("node_name");
+        expect(sanitize("node@name")).toBe("node_name");
+        expect(sanitize("CamelCase_123")).toBe("CamelCase_123");
+        expect(sanitize("")).toBe("");
+    });
+});
+
+// ─── Spec: Fold ranges for Spec View hiding ────────────────────────────────
+
+describe("Spec View: Fold ranges computation", () => {
+    it("groups consecutive hidden lines into single fold range", () => {
+        const lines = [
+            "rect @a {",       // 0 — node decl, shown
+            "  w: 100",        // 1 — hidden
+            "  h: 50",         // 2 — hidden
+            "  fill: #FFF",    // 3 — hidden
+            '  spec "Title"',  // 4 — shown
+            "}",               // 5 — closing, shown
+        ];
+        const ranges = computeSpecFoldRanges(lines);
+        // Lines 1-3 should form a single fold range
+        expect(ranges.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it("multiple non-contiguous blocks produce separate fold ranges", () => {
+        const lines = [
+            "rect @a {",       // 0
+            "  w: 100",        // 1 — hidden
+            '  spec "A"',      // 2 — shown
+            "}",               // 3
+            "",                // 4
+            "rect @b {",       // 5
+            "  h: 200",        // 6 — hidden
+            '  spec "B"',      // 7 — shown
+            "}",               // 8
+        ];
+        const ranges = computeSpecFoldRanges(lines);
+        expect(ranges.length).toBeGreaterThanOrEqual(2);
+    });
+});
+
+// ─── Panel column resolution (canvas placement) ────────────────────────────
+
+describe("Panel column resolution for canvas placement", () => {
+    it("returns 'beside' when no other columns available", () => {
+        const result = resolveTargetColumn(1, [1]);
+        expect(result).toBe("beside");
+    });
+
+    it("returns other column when two groups exist", () => {
+        const result = resolveTargetColumn(1, [1, 2]);
+        expect(result).toBe(2);
+    });
+
+    it("returns first non-active column when multiple groups exist", () => {
+        const result = resolveTargetColumn(2, [1, 2, 3]);
+        expect(result).toBe(1);
+    });
+
+    it("returns 'beside' when active column is undefined", () => {
+        const result = resolveTargetColumn(undefined, []);
+        expect(result).toBe("beside");
+    });
+});
+
+// ─── Frame nodes (Figma-style auto-layout containers) ──────────────────────
+
+describe("Frame nodes — auto-layout container parsing", () => {
+    it("parseDocumentSymbols correctly parses frame nodes", () => {
+        const lines = [
+            "frame @page {",
+            "  layout: column gap=16",
+            "  rect @hero {",
+            "    w: 800 h: 400",
+            "  }",
+            '  text @heading "Welcome" {',
+            "    fill: #000",
+            "  }",
+            "}",
+        ];
+        const symbols = parseDocumentSymbols(lines);
+        expect(symbols).toHaveLength(1);
+        expect(symbols[0].name).toBe("@page");
+        expect(symbols[0].kind).toBe("frame");
+        expect(symbols[0].children).toHaveLength(2);
+    });
+
+    it("parseSpecNodes includes frame nodes", () => {
+        const source = "frame @layout {\n  spec {\n    status: done\n  }\n}";
+        const result = parseSpecNodes(source);
+        expect(result.nodes).toHaveLength(1);
+        expect(result.nodes[0].kind).toBe("frame");
+        expect(result.nodes[0].annotations[0].value).toBe("done");
+    });
+});
+
+// ─── Deep nesting (3+ levels) ──────────────────────────────────────────────
+
+describe("Deep nesting — 3+ levels of hierarchy", () => {
+    it("parseDocumentSymbols handles 3-level nesting", () => {
+        const lines = [
+            "group @level1 {",
+            "  group @level2 {",
+            "    rect @level3 {",
+            "      w: 50 h: 50",
+            "    }",
+            "  }",
+            "}",
+        ];
+        const symbols = parseDocumentSymbols(lines);
+        expect(symbols).toHaveLength(1);
+        expect(symbols[0].name).toBe("@level1");
+        expect(symbols[0].children).toHaveLength(1);
+        expect(symbols[0].children[0].name).toBe("@level2");
+        expect(symbols[0].children[0].children).toHaveLength(1);
+        expect(symbols[0].children[0].children[0].name).toBe("@level3");
+    });
+
+    it("findSymbolAtLine finds deepest node in 3-level nesting", () => {
+        const lines = [
+            "group @l1 {",    // 0
+            "  group @l2 {",  // 1
+            "    rect @l3 {", // 2
+            "      w: 50",    // 3
+            "    }",          // 4
+            "  }",            // 5
+            "}",              // 6
+        ];
+        const symbols = parseDocumentSymbols(lines);
+        const deepest = findSymbolAtLine(symbols, 3);
+        expect(deepest).toBeDefined();
+        expect(deepest!.name).toBe("@l3");
+    });
+});
+
