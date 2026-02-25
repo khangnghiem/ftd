@@ -3344,7 +3344,7 @@ function focusOnNode(nodeId) {
 
   const MIN_VISIBLE_PX = 20;
   const FIT_PADDING_RATIO = 0.15;
-  const FIT_TARGET_RATIO = 0.25;
+  const FIT_TARGET_RATIO = 0.10;
 
   // Auto-zoom in: both dimensions < 20px (truly invisible, not just thin)
   if (screenW < MIN_VISIBLE_PX && screenH < MIN_VISIBLE_PX) {
