@@ -46,8 +46,11 @@ description: Continuous autonomous agent — work until all tasks are done, then
    ```
 
 7. **Implement the fix/feature** following the standard flow:
-   - Write tests first (TDD) when applicable
-   - Implement changes
+   - **Write tests FIRST** (TDD) — follow `/test` workflow conventions:
+     - Regression test for bugs, `parse_`/`emit_`/`roundtrip_` for parser changes,
+       `tool_`/`sync_`/`layout_` for respective features
+     - Skip only for pure docs/CI changes
+   - Implement changes to make tests pass
    - Keep functions ≤ 30 lines, ≤ 3 args
 
 8. **Verify** — all four must pass:

@@ -5,6 +5,12 @@
 
 ## Completed Requirements
 
+### v0.8.30
+
+- **BUG FIX**: Fixed `parseSpecNodes` annotation bleed — `lines.indexOf()` found the first occurrence of identical spec block lines, causing annotations from earlier nodes to leak into later nodes; switched to indexed `for` loop (fixes Spec View filtering accuracy)
+- **TESTING**: Added 52 E2E UX behavior tests in `e2e-ux.test.ts` covering 17 categories: select/move, copy/paste, group/ungroup, layer rename, inline text editing, zoom/pan, grid overlay, properties panel, drag-and-drop, arrow-key nudge, color swatches, selection bar, spec view, animation tweens, minimap, export PNG, and error resilience — simulating behaviors from Figma, Sketch, Miro, Freeform, Drawio, and Excalidraw
+- **DOCS**: Added TODO for recursive child ID rename on copy/paste of group nodes
+
 ### v0.8.29
 
 - **BREAKING**: Deprecated `label` style property on shapes — inline text on rect/ellipse/frame is now represented as a `text` child node instead of a `label:` property; parser silently ignores `label:` in old files for backwards compatibility
