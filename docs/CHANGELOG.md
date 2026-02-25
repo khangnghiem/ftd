@@ -5,6 +5,10 @@
 
 ## Completed Requirements
 
+### v0.8.20
+
+- **UX**: Reduced auto-zoom-in aggressiveness for layer focus (R3.30) — target node now fills ~10% of viewport width instead of 25%, preserving more surrounding context
+
 ### v0.8.19
 
 - **NEW**: Smart focus on layer click — clicking a layer item in the Layers panel now smoothly pans the camera to center the node (250ms ease-out animation); auto-zooms in if both dimensions are < 20px on screen (truly invisible), auto-zooms out if the node overflows the viewport (15% padding); skips pan if the node center is already within 20% of the viewport center; thin shapes (lines) are left at current zoom unless they overflow
