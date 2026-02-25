@@ -7,6 +7,9 @@ members = [
     "crates/fd-wasm",
     "crates/fd-lsp",
 ]
+exclude = [
+    "editors/zed",
+]
 
 [workspace.package]
 version = "0.1.0"

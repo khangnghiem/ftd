@@ -1,11 +1,15 @@
 [package]
 id = "fast-draft"
 name = "FD (Fast Draft)"
-description = "Language support for FD (Fast Draft) files — syntax highlighting, outline, and auto-indent"
-version = "0.1.0"
+description = "Language support for FD (Fast Draft) files — syntax highlighting, diagnostics, completions, hover, and outline"
+version = "0.2.0"
 schema_version = 1
 authors = ["Khang Nghiêm <khang@fastdraft.dev>"]
 repository = "https://github.com/khangnghiem/fast-draft"
+
+[language_servers.fd-lsp]
+name = "FD LSP"
+languages = ["FD"]
 
 [grammars.fd]
 repository = "https://github.com/khangnghiem/fast-draft"
