@@ -51,7 +51,7 @@ jobs:
     steps:
       - uses: huacnlee/zed-extension-action@v2
         with:
-          extension-name: fd
+          extension-name: fast-draft
           extension-path: extensions/fd
           push-to: khangnghiem/extensions
         env:
