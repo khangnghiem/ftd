@@ -5,6 +5,10 @@
 
 ## Completed Requirements
 
+### v0.8.16
+
+- **UX**: Resize handle cursor feedback — hovering over the 8 resize handles now shows the appropriate directional cursor (`nwse-resize`, `nesw-resize`, `ns-resize`, `ew-resize`) instead of the default pointer, matching Figma/Sketch behavior
+
 ### v0.8.15
 
 - **UX**: AI Refine error messages now include an **"Open Settings"** action button — clicking it opens VS Code settings filtered to `fd.ai` for quick API key configuration or provider switching

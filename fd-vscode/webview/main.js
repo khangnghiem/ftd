@@ -367,6 +367,17 @@ function setupPointerEvents() {
     );
     if (changed) render();
 
+    // ── Resize handle cursor feedback (hover only, not during drag) ──
+    if (!pointerIsDown && !isPanning) {
+      const resizeCursor = getResizeHandleCursor(x, y);
+      if (resizeCursor) {
+        canvas.style.cursor = resizeCursor;
+      } else if (canvas.style.cursor && canvas.style.cursor.includes("resize")) {
+        // Clear resize cursor when no longer over a handle
+        canvas.style.cursor = "";
+      }
+    }
+
     // Show dimension tooltip during drag
     if (pointerIsDown) {
       const tool = currentToolAtPointerDown;
@@ -811,6 +822,40 @@ function updateToolbarActive(tool) {
 function updateCanvasCursor(tool) {
   canvas.className = canvas.className.replace(/tool-\w+/g, "").trim();
   canvas.classList.add(`tool-${tool || "select"}`);
+}
+
+/**
+ * Check if scene-space coords (x, y) are over a resize handle of the
+ * currently selected node. Returns a CSS cursor name or empty string.
+ * Handle radius is 5px in scene-space (matches WASM hit_test_resize_handle).
+ */
+function getResizeHandleCursor(x, y) {
+  if (!fdCanvas) return "";
+  const selectedId = fdCanvas.get_selected_id();
+  if (!selectedId) return "";
+  let b;
+  try {
+    b = JSON.parse(fdCanvas.get_node_bounds(selectedId));
+  } catch (_) { return ""; }
+  if (b.x === undefined) return "";
+
+  const r = 5; // hit radius in scene-space px
+  const handles = [
+    { hx: b.x, hy: b.y, cursor: "nwse-resize" }, // top-left
+    { hx: b.x + b.width / 2, hy: b.y, cursor: "ns-resize" }, // top-center
+    { hx: b.x + b.width, hy: b.y, cursor: "nesw-resize" }, // top-right
+    { hx: b.x, hy: b.y + b.height / 2, cursor: "ew-resize" }, // middle-left
+    { hx: b.x + b.width, hy: b.y + b.height / 2, cursor: "ew-resize" }, // middle-right
+    { hx: b.x, hy: b.y + b.height, cursor: "nesw-resize" }, // bottom-left
+    { hx: b.x + b.width / 2, hy: b.y + b.height, cursor: "ns-resize" }, // bottom-center
+    { hx: b.x + b.width, hy: b.y + b.height, cursor: "nwse-resize" }, // bottom-right
+  ];
+  for (const { hx, hy, cursor } of handles) {
+    const dx = x - hx;
+    const dy = y - hy;
+    if (dx * dx + dy * dy <= r * r) return cursor;
+  }
+  return "";
 }
 
 // ─── Shortcut Help Overlay ───────────────────────────────────────────────
