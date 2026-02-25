@@ -653,19 +653,21 @@ impl SceneGraph {
 
         while let Some(parent_idx) = self.parent(current_idx) {
             let parent_node = &self.graph[parent_idx];
-            
+
             // Stop at root
             if matches!(parent_node.kind, NodeKind::Root) {
                 break;
             }
 
             // If the parent is a Group or Frame, check if it's selected
-            if matches!(parent_node.kind, NodeKind::Group { .. } | NodeKind::Frame { .. }) {
-                if !selected.contains(&parent_node.id) {
-                    highest_unselected_group = Some(parent_node.id);
-                }
+            if matches!(
+                parent_node.kind,
+                NodeKind::Group { .. } | NodeKind::Frame { .. }
+            ) && !selected.contains(&parent_node.id)
+            {
+                highest_unselected_group = Some(parent_node.id);
             }
-            
+
             current_idx = parent_idx;
         }
 
@@ -840,13 +842,24 @@ mod tests {
     #[test]
     fn test_effective_target_drill_down() {
         let mut sg = SceneGraph::new();
-        
+
         // Root -> Group -> Rect
         let group_id = NodeId::intern("my_group");
         let rect_id = NodeId::intern("my_rect");
 
-        let group = SceneNode::new(group_id, NodeKind::Group { layout: LayoutMode::Free });
-        let rect = SceneNode::new(rect_id, NodeKind::Rect { width: 10.0, height: 10.0 });
+        let group = SceneNode::new(
+            group_id,
+            NodeKind::Group {
+                layout: LayoutMode::Free,
+            },
+        );
+        let rect = SceneNode::new(
+            rect_id,
+            NodeKind::Rect {
+                width: 10.0,
+                height: 10.0,
+            },
+        );
 
         let group_idx = sg.add_node(sg.root, group);
         sg.add_node(group_idx, rect);
@@ -860,9 +873,9 @@ mod tests {
         assert_eq!(target2, rect_id);
 
         // 3. Rect is selected (somehow). Hitting rect should still return rect
-        // (because the rule says if ALL group ancestors are selected... wait, 
+        // (because the rule says if ALL group ancestors are selected... wait,
         // the rect is selected, but the group is NOT. So it bubbles to group!)
-        // This is correct Figma behavior: clicking a child of an unselected group 
+        // This is correct Figma behavior: clicking a child of an unselected group
         // selects the group, even if the child was somehow already selected.
         let target3 = sg.effective_target(rect_id, &[rect_id]);
         assert_eq!(target3, group_id);

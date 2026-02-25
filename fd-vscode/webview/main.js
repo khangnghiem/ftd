@@ -1563,6 +1563,8 @@ function openInlineEditor(nodeId, propKey, currentValue) {
 
   // Read node fill color for background matching
   fdCanvas.select_by_id(nodeId);
+  // Clear press animation state to prevent visual shape jump on dblclick
+  fdCanvas.clear_pressed();
   const propsJson = fdCanvas.get_selected_node_props();
   const props = JSON.parse(propsJson);
 
@@ -1611,6 +1613,17 @@ function openInlineEditor(nodeId, propKey, currentValue) {
     padTop = Math.max(4, sh - textHeight - 4);
   }
 
+  // Compute border-radius matching the node's actual shape
+  let borderRadius = "8px";
+  if (props.kind === "ellipse") {
+    borderRadius = "50%";
+  } else if (props.kind === "rect" || props.kind === "frame") {
+    const cr = props.cornerRadius !== undefined ? Math.round(props.cornerRadius * zoomLevel) : 0;
+    borderRadius = `${cr}px`;
+  } else if (isTextNode) {
+    borderRadius = "4px";
+  }
+
   const textarea = document.createElement("textarea");
   textarea.value = currentValue;
   textarea.style.cssText = [
@@ -1622,7 +1635,7 @@ function openInlineEditor(nodeId, propKey, currentValue) {
     `padding:${padTop}px 6px 4px 6px`,
     `font:${fontWeight} ${fontSize}px ${fontFamily},system-ui,sans-serif`,
     `border:2px solid #4FC3F7`,
-    `border-radius:8px`,
+    `border-radius:${borderRadius}`,
     `background:${bgColor}`,
     `color:${textColor}`,
     `resize:none`,

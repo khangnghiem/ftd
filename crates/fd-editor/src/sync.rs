@@ -1016,7 +1016,9 @@ rect @other {
         height: 600.0,
     };
     let mut engine = SyncEngine::from_text(input, viewport).unwrap();
-    engine.apply_mutation(GraphMutation::RemoveNode { id: NodeId::intern("box") });
+    engine.apply_mutation(GraphMutation::RemoveNode {
+        id: NodeId::intern("box"),
+    });
     let text = engine.current_text();
     assert!(!text.contains("rect @box"));
     assert!(text.contains("rect @other"));

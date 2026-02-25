@@ -5,6 +5,11 @@
 
 ## Completed Requirements
 
+### v0.8.25
+
+- **BUG FIX**: Double-clicking a node with `:press` animations no longer causes a visual shape jump — the inline editor now calls `clear_pressed()` to suppress the press animation state before opening the textarea overlay
+- **BUG FIX**: Inline editor textarea now matches the node's actual border-radius — ellipses use `50%`, rects use their actual corner radius (was hardcoded `8px` for all shapes), text nodes use `4px`
+
 ### v0.8.24
 
 - **BUG FIX**: Fixed an issue where deleting a node on canvas wouldn't update Code mode visually. The internal IDE text sync now computes accurate character bounds instead of relying on a naive line count (`document.lineCount`), eliminating silent replacement failures in VS Code when the active document shrinks.
