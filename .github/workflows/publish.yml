@@ -52,7 +52,7 @@ jobs:
       - uses: huacnlee/zed-extension-action@v2
         with:
           extension-name: fast-draft
-          extension-path: extensions/fd
+          extension-path: extensions/fast-draft
           push-to: khangnghiem/extensions
         env:
           COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
