@@ -5,6 +5,10 @@
 
 ## Completed Requirements
 
+### v0.8.28
+
+- **BUG FIX**: Dragging a selected child node within a group now moves only the child, not the whole group — if the raw hit node is already selected (user drilled in), `effective_target` is skipped to preserve the child selection for drag
+
 ### v0.8.27
 
 - **UX**: Groups are now directly clickable in Canvas — clicking empty space within a group's bounding box selects it, removing the need for marquee (drag) selection; clicking on a child still selects the child (then promotes to group via `effective_target`)

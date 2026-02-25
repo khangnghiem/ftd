@@ -178,6 +178,11 @@ impl FdCanvas {
         self.pending_drill_target = None;
 
         let hit = raw_hit.map(|id| {
+            // If the raw hit is already selected, keep it — the user drilled in
+            // and wants to interact with this specific node (e.g. drag a child).
+            if self.select_tool.selected.contains(&id) {
+                return id;
+            }
             let target = self
                 .engine
                 .graph
