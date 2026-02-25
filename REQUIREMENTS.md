@@ -61,6 +61,7 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R3.23**: Freehand shape recognition: After pen stroke completes, detect near-rectangular/elliptical/linear shapes and offer a one-click "Snap to Shape" action — converting freehand to a clean geometric node
 - **R3.28**: Inline text editing: Double-click a text node or shape to open a floating textarea overlay; background matches the node's fill (shape) or uses themed default (text node); live sync — every keystroke updates Code Mode in real-time; Enter confirms, Esc reverts to original value, click-outside commits; 3×3 alignment grid picker in properties panel for `align:` (R1.17)
 - **R3.29**: Animation drop: Drag a node onto another to assign animations — magnetic glow ring on hover, release opens a glassmorphism Animation Picker popover with preset groups (Hover/Press/Enter), live preview on hover, click to commit `anim` block to Code Mode
+- **R3.30**: Layer navigation: Clicking a layer item in the Layers panel selects the node and smoothly pans the camera to center it (250ms ease-out); auto-zooms in if both dimensions are < 20px on screen (truly invisible); auto-zooms out if the node overflows the viewport (15% padding); skips pan if the node center is already within 20% of the viewport center; thin shapes (lines, dividers) keep current zoom unless overflowing
 
 ### R4: AI Editing (Text)
 
@@ -123,34 +124,35 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 
 <!-- AI: Search this index BEFORE proposing new requirements. If a similar tag already exists, extend the existing requirement instead of creating a duplicate. -->
 
-| Tag                | Requirements                          |
-| ------------------ | ------------------------------------- |
-| selection          | R2.5, R3.1, R3.16                     |
-| drawing            | R3.3, R3.15, R3.19                    |
-| pen / freehand     | R3.4, R3.22, R3.23                    |
-| pan                | R3.6, R3.10                           |
-| zoom               | R3.6, R3.20                           |
-| grid / snap        | R3.17, R3.21                          |
-| cursor             | R3.11, R3.16                          |
-| resize             | R3.2, R3.16                           |
-| feedback / tooltip | R3.15, R3.18                          |
-| export             | R3.24                                 |
-| minimap            | R3.25                                 |
-| nudge              | R3.26                                 |
-| rename             | R3.27                                 |
-| undo / redo        | R3.7                                  |
-| properties         | R3.8                                  |
-| drag-drop          | R3.9                                  |
-| annotation         | R1.9, R3.12, R4.5                     |
-| theme              | R3.13                                 |
-| view mode          | R3.14, R4.11                          |
-| pressure / pencil  | R3.4, R3.10, R3.22                    |
-| ai / refinement    | R4.7, R4.8, R4.9, R4.10               |
-| edge               | R1.10, R1.11, R1.12, R4.6, R5.7, R5.8 |
-| import             | R1.14                                 |
-| style              | R1.4, R4.3                            |
-| animation          | R1.5, R1.11, R1.12, R3.29, R5.6, R5.8 |
-| rendering          | R5.1, R5.2, R5.4, R5.5                |
-| platform           | R6.1, R6.2, R6.3, R6.4                |
-| inline editing     | R3.28                                 |
-| text alignment     | R1.17, R3.28                          |
+| Tag                 | Requirements                          |
+| ------------------- | ------------------------------------- |
+| selection           | R2.5, R3.1, R3.16                     |
+| drawing             | R3.3, R3.15, R3.19                    |
+| pen / freehand      | R3.4, R3.22, R3.23                    |
+| pan                 | R3.6, R3.10                           |
+| zoom                | R3.6, R3.20                           |
+| grid / snap         | R3.17, R3.21                          |
+| cursor              | R3.11, R3.16                          |
+| resize              | R3.2, R3.16                           |
+| feedback / tooltip  | R3.15, R3.18                          |
+| export              | R3.24                                 |
+| minimap             | R3.25                                 |
+| nudge               | R3.26                                 |
+| rename              | R3.27                                 |
+| undo / redo         | R3.7                                  |
+| properties          | R3.8                                  |
+| drag-drop           | R3.9                                  |
+| annotation          | R1.9, R3.12, R4.5                     |
+| theme               | R3.13                                 |
+| view mode           | R3.14, R4.11                          |
+| pressure / pencil   | R3.4, R3.10, R3.22                    |
+| ai / refinement     | R4.7, R4.8, R4.9, R4.10               |
+| edge                | R1.10, R1.11, R1.12, R4.6, R5.7, R5.8 |
+| import              | R1.14                                 |
+| style               | R1.4, R4.3                            |
+| animation           | R1.5, R1.11, R1.12, R3.29, R5.6, R5.8 |
+| rendering           | R5.1, R5.2, R5.4, R5.5                |
+| platform            | R6.1, R6.2, R6.3, R6.4                |
+| inline editing      | R3.28                                 |
+| text alignment      | R1.17, R3.28                          |
+| layers / navigation | R3.30                                 |
