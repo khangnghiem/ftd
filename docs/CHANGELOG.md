@@ -5,6 +5,10 @@
 
 ## Completed Requirements
 
+### v0.8.49
+
+- **BUG FIX**: Groups are now draggable again when selected — restored deferred drill-down logic so clicking inside a selected group keeps the group selected for drag; only drills into the child on click-without-drag (pointer-up at same position)
+
 ### v0.8.48
 
 - **BUG FIX**: Clicking a child node now selects the child directly instead of its parent group — removed `effective_target` bubble-up behavior and drill-down state machine (`pending_drill_target`); groups are still selectable by clicking their own unoccupied area or via marquee selection
