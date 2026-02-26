@@ -3762,11 +3762,61 @@ function exportToPng() {
   vscode.postMessage({ type: "exportPng", dataUrl });
 }
 
-/** Set up the export button. */
+/** Set up the export dropdown menu. */
 function setupExportButton() {
-  const btn = document.getElementById("export-btn");
-  if (!btn) return;
-  btn.addEventListener("click", exportToPng);
+  const btn = document.getElementById("export-menu-btn");
+  const menu = document.getElementById("export-menu");
+  if (!btn || !menu) return;
+
+  // Toggle menu
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    menu.classList.toggle("visible");
+  });
+
+  // Handle menu actions
+  document.querySelectorAll(".export-menu-item").forEach(item => {
+    item.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      menu.classList.remove("visible");
+      if (item.classList.contains("disabled")) return;
+
+      const action = item.dataset.export;
+      switch (action) {
+        case "png-clip":
+          await copySelectionAsPng();
+          break;
+        case "png-file":
+          exportToPng();
+          break;
+        case "svg-file":
+          exportToSvg();
+          break;
+        case "fd-clip":
+          copySelectedAsFd();
+          vscode.postMessage({ type: "info", text: "Copied .fd text to clipboard!" });
+          break;
+      }
+    });
+  });
+
+  // Close when clicking outside
+  document.addEventListener("pointerdown", (e) => {
+    if (menu.classList.contains("visible") && !menu.contains(e.target) && !btn.contains(e.target)) {
+      menu.classList.remove("visible");
+    }
+  });
+}
+
+/** Save selection (or full canvas) as an SVG file. */
+function exportToSvg() {
+  if (!fdCanvas) return;
+  const svgStr = fdCanvas.export_svg();
+  if (!svgStr) {
+    vscode.postMessage({ type: "error", text: "Failed to generate SVG." });
+    return;
+  }
+  vscode.postMessage({ type: "exportSvg", svgStr });
 }
 
 // ─── Minimap (Figma/Miro) ─────────────────────────────────────────────────────

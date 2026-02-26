@@ -170,6 +170,21 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
           }
           break;
         }
+        case "exportSvg": {
+          const svgStr = (message as { type: string; svgStr?: string }).svgStr;
+          if (!svgStr) break;
+          const buffer = Buffer.from(svgStr, "utf8");
+          const defaultName = document.fileName.replace(/\.fd$/, ".svg");
+          const uri = await vscode.window.showSaveDialog({
+            defaultUri: vscode.Uri.file(defaultName),
+            filters: { "SVG Image": ["svg"] },
+          });
+          if (uri) {
+            await vscode.workspace.fs.writeFile(uri, buffer);
+            vscode.window.showInformationMessage(`Exported to ${uri.fsPath}`);
+          }
+          break;
+        }
       }
     });
 
@@ -1264,12 +1279,26 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
       background: var(--fd-accent-dim);
     }
 
-    /* ── Export Button ── */
-    #export-btn {
-      font-size: 13px;
-      min-width: 32px;
-      justify-content: center;
+    /* ── Export Dropdown ── */
+    #export-menu-btn {
+      font-size: 13px; min-width: 32px; justify-content: center;
     }
+    .export-dropdown-container { position: relative; display: inline-block; }
+    .export-menu {
+      display: none; position: absolute; top: 100%; right: 0; margin-top: 4px;
+      background: #2D2D2D; border: 1px solid #404040; border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5); flex-direction: column;
+      z-index: 1000; min-width: 180px; padding: 4px;
+    }
+    .export-menu.visible { display: flex; }
+    .export-menu-item {
+      background: none; border: none; padding: 6px 10px;
+      color: #D4D4D4; font-size: 12px; cursor: pointer; text-align: left;
+      border-radius: 4px; display: flex; align-items: center; gap: 8px;
+    }
+    .export-menu-item:hover:not(.disabled) { background: #007FD4; color: #FFF; }
+    .export-menu-item.disabled { opacity: 0.5; cursor: not-allowed; }
+    .export-menu-sep { height: 1px; background: #404040; margin: 4px 0; }
 
     /* ── Minimap ── */
     #minimap-container {
@@ -2100,7 +2129,19 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
     </div>
     <div class="tool-sep zen-full-only"></div>
     <button class="tool-btn zen-full-only" id="grid-toggle-btn" title="Toggle grid overlay (G)">⊞</button>
-    <button class="tool-btn zen-full-only" id="export-btn" title="Export canvas as PNG">📥</button>
+    
+    <!-- Export Dropdown -->
+    <div class="export-dropdown-container zen-full-only" id="export-dropdown-container">
+      <button class="tool-btn" id="export-menu-btn" title="Export options">📥</button>
+      <div class="export-menu" id="export-menu">
+        <button class="export-menu-item" data-export="png-clip">📋 Copy as PNG (⌘⇧C)</button>
+        <button class="export-menu-item" data-export="png-file">🖼️ Save as PNG (2x)</button>
+        <button class="export-menu-item" data-export="svg-file">✨ Save as SVG</button>
+        <div class="export-menu-sep"></div>
+        <button class="export-menu-item" data-export="fd-clip">📝 Copy as .fd text</button>
+        <button class="export-menu-item disabled" title="Coming soon">🔗 Copy as link</button>
+      </div>
+    </div>
     <div class="tool-sep zen-full-only"></div>
     <button class="tool-btn" id="sketchy-toggle-btn" title="Toggle sketchy hand-drawn mode">✏️</button>
     <button class="tool-btn zen-full-only" id="theme-toggle-btn" title="Toggle light/dark canvas theme">🌙</button>

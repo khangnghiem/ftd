@@ -44,6 +44,10 @@ export class FdCanvas {
      */
     duplicate_selected_at(dx: number, dy: number): boolean;
     /**
+     * Export the current selection (or entire canvas if empty) as an SVG string.
+     */
+    export_svg(): string;
+    /**
      * Get annotations for a node as JSON array.
      * Returns `[]` if node not found or has no annotations.
      */
@@ -234,6 +238,7 @@ export interface InitOutput {
     readonly fdcanvas_delete_selected: (a: number) => number;
     readonly fdcanvas_duplicate_selected: (a: number) => number;
     readonly fdcanvas_duplicate_selected_at: (a: number, b: number, c: number) => number;
+    readonly fdcanvas_export_svg: (a: number) => [number, number];
     readonly fdcanvas_get_annotations_json: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_get_arrow_preview: (a: number) => [number, number];
     readonly fdcanvas_get_node_animations_json: (a: number, b: number, c: number) => [number, number];
