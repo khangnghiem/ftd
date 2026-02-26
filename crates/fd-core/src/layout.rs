@@ -213,8 +213,15 @@ fn resolve_children(
         }
     }
 
-    // Auto-size groups to the union bounding box of their children
+    // Auto-size groups to the union bounding box of their children + padding
     if matches!(parent_node.kind, NodeKind::Group { .. }) && !children.is_empty() {
+        let pad = match &layout {
+            LayoutMode::Column { pad, .. }
+            | LayoutMode::Row { pad, .. }
+            | LayoutMode::Grid { pad, .. } => *pad,
+            LayoutMode::Free => 0.0,
+        };
+
         let mut min_x = f32::MAX;
         let mut min_y = f32::MAX;
         let mut max_x = f32::MIN;
@@ -232,7 +239,6 @@ fn resolve_children(
             }
 
             if let Some(cb) = bounds.get(&child_idx) {
-                // Here cb.x and cb.y are parent's coords, we add rel_x and rel_y for size calculation
                 let abs_x = cb.x + rel_x;
                 let abs_y = cb.y + rel_y;
                 min_x = min_x.min(abs_x);
@@ -243,13 +249,15 @@ fn resolve_children(
         }
 
         if min_x < f32::MAX {
+            // Include padding on all sides: origin moves back by pad,
+            // size grows by pad on the trailing edge
             bounds.insert(
                 parent_idx,
                 ResolvedBounds {
-                    x: min_x,
-                    y: min_y,
-                    width: max_x - min_x,
-                    height: max_y - min_y,
+                    x: min_x - pad,
+                    y: min_y - pad,
+                    width: (max_x - min_x) + 2.0 * pad,
+                    height: (max_y - min_y) + 2.0 * pad,
                 },
             );
         }
