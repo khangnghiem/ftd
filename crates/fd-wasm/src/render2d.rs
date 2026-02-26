@@ -164,6 +164,19 @@ fn render_node(
         None => return,
     };
 
+    // DEBUG: log node positions to browser console
+    if !matches!(node.kind, NodeKind::Root) {
+        web_sys::console::log_1(
+            &format!(
+                "RENDER {} y={:.0} h={:.0}",
+                node.id.as_str(),
+                node_bounds.y,
+                node_bounds.height
+            )
+            .into(),
+        );
+    }
+
     let mut triggers = Vec::new();
     if Some(node.id.as_str()) == hovered_id {
         triggers.push(fd_core::model::AnimTrigger::Hover);

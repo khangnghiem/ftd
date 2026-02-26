@@ -717,6 +717,28 @@ group @card {
 @card -> center_in: canvas
 "#;
         let graph = parse_document(input).unwrap();
+        let card_idx = graph.index_of(NodeId::intern("card")).unwrap();
+
+        // Check raw petgraph neighbor order (WITHOUT .reverse())
+        let raw: Vec<_> = graph
+            .graph
+            .neighbors_directed(card_idx, petgraph::Direction::Outgoing)
+            .map(|idx| graph.graph[idx].id.as_str().to_string())
+            .collect();
+        eprintln!("Raw petgraph order: {:?}", raw);
+
+        // Check graph.children() order (WITH .reverse())
+        let children: Vec<_> = graph
+            .children(card_idx)
+            .iter()
+            .map(|idx| graph.graph[*idx].id.as_str().to_string())
+            .collect();
+        eprintln!("graph.children() order: {:?}", children);
+
+        // Correct document order is: heading, amount, change, chart, button
+        assert_eq!(children[0], "heading", "First child must be heading");
+        assert_eq!(children[4], "button", "Last child must be button");
+
         let viewport = Viewport {
             width: 800.0,
             height: 600.0,
