@@ -89,6 +89,22 @@ export class FdCanvas {
         return ret !== 0;
     }
     /**
+     * Export the current selection (or entire canvas if empty) as an SVG string.
+     * @returns {string}
+     */
+    export_svg() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.fdcanvas_export_svg(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
      * Get annotations for a node as JSON array.
      * Returns `[]` if node not found or has no annotations.
      * @param {string} node_id

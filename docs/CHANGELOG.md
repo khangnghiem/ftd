@@ -5,6 +5,12 @@
 
 ## Completed Requirements
 
+### v0.8.44
+
+- **FEATURE**: One-Click Export Menu — replaced the single PNG export button with a multi-format dropdown.
+- **FEATURE**: SVG Export — generate perfect vector SVG files directly from the canvas via a native Rust implementation.
+- **UX**: Support copying raw `.fd` source code to clipboard via the export menu to easily paste to AI assistants.
+
 ### v0.8.43
 
 - **FEATURE**: Copy Selection as PNG — instantly export selected components to the system clipboard as a transparent PNG.

@@ -3,6 +3,7 @@
 //! Compiled via `wasm-pack build --target web` and loaded in VS Code webview.
 
 mod render2d;
+mod svg;
 
 use fd_core::id::NodeId;
 use fd_core::layout::Viewport;
@@ -1005,6 +1006,29 @@ impl FdCanvas {
             offset_y,
             self.sketchy_mode,
         );
+    }
+
+    /// Export the current selection (or entire canvas if empty) as an SVG string.
+    pub fn export_svg(&self) -> String {
+        let theme = if self.dark_mode {
+            render2d::CanvasTheme::dark()
+        } else {
+            render2d::CanvasTheme::light()
+        };
+
+        let selected_ids: Vec<String> = self
+            .select_tool
+            .selected
+            .iter()
+            .map(|id| id.as_str().to_string())
+            .collect();
+
+        svg::render_svg(
+            &self.engine.graph,
+            self.engine.current_bounds(),
+            &selected_ids,
+            &theme,
+        )
     }
 
     // ─── Properties Panel API ────────────────────────────────────────────
