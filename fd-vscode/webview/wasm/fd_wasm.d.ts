@@ -31,10 +31,6 @@ export class FdCanvas {
      */
     create_node_at(kind: string, x: number, y: number): boolean;
     /**
-     * Debug: dump all node bounds as JSON for runtime inspection.
-     */
-    debug_bounds(): string;
-    /**
      * Delete the currently selected node(s). Returns true if any was deleted.
      */
     delete_selected(): boolean;
@@ -239,7 +235,6 @@ export interface InitOutput {
     readonly fdcanvas_add_animation_to_node: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => number;
     readonly fdcanvas_clear_pressed: (a: number) => void;
     readonly fdcanvas_create_node_at: (a: number, b: number, c: number, d: number, e: number) => number;
-    readonly fdcanvas_debug_bounds: (a: number) => [number, number];
     readonly fdcanvas_delete_selected: (a: number) => number;
     readonly fdcanvas_duplicate_selected: (a: number) => number;
     readonly fdcanvas_duplicate_selected_at: (a: number, b: number, c: number) => number;
