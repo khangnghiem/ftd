@@ -134,12 +134,12 @@ pub fn render_svg(
     svg
 }
 
+#[allow(clippy::only_used_in_recursion)]
 fn render_node_svg(
     out: &mut String,
     graph: &SceneGraph,
     idx: NodeIndex,
     bounds: &HashMap<NodeIndex, ResolvedBounds>,
-    #[allow(clippy::only_used_in_recursion)]
     theme: &CanvasTheme,
 ) {
     let node = &graph.graph[idx];
