@@ -294,8 +294,9 @@ fn intrinsic_size(node: &SceneNode) -> (f32, f32) {
         NodeKind::Rect { width, height } => (*width, *height),
         NodeKind::Ellipse { rx, ry } => (*rx * 2.0, *ry * 2.0),
         NodeKind::Text { content } => {
-            // Rough estimate: 8px per char, 20px height. Real text layout comes later.
-            (content.len() as f32 * 8.0, 20.0)
+            let font_size = node.style.font.as_ref().map_or(14.0, |f| f.size);
+            let char_width = font_size * 0.6;
+            (content.len() as f32 * char_width, font_size)
         }
         NodeKind::Group { .. } => (0.0, 0.0), // Auto-sized: computed after children resolve
         NodeKind::Frame { width, height, .. } => (*width, *height),
