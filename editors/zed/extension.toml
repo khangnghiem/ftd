@@ -12,4 +12,5 @@ languages = ["FD"]
 
 [grammars.fd]
 repository = "https://github.com/khangnghiem/fast-draft"
+rev = "1e43a46"
 path = "tree-sitter-fd"
