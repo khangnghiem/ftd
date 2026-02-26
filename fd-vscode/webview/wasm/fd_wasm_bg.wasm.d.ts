@@ -5,6 +5,7 @@ export const __wbg_fdcanvas_free: (a: number, b: number) => void;
 export const fdcanvas_add_animation_to_node: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => number;
 export const fdcanvas_clear_pressed: (a: number) => void;
 export const fdcanvas_create_node_at: (a: number, b: number, c: number, d: number, e: number) => number;
+export const fdcanvas_debug_bounds: (a: number) => [number, number];
 export const fdcanvas_delete_selected: (a: number) => number;
 export const fdcanvas_duplicate_selected: (a: number) => number;
 export const fdcanvas_duplicate_selected_at: (a: number, b: number, c: number) => number;

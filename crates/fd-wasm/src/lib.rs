@@ -109,6 +109,23 @@ impl FdCanvas {
         self.engine.current_text().to_string()
     }
 
+    /// Debug: dump all node bounds as JSON for runtime inspection.
+    pub fn debug_bounds(&self) -> String {
+        let mut entries = Vec::new();
+        for (idx, b) in self.engine.current_bounds() {
+            let node = &self.engine.graph.graph[*idx];
+            entries.push(format!(
+                r#"{{"id":"{}","x":{:.1},"y":{:.1},"w":{:.1},"h":{:.1}}}"#,
+                node.id.as_str(),
+                b.x,
+                b.y,
+                b.width,
+                b.height
+            ));
+        }
+        format!("[{}]", entries.join(","))
+    }
+
     /// Render the scene to a Canvas2D context.
     pub fn render(&self, ctx: &CanvasRenderingContext2d, time_ms: f64) {
         let selected_ids: Vec<String> = self

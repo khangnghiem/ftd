@@ -702,4 +702,80 @@ group @card {
             amount.height
         );
     }
+
+    #[test]
+    fn layout_dashboard_card_with_center_in() {
+        let input = r#"
+group @card {
+  layout: column gap=12 pad=24
+  text @heading "Monthly Revenue" { font: "Inter" 600 18 }
+  text @amount "$48,250" { font: "Inter" 700 36 }
+  text @change "+12.5% from last month" { font: "Inter" 400 14 }
+  rect @chart { w: 320 h: 160 }
+  rect @button { w: 320 h: 44 }
+}
+@card -> center_in: canvas
+"#;
+        let graph = parse_document(input).unwrap();
+        let viewport = Viewport {
+            width: 800.0,
+            height: 600.0,
+        };
+        let bounds = resolve_layout(&graph, viewport);
+
+        let heading = bounds[&graph.index_of(NodeId::intern("heading")).unwrap()];
+        let amount = bounds[&graph.index_of(NodeId::intern("amount")).unwrap()];
+        let change = bounds[&graph.index_of(NodeId::intern("change")).unwrap()];
+        let chart = bounds[&graph.index_of(NodeId::intern("chart")).unwrap()];
+        let button = bounds[&graph.index_of(NodeId::intern("button")).unwrap()];
+        let card = bounds[&graph.index_of(NodeId::intern("card")).unwrap()];
+
+        // Print for debugging
+        eprintln!("card: y={} h={}", card.y, card.height);
+        eprintln!("heading: y={}", heading.y);
+        eprintln!("amount: y={}", amount.y);
+        eprintln!("change: y={}", change.y);
+        eprintln!("chart: y={}", chart.y);
+        eprintln!("button: y={}", button.y);
+
+        // All children must be INSIDE the card
+        assert!(
+            heading.y >= card.y,
+            "heading.y({}) must be >= card.y({})",
+            heading.y,
+            card.y
+        );
+        assert!(
+            button.y + button.height <= card.y + card.height + 0.1,
+            "button bottom({}) must be <= card bottom({})",
+            button.y + button.height,
+            card.y + card.height
+        );
+
+        // Document order preserved after center_in shift
+        assert!(
+            heading.y < amount.y,
+            "heading.y({}) < amount.y({})",
+            heading.y,
+            amount.y
+        );
+        assert!(
+            amount.y < change.y,
+            "amount.y({}) < change.y({})",
+            amount.y,
+            change.y
+        );
+        assert!(
+            change.y < chart.y,
+            "change.y({}) < chart.y({})",
+            change.y,
+            chart.y
+        );
+        assert!(
+            chart.y < button.y,
+            "chart.y({}) < button.y({})",
+            chart.y,
+            button.y
+        );
+    }
 }

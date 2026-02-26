@@ -62,6 +62,22 @@ export class FdCanvas {
         return ret !== 0;
     }
     /**
+     * Debug: dump all node bounds as JSON for runtime inspection.
+     * @returns {string}
+     */
+    debug_bounds() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.fdcanvas_debug_bounds(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
      * Delete the currently selected node(s). Returns true if any was deleted.
      * @returns {boolean}
      */
