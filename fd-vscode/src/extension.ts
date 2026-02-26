@@ -321,11 +321,9 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
     );
 
     const nonce = getNonce();
-    const initialText = document
-      .getText()
-      .replace(/\\/g, "\\\\")
-      .replace(/`/g, "\\`")
-      .replace(/\$/g, "\\$");
+    const initialText = JSON.stringify(document.getText())
+      .replace(/</g, "\\u003c")
+      .replace(/>/g, "\\u003e");
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -2348,7 +2346,7 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
   </div>
 
   <script nonce="${nonce}">
-    window.initialText = \`${initialText}\`;
+    window.initialText = ${initialText};
     window.wasmBinaryUrl = "${wasmBinaryUri}";
     window.wasmJsUrl = "${wasmJsUri}";
     window.vscodeApi = acquireVsCodeApi();
