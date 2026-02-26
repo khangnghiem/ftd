@@ -94,15 +94,23 @@ fn resolve_children(
 
     match layout {
         LayoutMode::Column { gap, pad } => {
+            let content_width = parent_bounds.width - 2.0 * pad;
             // Pass 1: initialize children at parent origin + pad, recurse to resolve nested groups
             for &child_idx in &children {
-                let child_size = intrinsic_size(&graph.graph[child_idx]);
+                let child_node = &graph.graph[child_idx];
+                let child_size = intrinsic_size(child_node);
+                // Stretch text nodes to fill column width (like CSS align-items: stretch)
+                let w = if matches!(child_node.kind, NodeKind::Text { .. }) {
+                    content_width.max(child_size.0)
+                } else {
+                    child_size.0
+                };
                 bounds.insert(
                     child_idx,
                     ResolvedBounds {
                         x: parent_bounds.x + pad,
                         y: parent_bounds.y + pad,
-                        width: child_size.0,
+                        width: w,
                         height: child_size.1,
                     },
                 );
