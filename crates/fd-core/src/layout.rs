@@ -336,29 +336,22 @@ fn apply_constraint(
 
             let cx = container.x + (container.width - node_bounds.width) / 2.0;
             let cy = container.y + (container.height - node_bounds.height) / 2.0;
+            let dx = cx - node_bounds.x;
+            let dy = cy - node_bounds.y;
 
-            bounds.insert(
-                node_idx,
-                ResolvedBounds {
-                    x: cx,
-                    y: cy,
-                    ..node_bounds
-                },
-            );
+            shift_subtree(graph, node_idx, dx, dy, bounds);
         }
         Constraint::Offset { from, dx, dy } => {
             let from_bounds = match graph.index_of(*from).and_then(|i| bounds.get(&i)) {
                 Some(b) => *b,
                 None => return,
             };
-            bounds.insert(
-                node_idx,
-                ResolvedBounds {
-                    x: from_bounds.x + dx,
-                    y: from_bounds.y + dy,
-                    ..node_bounds
-                },
-            );
+            let target_x = from_bounds.x + dx;
+            let target_y = from_bounds.y + dy;
+            let sdx = target_x - node_bounds.x;
+            let sdy = target_y - node_bounds.y;
+
+            shift_subtree(graph, node_idx, sdx, sdy, bounds);
         }
         Constraint::FillParent { pad } => {
             // Find parent in graph
@@ -367,16 +360,22 @@ fn apply_constraint(
                 .neighbors_directed(node_idx, petgraph::Direction::Incoming)
                 .next();
 
-            if let Some(parent) = parent_idx.and_then(|p| bounds.get(&p)) {
-                bounds.insert(
-                    node_idx,
-                    ResolvedBounds {
-                        x: parent.x + pad,
-                        y: parent.y + pad,
-                        width: parent.width - 2.0 * pad,
-                        height: parent.height - 2.0 * pad,
-                    },
-                );
+            if let Some(parent) = parent_idx.and_then(|p| bounds.get(&p).copied()) {
+                let target_x = parent.x + pad;
+                let target_y = parent.y + pad;
+                let new_w = parent.width - 2.0 * pad;
+                let new_h = parent.height - 2.0 * pad;
+                let dx = target_x - node_bounds.x;
+                let dy = target_y - node_bounds.y;
+
+                // Move children with the position shift
+                shift_subtree(graph, node_idx, dx, dy, bounds);
+
+                // Apply the resize to the node itself (children keep their sizes)
+                if let Some(nb) = bounds.get_mut(&node_idx) {
+                    nb.width = new_w;
+                    nb.height = new_h;
+                }
             }
         }
         Constraint::Position { x, y } => {
@@ -384,15 +383,12 @@ fn apply_constraint(
                 Some(p_bounds) => (p_bounds.x, p_bounds.y),
                 None => (0.0, 0.0),
             };
-            bounds.insert(
-                node_idx,
-                ResolvedBounds {
-                    x: px + *x,
-                    y: py + *y,
-                    width: node_bounds.width,
-                    height: node_bounds.height,
-                },
-            );
+            let target_x = px + *x;
+            let target_y = py + *y;
+            let dx = target_x - node_bounds.x;
+            let dy = target_y - node_bounds.y;
+
+            shift_subtree(graph, node_idx, dx, dy, bounds);
         }
     }
 }
