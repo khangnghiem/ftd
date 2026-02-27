@@ -1575,7 +1575,7 @@ rect @box {
         let child_pos = output.find("text @label").expect("child missing");
         let fill_pos = output.find("fill: #FF0000").expect("fill missing");
         let corner_pos = output.find("corner: 10").expect("corner missing");
-        let anim_pos = output.find("anim :hover").expect("anim missing");
+        let anim_pos = output.find("when :hover").expect("when missing");
 
         assert!(
             child_pos < fill_pos,
@@ -1615,8 +1615,8 @@ edge @flow {
         let output = emit_document(&graph);
 
         assert!(
-            output.contains("# ─── Styles ───"),
-            "should have Styles separator"
+            output.contains("# ─── Themes ───"),
+            "should have Themes separator"
         );
         assert!(
             output.contains("# ─── Layout ───"),
