@@ -124,32 +124,35 @@ impl SyncEngine {
                                     | Constraint::FillParent { .. }
                             )
                         });
-                        node.constraints
-                            .push(Constraint::Position { x: rel_x, y: rel_y });
+                        let rx = (rel_x * 100.0).round() / 100.0;
+                        let ry = (rel_y * 100.0).round() / 100.0;
+                        node.constraints.push(Constraint::Position { x: rx, y: ry });
                     }
                 }
             }
             GraphMutation::ResizeNode { id, width, height } => {
+                let rw = (width * 100.0).round() / 100.0;
+                let rh = (height * 100.0).round() / 100.0;
                 if let Some(node) = self.graph.get_by_id_mut(id) {
                     match &mut node.kind {
                         NodeKind::Rect {
                             width: w,
                             height: h,
                         } => {
-                            *w = width;
-                            *h = height;
+                            *w = rw;
+                            *h = rh;
                         }
                         NodeKind::Ellipse { rx, ry } => {
-                            *rx = width / 2.0;
-                            *ry = height / 2.0;
+                            *rx = rw / 2.0;
+                            *ry = rh / 2.0;
                         }
                         NodeKind::Frame {
                             width: w,
                             height: h,
                             ..
                         } => {
-                            *w = width;
-                            *h = height;
+                            *w = rw;
+                            *h = rh;
                         }
                         _ => {}
                     }

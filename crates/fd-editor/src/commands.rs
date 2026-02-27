@@ -6,22 +6,26 @@
 use crate::sync::{GraphMutation, SyncEngine};
 
 /// A command that captures both a forward mutation and its inverse.
+/// May hold a single mutation or a batch of mutations (from drag gestures).
 #[derive(Debug, Clone)]
 pub struct Command {
-    /// The forward mutation.
-    pub forward: GraphMutation,
-    /// The inverse mutation (computed at apply time).
-    pub inverse: GraphMutation,
+    /// Individual steps: each is (forward, inverse).
+    /// A single command has exactly one entry; a batch may have many.
+    pub steps: Vec<(GraphMutation, GraphMutation)>,
     /// Human-readable description for UI display.
     pub description: String,
 }
 
-/// Manages undo/redo stacks.
+/// Manages undo/redo stacks with batch grouping for drag gestures.
 pub struct CommandStack {
     undo_stack: Vec<Command>,
     redo_stack: Vec<Command>,
     /// Maximum undo depth.
     max_depth: usize,
+    /// Batch nesting depth (0 = not batching).
+    batch_depth: usize,
+    /// Accumulated steps during a batch.
+    batch_buffer: Vec<(GraphMutation, GraphMutation)>,
 }
 
 impl CommandStack {
@@ -30,6 +34,37 @@ impl CommandStack {
             undo_stack: Vec::with_capacity(max_depth),
             redo_stack: Vec::new(),
             max_depth,
+            batch_depth: 0,
+            batch_buffer: Vec::new(),
+        }
+    }
+
+    /// Start a batch group. All commands until `end_batch()` are merged
+    /// into a single undo step. Supports nesting.
+    pub fn begin_batch(&mut self) {
+        if self.batch_depth == 0 {
+            self.batch_buffer.clear();
+        }
+        self.batch_depth += 1;
+    }
+
+    /// End a batch group. When the outermost batch closes, all buffered
+    /// steps are squashed into one `Command` on the undo stack.
+    pub fn end_batch(&mut self) {
+        if self.batch_depth == 0 {
+            return;
+        }
+        self.batch_depth -= 1;
+        if self.batch_depth == 0 && !self.batch_buffer.is_empty() {
+            let cmd = Command {
+                steps: std::mem::take(&mut self.batch_buffer),
+                description: "canvas edit".to_string(),
+            };
+            self.undo_stack.push(cmd);
+            if self.undo_stack.len() > self.max_depth {
+                self.undo_stack.remove(0);
+            }
+            self.redo_stack.clear();
         }
     }
 
@@ -38,9 +73,15 @@ impl CommandStack {
         let inverse = compute_inverse(engine, &mutation);
         engine.apply_mutation(mutation.clone());
 
+        let step = (mutation, inverse);
+
+        if self.batch_depth > 0 {
+            self.batch_buffer.push(step);
+            return;
+        }
+
         let cmd = Command {
-            forward: mutation,
-            inverse,
+            steps: vec![step],
             description: description.to_string(),
         };
 
@@ -53,20 +94,26 @@ impl CommandStack {
         self.redo_stack.clear();
     }
 
-    /// Undo the last command.
+    /// Undo the last command (or batch).
     pub fn undo(&mut self, engine: &mut SyncEngine) -> Option<String> {
         let cmd = self.undo_stack.pop()?;
         let desc = cmd.description.clone();
-        engine.apply_mutation(cmd.inverse.clone());
+        // Apply inverses in reverse order
+        for (_fwd, inv) in cmd.steps.iter().rev() {
+            engine.apply_mutation(inv.clone());
+        }
         self.redo_stack.push(cmd);
         Some(desc)
     }
 
-    /// Redo the last undone command.
+    /// Redo the last undone command (or batch).
     pub fn redo(&mut self, engine: &mut SyncEngine) -> Option<String> {
         let cmd = self.redo_stack.pop()?;
         let desc = cmd.description.clone();
-        engine.apply_mutation(cmd.forward.clone());
+        // Apply forwards in original order
+        for (fwd, _inv) in &cmd.steps {
+            engine.apply_mutation(fwd.clone());
+        }
         self.undo_stack.push(cmd);
         Some(desc)
     }
@@ -472,5 +519,85 @@ rect @b2 {
             undo_count += 1;
         }
         assert_eq!(undo_count, max, "undo depth should be capped at max_depth");
+    }
+
+    #[test]
+    fn batch_undo_is_single_step() {
+        let input = "rect @box {\n  w: 100 h: 50\n}\n";
+        let viewport = Viewport {
+            width: 800.0,
+            height: 600.0,
+        };
+        let mut engine = SyncEngine::from_text(input, viewport).unwrap();
+        let mut stack = CommandStack::new(100);
+        let box_id = NodeId::intern("box");
+
+        // Simulate a drag: 5 incremental moves inside a batch
+        stack.begin_batch();
+        for _ in 0..5 {
+            stack.execute(
+                &mut engine,
+                GraphMutation::MoveNode {
+                    id: box_id,
+                    dx: 10.0,
+                    dy: 5.0,
+                },
+                "drag",
+            );
+        }
+        stack.end_batch();
+
+        // Should be exactly one undo step for the whole drag
+        assert!(stack.can_undo());
+        stack.undo(&mut engine);
+        assert!(!stack.can_undo(), "batch should be a single undo step");
+    }
+
+    #[test]
+    fn batch_redo_reapplies_all() {
+        let input = "rect @box {\n  w: 100 h: 50\n}\n";
+        let viewport = Viewport {
+            width: 800.0,
+            height: 600.0,
+        };
+        let mut engine = SyncEngine::from_text(input, viewport).unwrap();
+        let mut stack = CommandStack::new(100);
+        let box_id = NodeId::intern("box");
+
+        let idx = engine.graph.index_of(box_id).unwrap();
+        let start_x = engine.bounds[&idx].x;
+
+        // 5 moves of dx=10 in a batch = total 50px
+        stack.begin_batch();
+        for _ in 0..5 {
+            stack.execute(
+                &mut engine,
+                GraphMutation::MoveNode {
+                    id: box_id,
+                    dx: 10.0,
+                    dy: 0.0,
+                },
+                "drag",
+            );
+        }
+        stack.end_batch();
+
+        // Undo the batch
+        stack.undo(&mut engine);
+        let b = engine.bounds[&idx];
+        assert!(
+            (b.x - start_x).abs() < 0.1,
+            "undo should restore x to {start_x}, got {}",
+            b.x
+        );
+
+        // Redo the batch
+        stack.redo(&mut engine);
+        let b = engine.bounds[&idx];
+        assert!(
+            (b.x - (start_x + 50.0)).abs() < 0.1,
+            "redo should reapply all 50px, got {}",
+            b.x
+        );
     }
 }

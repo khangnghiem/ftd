@@ -116,6 +116,11 @@ crates/
 > [!CAUTION]
 > **NEVER use npm for VS Code extension. Always use pnpm if possible, npm only as fallback.**
 
+### 🌐 Browser Subagent Rule
+
+> [!IMPORTANT]
+> When using Chrome browser subagents, if a tab with the same or similar URL already exists, **reuse it** instead of spawning a new tab.
+
 ---
 
 ## TIER 2: CI/CD
