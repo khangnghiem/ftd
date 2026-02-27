@@ -32,34 +32,45 @@ impl Color {
     /// Parse a hex color string: `#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA`.
     pub fn from_hex(hex: &str) -> Option<Self> {
         let hex = hex.strip_prefix('#')?;
-        match hex.len() {
+        let bytes = hex.as_bytes();
+
+        fn hex_val(c: u8) -> Option<u8> {
+            match c {
+                b'0'..=b'9' => Some(c - b'0'),
+                b'a'..=b'f' => Some(c - b'a' + 10),
+                b'A'..=b'F' => Some(c - b'A' + 10),
+                _ => None,
+            }
+        }
+
+        match bytes.len() {
             3 => {
-                let r = u8::from_str_radix(&hex[0..1].repeat(2), 16).ok()?;
-                let g = u8::from_str_radix(&hex[1..2].repeat(2), 16).ok()?;
-                let b = u8::from_str_radix(&hex[2..3].repeat(2), 16).ok()?;
+                let r = hex_val(bytes[0])?;
+                let g = hex_val(bytes[1])?;
+                let b = hex_val(bytes[2])?;
                 Some(Self::rgba(
-                    r as f32 / 255.0,
-                    g as f32 / 255.0,
-                    b as f32 / 255.0,
+                    (r * 17) as f32 / 255.0,
+                    (g * 17) as f32 / 255.0,
+                    (b * 17) as f32 / 255.0,
                     1.0,
                 ))
             }
             4 => {
-                let r = u8::from_str_radix(&hex[0..1].repeat(2), 16).ok()?;
-                let g = u8::from_str_radix(&hex[1..2].repeat(2), 16).ok()?;
-                let b = u8::from_str_radix(&hex[2..3].repeat(2), 16).ok()?;
-                let a = u8::from_str_radix(&hex[3..4].repeat(2), 16).ok()?;
+                let r = hex_val(bytes[0])?;
+                let g = hex_val(bytes[1])?;
+                let b = hex_val(bytes[2])?;
+                let a = hex_val(bytes[3])?;
                 Some(Self::rgba(
-                    r as f32 / 255.0,
-                    g as f32 / 255.0,
-                    b as f32 / 255.0,
-                    a as f32 / 255.0,
+                    (r * 17) as f32 / 255.0,
+                    (g * 17) as f32 / 255.0,
+                    (b * 17) as f32 / 255.0,
+                    (a * 17) as f32 / 255.0,
                 ))
             }
             6 => {
-                let r = u8::from_str_radix(&hex[0..2], 16).ok()?;
-                let g = u8::from_str_radix(&hex[2..4], 16).ok()?;
-                let b = u8::from_str_radix(&hex[4..6], 16).ok()?;
+                let r = hex_val(bytes[0])? << 4 | hex_val(bytes[1])?;
+                let g = hex_val(bytes[2])? << 4 | hex_val(bytes[3])?;
+                let b = hex_val(bytes[4])? << 4 | hex_val(bytes[5])?;
                 Some(Self::rgba(
                     r as f32 / 255.0,
                     g as f32 / 255.0,
@@ -68,10 +79,10 @@ impl Color {
                 ))
             }
             8 => {
-                let r = u8::from_str_radix(&hex[0..2], 16).ok()?;
-                let g = u8::from_str_radix(&hex[2..4], 16).ok()?;
-                let b = u8::from_str_radix(&hex[4..6], 16).ok()?;
-                let a = u8::from_str_radix(&hex[6..8], 16).ok()?;
+                let r = hex_val(bytes[0])? << 4 | hex_val(bytes[1])?;
+                let g = hex_val(bytes[2])? << 4 | hex_val(bytes[3])?;
+                let b = hex_val(bytes[4])? << 4 | hex_val(bytes[5])?;
+                let a = hex_val(bytes[6])? << 4 | hex_val(bytes[7])?;
                 Some(Self::rgba(
                     r as f32 / 255.0,
                     g as f32 / 255.0,
