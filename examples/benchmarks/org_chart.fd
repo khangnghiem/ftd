@@ -1,5 +1,5 @@
 # Org Chart — HR / Manager use case
-# Demonstrates: edges with labels, nested groups, hierarchical layout
+# Demonstrates: edges, nested groups, ellipse avatars, named colors
 
 style person_card {
   fill: #FFFFFF
@@ -16,6 +16,11 @@ group @ceo_card {
   use: person_card
   shadow: (0,2,8,#0000001A)
   x: 380 y: 40
+  ellipse @ceo_avatar {
+    w: 40 h: 40
+    fill: purple
+    opacity: 0.15
+  }
   text @ceo_name "Sarah Chen" {
     font: "Inter" semibold 16
     fill: #111827
@@ -23,7 +28,7 @@ group @ceo_card {
   rect @ceo_role {
     w: 140 h: 24
     use: role_badge
-    fill: #6C5CE7
+    fill: purple
     text "Chief Executive Officer" {
       font: "Inter" medium 11
       fill: #FFFFFF
@@ -37,6 +42,11 @@ group @vp_eng_card {
   use: person_card
   shadow: (0,2,8,#0000001A)
   x: 120 y: 200
+  ellipse @vp_eng_avatar {
+    w: 32 h: 32
+    fill: blue
+    opacity: 0.15
+  }
   text @vp_eng_name "Marcus Johnson" {
     font: "Inter" semibold 14
     fill: #111827
@@ -44,7 +54,7 @@ group @vp_eng_card {
   rect @vp_eng_role {
     w: 120 h: 22
     use: role_badge
-    fill: #3B82F6
+    fill: blue
     text "VP Engineering" {
       font: "Inter" medium 11
       fill: #FFFFFF
@@ -57,6 +67,11 @@ group @vp_design_card {
   use: person_card
   shadow: (0,2,8,#0000001A)
   x: 380 y: 200
+  ellipse @vp_design_avatar {
+    w: 32 h: 32
+    fill: violet
+    opacity: 0.15
+  }
   text @vp_design_name "Aisha Patel" {
     font: "Inter" semibold 14
     fill: #111827
@@ -77,6 +92,11 @@ group @vp_product_card {
   use: person_card
   shadow: (0,2,8,#0000001A)
   x: 620 y: 200
+  ellipse @vp_product_avatar {
+    w: 32 h: 32
+    fill: green
+    opacity: 0.15
+  }
   text @vp_product_name "David Kim" {
     font: "Inter" semibold 14
     fill: #111827
@@ -84,7 +104,7 @@ group @vp_product_card {
   rect @vp_product_role {
     w: 100 h: 22
     use: role_badge
-    fill: #10B981
+    fill: green
     text "VP Product" {
       font: "Inter" medium 11
       fill: #FFFFFF

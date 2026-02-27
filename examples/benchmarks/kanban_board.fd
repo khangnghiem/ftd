@@ -1,5 +1,5 @@
 # Kanban Board — Project Manager use case
-# Demonstrates: row/column layouts, semantic IDs, color-coded statuses, style reuse
+# Demonstrates: row/column layouts, semantic IDs, named colors, style reuse
 
 style card {
   fill: #FFFFFF
@@ -51,7 +51,7 @@ group @kanban_board {
         use: tag_urgent
         text "Urgent" {
           font: "Inter" medium 11
-          fill: #DC2626
+          fill: red
         }
       }
       text @task_auth_title "Fix authentication timeout" {
@@ -73,7 +73,7 @@ group @kanban_board {
         use: tag_feature
         text "Feature" {
           font: "Inter" medium 11
-          fill: #2563EB
+          fill: blue
         }
       }
       text @task_search_title "Add global search" {
@@ -107,7 +107,7 @@ group @kanban_board {
         use: tag_feature
         text "Feature" {
           font: "Inter" medium 11
-          fill: #2563EB
+          fill: blue
         }
       }
       text @task_api_title "REST API v2 migration" {
@@ -129,7 +129,7 @@ group @kanban_board {
         use: tag_bug
         text "Bug" {
           font: "Inter" medium 11
-          fill: #D97706
+          fill: yellow
         }
       }
       text @task_perf_title "Dashboard slow on mobile" {
@@ -163,7 +163,7 @@ group @kanban_board {
         use: tag_feature
         text "Feature" {
           font: "Inter" medium 11
-          fill: #2563EB
+          fill: blue
         }
       }
       text @task_dark_title "Dark mode support" {
