@@ -1,6 +1,6 @@
 id = "fast-draft"
 name = "FD (Fast Draft)"
-description = "Language support for FD (Fast Draft) files — syntax highlighting, diagnostics, completions, hover, and outline"
+description = "Design as Code — language support for .fd (Fast Draft) files with syntax highlighting, diagnostics, completions, hover, and outline"
 version = "0.2.0"
 schema_version = 1
 authors = ["Khang Nghiêm <khang@fastdraft.dev>"]

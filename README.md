@@ -1,39 +1,54 @@
-# FD — Fast Draft
+# Fast Draft
 
-> A token-efficient file format and interactive canvas for drawing, design, and animation. Built in Rust + WASM. Bidirectional: edit the code or the canvas, both stay in sync.
+> **Design as Code.** \
+> Fast Draft is a file format and canvas for drawing, design, and animation — right inside your code editor. Draw it or code it? Why not both?
 
-## What is FD?
+**Fast Draft lets you describe designs as simple text — then see and edit them on a live canvas.**
 
-FD is two things:
+Think of it like Markdown, but for graphics. You write a few lines of text to describe shapes, colors, and layouts. Fast Draft instantly renders them on an interactive canvas where you can drag, resize, and restyle everything visually. Any change you make on the canvas writes back to the text, and vice versa.
 
-1. **A file format** (`.fd`) — a compact text DSL for describing 2D graphics, layouts, and animations. Designed to be 5× more token-efficient than SVG while remaining human-readable and AI-friendly.
+Fast Draft has two modes, each designed for a different audience:
 
-2. **An interactive canvas** — a GPU-accelerated editor that renders `.fd` files and lets you manipulate them visually. Changes flow bidirectionally: edit the text → canvas updates; drag on canvas → text updates.
+- 🤖 **Code Mode** — the AI Interface. LLMs and coding agents read, write, and reason about `.fd` text directly. Uses ~5× fewer tokens than Excalidraw JSON, so entire UIs fit in a single prompt. No screenshots, no pixel coordinates — just structured, semantic text.
+- 🎨 **Canvas Mode** — the Human Interface. Designers and architects draw, drag, and resize on a fast, GPU-powered canvas inside VS Code, Cursor, or Zed. No code knowledge needed — just point, click, and create.
 
-### Example `.fd` File
+Both modes edit the same file. Changes in one instantly appear in the other.
+
+### Why Fast Draft?
+
+| Benefit                        | How                                                                              |
+| ------------------------------ | -------------------------------------------------------------------------------- |
+| **AI-friendly**                | Compact enough for LLMs to read, write, and reason about entire UIs              |
+| **Version-control ready**      | Plain text — `git diff`, `git merge`, code review all work naturally             |
+| **Design + specs in one file** | Attach requirements, status, and acceptance criteria directly to visual elements |
+| **No context switching**       | Design and code live side-by-side in your editor                                 |
+
+### See it in action
+
+Here's a card component with a hover animation — in just 20 lines:
 
 ```
-# FD v1
+# A card with a button that reacts on hover
 
 style accent {
-  fill: #6C5CE7
+  fill: #6C5CE7                  # purple fill, reusable across shapes
 }
 
 group @card {
-  layout: column gap=16 pad=24
+  layout: column gap=16 pad=24   # vertical stack with spacing
   bg: #FFF corner=12 shadow=(0,4,20,#0002)
 
   text @title "Hello World" {
-    font: "Inter" 600 24
+    font: "Inter" 600 24         # Inter font, semi-bold, 24px
     fill: #1A1A2E
   }
 
   rect @button {
     w: 200 h: 48
     corner: 10
-    use: accent
+    use: accent                  # inherits the purple fill
 
-    anim :hover {
+    anim :hover {                # animate on hover
       fill: #5A4BD1
       scale: 1.02
       ease: spring 300ms
@@ -41,54 +56,75 @@ group @card {
   }
 }
 
-@card -> center_in: canvas
+@card -> center_in: canvas       # center the whole card on screen
 ```
 
-### Comments vs Annotations
+### Add requirements to your designs
 
-FD has a two-tier metadata system:
-
-- **`#` Comments** — throwaway notes. Discarded on parse, never stored in the scene graph. Use for scratch notes, TODOs, or temporary explanations.
-
-- **`##` Annotations** — persistent, structured metadata attached to nodes. Stored in the scene graph, survive round-trips (parse → emit), and are accessible to the canvas, AI agents, and tooling.
+FD has a built-in way to attach specifications directly to visual elements using `spec` blocks. This means designers, developers, and AI agents can all see _what_ a component should do, right next to _how_ it looks.
 
 ```
-# This is a comment (discarded on parse)
-
 rect @login_btn {
-  ## "Primary CTA — triggers login API call"
-  ## accept: "disabled state when fields empty"
-  ## status: in_progress
-  ## priority: high
-  ## tag: auth, mvp
+  spec {
+    "Primary CTA — triggers login API call"
+    accept: "disabled state when fields empty"
+    accept: "loading spinner during auth"
+    status: in_progress
+    priority: high
+  }
   w: 280 h: 48
   use: accent
 }
-```
 
-| Syntax               | Kind        | Purpose                        |
-| -------------------- | ----------- | ------------------------------ |
-| `## "text"`          | Description | What this node is/does         |
-| `## accept: "text"`  | Accept      | Acceptance criterion           |
-| `## status: value`   | Status      | `draft`, `in_progress`, `done` |
-| `## priority: value` | Priority    | `high`, `medium`, `low`        |
-| `## tag: value`      | Tag         | Categorization labels          |
-
-**Why the distinction?** Comments (`#`) are cheap and safe to be messy — they won't pollute your data model. Annotations (`##`) are the structured layer that AI agents, CI pipelines, and the canvas UI can reliably read and act on.
-
-### Generic Nodes (Spec-First)
-
-Nodes without a shape type act as abstract placeholders — define requirements first, add design later:
-
-```
-@login_btn {
-  ## "Primary CTA"
-  ## accept: "disabled when fields empty"
-  ## status: draft
+# Short form for quick notes:
+text @title "Welcome" {
+  spec "Brand greeting — sets emotional tone"
 }
 ```
 
-On canvas, generic nodes render as dashed placeholder boxes with the `@id` label. They can be nested inside groups and later "upgraded" to a concrete type by adding a keyword prefix (e.g., `rect @login_btn`).
+| What you write   | What it means                                  |
+| ---------------- | ---------------------------------------------- |
+| `spec "text"`    | A short description of what the element does   |
+| `accept: "text"` | What counts as "done" (acceptance criteria)    |
+| `status: draft`  | Current status: `draft`, `in_progress`, `done` |
+| `priority: high` | Importance: `high`, `medium`, `low`            |
+| `tag: auth, mvp` | Labels for filtering and organization          |
+
+Use `#` for quick throwaway notes (they're discarded when the file is processed). Use `spec` for anything you want to keep — the canvas UI, AI tools, and exports can all read spec blocks.
+
+### Start with ideas, add visuals later
+
+You don't need to pick a shape right away. Write a placeholder element with just a name and spec — it shows up on canvas as a dashed box. When you're ready, upgrade it to a real shape:
+
+```
+# Start with just an idea:
+@login_btn {
+  spec "Primary CTA"
+  spec {
+    accept: "disabled when fields empty"
+    status: draft
+  }
+}
+
+# Later, add a shape:
+rect @login_btn { ... }
+```
+
+## Feature Highlights
+
+- ↔️ **Two-way sync** — edit code or canvas, the other updates instantly
+- 🧘 **Zen mode** — minimal floating toolbar for distraction-free drawing
+- ✏️ **Sketchy rendering** — hand-drawn mode with wobbly, organic lines
+- 📐 **Smart guides** — alignment lines appear when shapes line up (like Figma)
+- ↔ **Resize handles** — drag corners and edges to resize, hold Shift to keep proportions
+- 🎨 **Floating toolbar** — quick access to fill, stroke, opacity on any selection
+- 👆 **Touch & gestures** — two-finger pan, pinch-to-zoom, Apple Pencil support
+- 🎬 **Drag-and-drop animations** — drag a shape onto another to add hover/press effects
+- 📤 **Export** — PNG, SVG, clipboard copy, or raw `.fd` source
+- 🤖 **AI Refine** — press ⌘I to improve designs with AI (supports 5 providers)
+- 📋 **Spec View** — requirements dashboard with status filters and coverage tracking
+- 🎯 **Sticky styles** — your last-used colors and fonts are remembered per tool
+- ↗️ **Arrows & connectors** — draw connections between shapes with smooth curves
 
 ## Architecture
 
@@ -96,28 +132,43 @@ On canvas, generic nodes render as dashed placeholder boxes with the `@id` label
 ┌─────────────────────────────────────────────────────┐
 │  .fd file (text DSL)                                │
 ├─────────────────────────────────────────────────────┤
-│  fd-core      Parser ↔ SceneGraph (DAG) ↔ Emitter  │
-│                Layout solver (constraints → coords)  │
+│  fd-core        Parser ↔ SceneGraph (DAG) ↔ Emitter │
+│                  Layout solver (constraints → coords) │
 ├─────────────────────────────────────────────────────┤
-│  fd-render    Vello + wgpu → GPU canvas             │
-│                Hit testing (point → node)             │
+│  fd-render      Vello + wgpu → GPU canvas           │
+│                  Hit testing (point → node)           │
 ├─────────────────────────────────────────────────────┤
-│  fd-editor    Bidi sync engine                      │
-│                Tools (select, rect, pen, text)        │
-│                Undo/redo command stack                │
+│  fd-editor      Bidi sync engine                    │
+│                  Tools (select, rect, pen, text)      │
+│                  Undo/redo command stack               │
 ├─────────────────────────────────────────────────────┤
-│  fd-vscode    VS Code Custom Editor (WASM webview)  │
+│  tree-sitter-fd Tree-sitter grammar for editors     │
+├─────────────────────────────────────────────────────┤
+│  fd-vscode      VS Code Custom Editor (WASM webview)│
+│  editors/       Zed, Neovim, Sublime, Helix, Emacs  │
 └─────────────────────────────────────────────────────┘
 ```
 
 ## Crate Structure
 
-| Crate       | Purpose                                               |
-| ----------- | ----------------------------------------------------- |
-| `fd-core`   | Data model, parser, emitter, constraint layout solver |
-| `fd-render` | Vello/wgpu 2D renderer + hit testing                  |
-| `fd-editor` | Bidirectional sync, tool system, undo/redo, input     |
-| `fd-vscode` | VS Code extension (custom editor provider)            |
+| Crate            | Purpose                                               |
+| ---------------- | ----------------------------------------------------- |
+| `fd-core`        | Data model, parser, emitter, constraint layout solver |
+| `fd-render`      | Vello/wgpu 2D renderer + hit testing                  |
+| `fd-editor`      | Bidirectional sync, tool system, undo/redo, input     |
+| `tree-sitter-fd` | Tree-sitter grammar (used by Zed, Neovim, etc.)       |
+| `fd-vscode`      | VS Code extension (custom editor provider)            |
+
+## Editor Support
+
+| Editor           | Syntax Highlighting | LSP | Canvas |
+| ---------------- | :-----------------: | :-: | :----: |
+| VS Code / Cursor |         ✅          |  —  |   ✅   |
+| Zed              |         ✅          | ✅  |   —    |
+| Neovim           |         ✅          |  —  |   —    |
+| Sublime Text     |         ✅          |  —  |   —    |
+| Helix            |         ✅          |  —  |   —    |
+| Emacs            |         ✅          |  —  |   —    |
 
 ## Quick Start
 
@@ -126,6 +177,7 @@ On canvas, generic nodes render as dashed placeholder boxes with the `@id` label
 - [Rust](https://rustup.rs/) (edition 2024)
 - [wasm-pack](https://rustwasm.github.io/wasm-pack/) (for WASM builds)
 - [Node.js](https://nodejs.org/) ≥ 18 (for VS Code extension)
+- [pnpm](https://pnpm.io/) (for VS Code extension)
 - VS Code or Cursor IDE
 
 ### Build
@@ -141,7 +193,7 @@ cargo test --workspace
 wasm-pack build crates/fd-render --target web
 
 # Build VS Code extension
-cd fd-vscode && npm install && npm run compile
+cd fd-vscode && pnpm install && pnpm run compile
 ```
 
 ### Development
@@ -173,6 +225,8 @@ cd fd-vscode && code --extensionDevelopmentPath=.
 | Platform                  | Repo                  | Status         |
 | ------------------------- | --------------------- | -------------- |
 | VS Code / Cursor IDE      | This repo             | 🟡 In progress |
+| Zed                       | This repo             | 🟢 Published   |
+| Neovim / Helix / Sublime  | This repo             | 🟢 Syntax only |
 | Desktop (macOS/Win/Linux) | Separate repo (Tauri) | ⬜ Planned     |
 | iOS                       | Separate repo         | ⬜ Planned     |
 | Android                   | Separate repo         | ⬜ Planned     |
