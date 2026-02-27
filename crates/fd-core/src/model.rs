@@ -32,7 +32,12 @@ impl Color {
     /// Parse a hex color string: `#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA`.
     pub fn from_hex(hex: &str) -> Option<Self> {
         let hex = hex.strip_prefix('#')?;
-        let bytes = hex.as_bytes();
+        Self::from_hex_digits(hex)
+    }
+
+    /// Parse a hex color string without prefix: `RGB`, `RGBA`, `RRGGBB`, `RRGGBBAA`.
+    pub fn from_hex_digits(digits: &str) -> Option<Self> {
+        let bytes = digits.as_bytes();
 
         fn hex_val(c: u8) -> Option<u8> {
             match c {
