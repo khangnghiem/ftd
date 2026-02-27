@@ -1,6 +1,3 @@
-# FD v1
-# Token comparison benchmark — a simple dashboard card
-
 style accent {
   fill: #6C5CE7
 }
@@ -12,38 +9,35 @@ style subtle {
 
 group @dashboard_card {
   layout: column gap=12 pad=24
-  bg: #FFFFFF corner=16 shadow=(0,4,20,#0002)
-
+  fill: #FFFFFF
+  corner: 16
+  shadow: (0,4,20,#00000022)
   text @heading "Monthly Revenue" {
+    fill: #1A1A2E
     font: "Inter" 600 18
-    fill: #1A1A2E
   }
-
   text @amount "$48,250" {
-    font: "Inter" 700 36
     fill: #1A1A2E
+    font: "Inter" 700 36
   }
-
   text @change "+12.5% from last month" {
-    font: "Inter" 400 14
     fill: #27AE60
+    font: "Inter" 400 14
   }
-
   rect @chart_area {
     w: 320 h: 160
     use: subtle
   }
-
   rect @cta_button {
     w: 320 h: 44
-    corner: 10
     use: accent
-
+    corner: 10
     text @cta_label "View Details" {
-      font: "Inter" 600 14
       fill: #FFFFFF
+      font: "Inter" 600 14
+      x: 5.87
+      y: 3.32
     }
-
     anim :hover {
       fill: #5A4BD1
       scale: 1.02

@@ -5,6 +5,13 @@
 
 ## Completed Requirements
 
+### v0.8.54
+
+- **BUG FIX**: Drag actions (move, resize, draw) now undo/redo as a single step — previously every pointer-move during a drag pushed a separate undo entry, requiring dozens of Cmd+Z to revert one drag gesture. Implemented `begin_batch()`/`end_batch()` on `CommandStack` to squash all mutations between PointerDown and PointerUp into one atomic command.
+- **UX**: Coordinates and dimensions are now rounded to 2 decimal places — eliminates floating-point noise (e.g. `x: 100.00000762939453`) from accumulated drag deltas in the emitted `.fd` text.
+- **TESTING**: 2 new tests — `batch_undo_is_single_step`, `batch_redo_reapplies_all`
+- **CONFIG**: Added browser subagent tab reuse rule to `GEMINI.md`
+
 ### v0.8.53
 
 - **SECURITY**: Fixed Stored XSS vulnerability in webview initialization — replaced manual backtick escaping with `JSON.stringify` + unicode escaping for `initialText`, preventing injection via crafted `.fd` file content
