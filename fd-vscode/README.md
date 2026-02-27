@@ -1,10 +1,17 @@
 # Fast Draft
 
-> A token-efficient file format and interactive canvas for drawing, design, and animation. Built in Rust + WASM.
+> **Design as Code.** A file format and canvas for drawing, design, and animation — right inside your editor.
 
 ## What You Get
 
-Install this extension and **every `.fd` file lights up** — syntax colors, instant error detection, and a visual canvas that renders your design in real time. Think Figma meets code.
+Install this extension and **every `.fd` file lights up** with syntax colors, instant error detection, and a visual canvas that renders your design in real time.
+
+Fast Draft has two modes:
+
+- 🤖 **Code Mode** — the AI interface. LLMs and coding agents read, write, and edit `.fd` text directly. Uses ~5× fewer tokens than Excalidraw JSON, so entire UIs fit in a single prompt.
+- 🎨 **Canvas Mode** — the human interface. Designers and architects draw, drag, and resize on a live GPU-powered canvas. No code knowledge needed.
+
+Both modes edit the same file. Changes in one instantly appear in the other.
 
 | You write this...                              | ...and get this                |
 | ---------------------------------------------- | ------------------------------ |
@@ -193,13 +200,13 @@ group @login_form {
 
 ---
 
-## Why FD?
+## Why Fast Draft?
 
-| vs. SVG                                         | vs. Figma                                         | vs. HTML/CSS                                            |
-| ----------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------- |
-| **5× fewer tokens** — AI can generate it faster | **Code-first** — version control, diffs, PRs      | **Semantic** — `center_in: canvas` not `margin: 0 auto` |
-| **Constraint-based** — no absolute coords       | **Open format** — no vendor lock-in               | **GPU-rendered** — Vello/wgpu pipeline                  |
-| **Bidirectional** — edit code or canvas         | **Extensible** — custom nodes, styles, animations | **WASM** — same renderer on web, desktop, mobile        |
+| vs. Excalidraw JSON                               | vs. Figma                                         | vs. Markdown                                          |
+| ------------------------------------------------- | ------------------------------------------------- | ----------------------------------------------------- |
+| **~5× fewer tokens** — AI generates it faster     | **Code-first** — version control, diffs, PRs      | **Visual** — renders shapes, layouts, and animations  |
+| **Semantic** — `center_in: canvas` not raw coords | **Open format** — no vendor lock-in               | **Interactive** — live canvas with drag, resize, draw |
+| **Bidirectional** — edit code or canvas           | **Extensible** — custom nodes, styles, animations | **Structured** — spec blocks, styles, constraints     |
 
 ## Requirements
 

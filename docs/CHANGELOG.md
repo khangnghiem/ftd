@@ -5,6 +5,13 @@
 
 ## Completed Requirements
 
+### v0.8.52
+
+- **BUG FIX**: Column layout elements no longer render in reversed order on the WASM canvas — replaced platform-dependent `petgraph` neighbor order hack (`.reverse()`) with deterministic `NodeIndex` sorting (`.sort()`), which is insertion-order-stable across both native x86_64 and wasm32 targets
+- **UX**: Column layout now stretches text children to fill parent content width (CSS `align-items: stretch` behavior)
+- **UX**: Context-aware text alignment defaults — text inside shapes (rect/ellipse/frame) defaults to center alignment; standalone text defaults to left alignment
+- **TESTING**: New `layout_dashboard_card_with_center_in` regression test verifying child ordering and bounds after `center_in: canvas` constraint resolution
+
 ### Fix Nested Group Auto-Sizing
 
 - **BUG FIX**: Groups inside Column/Row/Grid layouts now take up their correct resolved size — previously `intrinsic_size()` returned `(0,0)` for groups, causing siblings to overlap. Layout solver now uses a two-pass approach: pass 1 recurses to resolve nested group sizes bottom-up, pass 2 repositions children using their actual dimensions with `shift_subtree` to maintain correct absolute positions for all descendants.
