@@ -7,7 +7,9 @@
 
 ### Benchmark Examples
 
-- **DOCS**: 8 new benchmark pairs in `examples/benchmarks/` — each pair contains an `.fd` file and equivalent `.excalidraw.json` to demonstrate FD's conciseness advantage for different user personas: Product Designer (login_form), Project Manager (kanban_board), HR/Manager (org_chart), Software Engineer (api_flowchart), Mobile Designer (mobile_onboarding), Marketing (pricing_table), UX Researcher (wireframe_ecommerce), Data Analyst (data_dashboard)
+- **DOCS**: 11 benchmark pairs in `examples/benchmarks/` — each pair contains an `.fd` file and equivalent `.excalidraw.json` to demonstrate FD's conciseness advantage (avg 6.5× fewer bytes, 3.2× fewer tokens). Covers 9 user personas: Product Designer (login_form, dashboard_card), Project Manager (kanban_board), HR/Manager (org_chart), Software Engineer (api_flowchart), Mobile Designer (mobile_onboarding), Marketing (pricing_table), UX Researcher (wireframe_ecommerce), Data Analyst (data_dashboard), Systems Architect (network_topology), Brand Designer (design_system)
+- **DOCS**: Benchmark README with metrics table, FD feature matrix, and `compare.sh` auto-metrics script
+- **DOCS**: Feature coverage improvements — added named colors to kanban/org_chart, ellipse avatars + opacity to org_chart, property aliases + import + opacity to design_system; all Excalidraw JSONs normalized to pretty-printed format
 
 ### v0.8.59
 
