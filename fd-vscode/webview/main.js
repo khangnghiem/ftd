@@ -820,14 +820,14 @@ function setupPointerEvents() {
     }
 
     // ── Detach snap feedback: scale pop + glow on group detach ──
-    if (isDraggingNode && fdCanvas) {
-      const detachJson = fdCanvas.get_last_detach_info();
+    if (isDraggingNode && fdCanvas && draggedNodeId) {
+      const detachJson = fdCanvas.evaluate_drop(draggedNodeId);
       if (detachJson) {
         try {
           const detach = JSON.parse(detachJson);
           if (detach.detached) {
             playDetachAnimation(detach.nodeId);
-            // Sync text since the graph structure changed
+            // Sync text since the graph changed (structural detach)
             syncTextToExtension();
           }
         } catch (_) { /* ignore parse errors */ }

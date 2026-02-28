@@ -75,6 +75,8 @@ group @login_form {
     text @btn_label "Sign In" {
       fill: #FFFFFF  # white
       font: "Inter" semibold 16
+      x: 4.3
+      y: 0.84
     }
     w: 280 h: 48
     use: accent
