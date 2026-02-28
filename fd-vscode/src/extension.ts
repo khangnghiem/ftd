@@ -14,7 +14,8 @@ import { FdDiagnosticsProvider } from "./diagnostics";
 import { FdTreePreviewPanel } from "./panels/tree-preview";
 import { FdSpecViewPanel } from "./panels/spec-view";
 import { FdDocumentSymbolProvider } from "./document-symbol";
-import { HTML_TEMPLATE, VIEW_TYPE_CANVAS, COMMAND_AI_REFINE, COMMAND_AI_REFINE_ALL, COMMAND_EXPORT_SPEC, COMMAND_OPEN_CANVAS, COMMAND_SHOW_PREVIEW, COMMAND_SHOW_SPEC_VIEW, COMMAND_TOGGLE_VIEW_MODE } from "./webview-html";
+import { FdReadOnlyProvider, FD_READONLY_SCHEME, VIEW_MODE_LABELS, FdViewMode } from "./panels/readonly-provider";
+import { HTML_TEMPLATE, VIEW_TYPE_CANVAS, COMMAND_AI_REFINE, COMMAND_AI_REFINE_ALL, COMMAND_EXPORT_SPEC, COMMAND_OPEN_CANVAS, COMMAND_SHOW_PREVIEW, COMMAND_SHOW_SPEC_VIEW, COMMAND_TOGGLE_VIEW_MODE, COMMAND_OPEN_READONLY_VIEW, COMMAND_CHANGE_VIEW_MODE } from "./webview-html";
 
 function getNonce(): string {
   let text = "";
@@ -691,6 +692,116 @@ export function activate(context: vscode.ExtensionContext) {
         supportsMultipleEditorsPerDocument: false,
       }
     )
+  );
+
+  // ─── Read-Only Virtual Document Provider ─────────────────────────────
+  const readOnlyProvider = new FdReadOnlyProvider(context.extensionPath);
+  context.subscriptions.push(
+    vscode.workspace.registerTextDocumentContentProvider(
+      FD_READONLY_SCHEME,
+      readOnlyProvider
+    )
+  );
+
+  // Status bar item showing active view mode
+  const viewModeStatusBar = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Right,
+    90
+  );
+  viewModeStatusBar.command = COMMAND_CHANGE_VIEW_MODE;
+  viewModeStatusBar.tooltip = "FD: Change view mode";
+  viewModeStatusBar.hide();
+  context.subscriptions.push(viewModeStatusBar);
+
+  // Show/hide status bar based on active editor
+  context.subscriptions.push(
+    vscode.window.onDidChangeActiveTextEditor((editor) => {
+      if (
+        editor &&
+        editor.document.uri.scheme === FD_READONLY_SCHEME
+      ) {
+        const sourceKey = editor.document.uri.query;
+        const sourceUri = vscode.Uri.parse(sourceKey);
+        const mode = readOnlyProvider.getMode(sourceUri);
+        viewModeStatusBar.text = `$(eye) ${mode.toUpperCase()}`;
+        viewModeStatusBar.show();
+      } else {
+        viewModeStatusBar.hide();
+      }
+    })
+  );
+
+  // Command: open read-only view for the active .fd document
+  context.subscriptions.push(
+    vscode.commands.registerCommand(COMMAND_OPEN_READONLY_VIEW, async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor || editor.document.languageId !== "fd") {
+        vscode.window.showWarningMessage("Open an .fd file first");
+        return;
+      }
+
+      const sourceUri = editor.document.uri;
+      const sourceText = editor.document.getText();
+      const mode = readOnlyProvider.getMode(sourceUri);
+
+      await readOnlyProvider.setMode(sourceUri, mode, sourceText);
+
+      const virtualUri = FdReadOnlyProvider.buildUri(sourceUri, mode);
+      const doc = await vscode.workspace.openTextDocument(virtualUri);
+      await vscode.window.showTextDocument(doc, {
+        viewColumn: vscode.ViewColumn.Beside,
+        preview: true,
+        preserveFocus: true,
+      });
+
+      viewModeStatusBar.text = `$(eye) ${mode.toUpperCase()}`;
+      viewModeStatusBar.show();
+    })
+  );
+
+  // Command: change the view mode via quick pick
+  context.subscriptions.push(
+    vscode.commands.registerCommand(COMMAND_CHANGE_VIEW_MODE, async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) return;
+
+      // Find the source URI (works from both source and virtual tabs)
+      let sourceUri: vscode.Uri;
+      if (editor.document.uri.scheme === FD_READONLY_SCHEME) {
+        sourceUri = vscode.Uri.parse(editor.document.uri.query);
+      } else if (editor.document.languageId === "fd") {
+        sourceUri = editor.document.uri;
+      } else {
+        return;
+      }
+
+      const items = (Object.entries(VIEW_MODE_LABELS) as [FdViewMode, string][]).map(
+        ([value, label]) => ({ label, value })
+      );
+
+      const picked = await vscode.window.showQuickPick(items, {
+        placeHolder: "Select view mode",
+      });
+      if (!picked) return;
+
+      // Get source text
+      const sourceDoc = await vscode.workspace.openTextDocument(sourceUri);
+      const sourceText = sourceDoc.getText();
+
+      await readOnlyProvider.setMode(sourceUri, picked.value, sourceText);
+
+      // Open or refresh the virtual document
+      const virtualUri = FdReadOnlyProvider.buildUri(sourceUri, picked.value);
+      const doc = await vscode.workspace.openTextDocument(virtualUri);
+      await vscode.window.showTextDocument(doc, {
+        viewColumn: vscode.ViewColumn.Beside,
+        preview: true,
+        preserveFocus: false,
+      });
+
+      viewModeStatusBar.text = `$(eye) ${picked.value.toUpperCase()}`;
+      viewModeStatusBar.show();
+    })
   );
 
   // ─── Auto-open welcome.fd on first activation ───────────────────────

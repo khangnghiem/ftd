@@ -5,6 +5,13 @@
 
 ## Completed Requirements
 
+### v0.8.67 — ReadMode Filtered Views + Read-Only Code View
+
+- **FEATURE (R4.19)**: ReadMode filtered views — `emit_filtered(graph, mode)` with 8 modes: Full, Structure, Layout, Design, Spec, Visual (layout+design+when combined), When (animations), Edges (flows). Each mode selectively emits only relevant properties, saving 50-80% tokens for AI agents
+- **FEATURE (R4.19)**: CLI `fd-lsp --view <mode>` — pipe FD source through stdin, get filtered output on stdout (e.g. `cat file.fd | fd-lsp --view structure`)
+- **FEATURE (R4.19)**: VS Code read-only virtual document provider — `FD: Open Read-Only Code View` command opens a synced, read-only tab filtered by the active ReadMode; status bar dropdown (`FD: Change View Mode`) switches between modes
+- **TESTING**: 8 new emit_filtered tests (one per mode) + 121 unit tests + 18 integration tests all pass
+
 ### Component Libraries (R3.33)
 
 - **FEATURE (R3.33)**: Component libraries — reusable `.fd` files with themes and node groups; 3 built-in libraries: **UI Kit** (buttons, inputs, cards, badges, avatars), **Flowchart** (process, decision, start/end, connectors), **Wireframe** (navbar, sidebar, content, footer, layouts)

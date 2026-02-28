@@ -13,6 +13,8 @@ export const COMMAND_AI_REFINE_ALL = "fd.aiRefineAll";
 export const COMMAND_SHOW_SPEC_VIEW = "fd.showSpecView";
 export const COMMAND_EXPORT_SPEC = "fd.exportSpec";
 export const COMMAND_TOGGLE_VIEW_MODE = "fd.toggleViewMode";
+export const COMMAND_OPEN_READONLY_VIEW = "fd.openReadOnlyView";
+export const COMMAND_CHANGE_VIEW_MODE = "fd.changeViewMode";
 
 export const HTML_TEMPLATE = `<!DOCTYPE html>
 <html lang="en">
