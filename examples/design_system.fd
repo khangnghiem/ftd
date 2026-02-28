@@ -272,8 +272,3 @@ group @color_palette {
 }
 
 @color_palette -> center_in: canvas
-@inputs -> absolute: 39.44, 30.53
-@input_focus -> absolute: 428.47, 213.61
-@btn_secondary -> absolute: 359.83, 246.74
-@_anon_8 -> absolute: 458.83, 317.71
-@swatch_gray_500 -> absolute: 64.55, 775.32
