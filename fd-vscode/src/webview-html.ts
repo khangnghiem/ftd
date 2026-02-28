@@ -1199,17 +1199,6 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
       background: var(--fd-accent-dim);
     }
 
-    /* ── Spec Badge Toggle Button ── */
-    #spec-badge-toggle-btn {
-      font-size: 13px;
-      min-width: 32px;
-      justify-content: center;
-    }
-    #spec-badge-toggle-btn.spec-on {
-      color: var(--fd-accent);
-      background: var(--fd-accent-dim);
-    }
-
     /* ── Export Dropdown ── */
     #export-menu-btn {
       font-size: 13px; min-width: 32px; justify-content: center;
@@ -1313,6 +1302,28 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
     .color-swatch.active {
       border-color: var(--fd-accent);
       box-shadow: 0 0 0 2px var(--fd-input-focus);
+    }
+
+    /* ── Layer Actions (⋮ Menu Button) ── */
+    .layer-actions {
+      width: 18px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: bold;
+      color: var(--fd-text-tertiary);
+      opacity: 0;
+      transition: opacity 0.12s ease, color 0.12s ease;
+      border-radius: 4px;
+    }
+    .layer-item:hover .layer-actions { opacity: 1; }
+    .layer-actions:hover {
+      color: var(--fd-text-primary);
+      background: var(--fd-hover);
     }
 
     /* ── Layer Visibility (Eye Icon) ── */
