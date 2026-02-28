@@ -1970,6 +1970,51 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
     .ft-tool-btn .ft-key {
       display: none;
     }
+    .ft-tooltip {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 4px 10px;
+      background: var(--fd-surface);
+      backdrop-filter: blur(12px) saturate(180%);
+      -webkit-backdrop-filter: blur(12px) saturate(180%);
+      border: 0.5px solid var(--fd-border);
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--fd-text);
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.15s ease, visibility 0.15s ease;
+      transition-delay: 0s;
+      z-index: 100;
+      letter-spacing: -0.01em;
+    }
+    .dark-theme .ft-tooltip {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.30), 0 1px 4px rgba(0,0,0,0.15);
+    }
+    .ft-tooltip .tt-shortcut {
+      color: var(--fd-text-tertiary);
+      margin-left: 4px;
+      font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
+    }
+    .ft-tool-btn:hover .ft-tooltip {
+      opacity: 1;
+      visibility: visible;
+      transition-delay: 0.4s;
+    }
+    .ft-tool-btn:active .ft-tooltip {
+      opacity: 0;
+      visibility: hidden;
+      transition-delay: 0s;
+    }
+    #floating-toolbar.collapsed .ft-tooltip {
+      display: none;
+    }
     .ft-sep {
       width: 0.5px;
       height: 20px;
@@ -2366,14 +2411,14 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
     <!-- Floating Bottom Toolbar (iPad UX) -->
     <div id="floating-toolbar">
       <div class="ft-drag-handle" id="ft-drag-handle" title="Drag to move toolbar"></div>
-      <button class="ft-tool-btn active" data-tool="select" title="Select (V)">▸</button>
+      <button class="ft-tool-btn active" data-tool="select">▸<span class="ft-tooltip">Select<span class="tt-shortcut">V</span></span></button>
       <div class="ft-sep"></div>
-      <button class="ft-tool-btn" data-tool="rect" title="Rectangle (R)">▢</button>
-      <button class="ft-tool-btn" data-tool="ellipse" title="Ellipse (O)">◯</button>
-      <button class="ft-tool-btn" data-tool="pen" title="Pen (P)">✎</button>
-      <button class="ft-tool-btn" data-tool="arrow" title="Arrow (A)">→</button>
-      <button class="ft-tool-btn" data-tool="text" title="Text (T)">T</button>
-      <button class="ft-tool-btn" data-tool="frame" title="Frame (F)">⊞</button>
+      <button class="ft-tool-btn" data-tool="rect">▢<span class="ft-tooltip">Rectangle<span class="tt-shortcut">R</span></span></button>
+      <button class="ft-tool-btn" data-tool="ellipse">◯<span class="ft-tooltip">Ellipse<span class="tt-shortcut">O</span></span></button>
+      <button class="ft-tool-btn" data-tool="pen">✎<span class="ft-tooltip">Pen<span class="tt-shortcut">P</span></span></button>
+      <button class="ft-tool-btn" data-tool="arrow">→<span class="ft-tooltip">Arrow<span class="tt-shortcut">A</span></span></button>
+      <button class="ft-tool-btn" data-tool="text">T<span class="ft-tooltip">Text<span class="tt-shortcut">T</span></span></button>
+      <button class="ft-tool-btn" data-tool="frame">⊞<span class="ft-tooltip">Frame<span class="tt-shortcut">F</span></span></button>
     </div>
     <div id="loading"><div class="loading-spinner"></div>Loading FD engine…</div>
     <!-- Properties Panel (Apple-style) -->

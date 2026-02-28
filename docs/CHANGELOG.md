@@ -5,6 +5,10 @@
 
 ## Completed Requirements
 
+### v0.8.73 — Frosted Glass Tooltips
+
+- **UX**: Apple-style frosted glass tooltips on all 7 floating toolbar buttons — `backdrop-filter: blur(12px)`, glassmorphic pill with 400ms hover delay, monospace shortcut key badge; replaces ugly native `title` tooltips; hidden in collapsed mode and during click
+
 ### v0.8.72 — Fix Group Detach on Drag Out
 
 - **BUG FIX (R3.34)**: Fixed "chasing envelope" bug — dragging a child incrementally outside a group now correctly detaches it. Previously, `expand_group_to_children` grew the parent to contain the moving child on every drag frame, making escape impossible. Fix: skip group expansion during continuous drag; only detach or keep in-place
