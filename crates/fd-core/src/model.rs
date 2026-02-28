@@ -294,7 +294,7 @@ pub enum Annotation {
     Description(String),
     /// Acceptance criterion: `spec { accept: "validates email on blur" }`
     Accept(String),
-    /// Status: `spec { status: draft }`
+    /// Status: `spec { status: todo }` (values: todo, doing, done, blocked)
     Status(String),
     /// Priority: `spec { priority: high }`
     Priority(String),

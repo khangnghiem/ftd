@@ -142,7 +142,7 @@ rect @queue {
   spec {
     "RabbitMQ — async job processing"
     accept: "message TTL 24h"
-    status: in_progress
+    status: doing
   }
   w: 180 h: 48
   use: ext_box

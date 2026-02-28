@@ -705,9 +705,12 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
       font-size: 10px;
       font-weight: 600;
     }
-    .spec-badge.status-draft   { background: rgba(142,142,147,0.15); color: var(--fd-text-secondary); }
+    .spec-badge.status-todo    { background: rgba(142,142,147,0.15); color: var(--fd-text-secondary); }
+    .spec-badge.status-draft    { background: rgba(142,142,147,0.15); color: var(--fd-text-secondary); }
+    .spec-badge.status-doing    { background: rgba(255,159,10,0.15); color: #FF9F0A; }
     .spec-badge.status-in_progress { background: rgba(255,159,10,0.15); color: #FF9F0A; }
     .spec-badge.status-done    { background: rgba(52,199,89,0.15); color: #34C759; }
+    .spec-badge.status-blocked { background: rgba(255,59,48,0.15); color: #FF3B30; }
     .spec-badge.priority-high  { background: rgba(255,59,48,0.15); color: #FF3B30; }
     .spec-badge.priority-medium { background: rgba(255,159,10,0.15); color: #FF9F0A; }
     .spec-badge.priority-low   { background: rgba(52,199,89,0.15); color: #34C759; }
@@ -823,9 +826,12 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
       border-radius: 4px;
       font-weight: 600;
     }
+    .spec-card-badge.status-todo { background: rgba(142,142,147,0.15); color: #8E8E93; }
     .spec-card-badge.status-draft { background: rgba(142,142,147,0.15); color: #8E8E93; }
+    .spec-card-badge.status-doing { background: rgba(255,159,10,0.15); color: #FF9F0A; }
     .spec-card-badge.status-in_progress { background: rgba(255,159,10,0.15); color: #FF9F0A; }
     .spec-card-badge.status-done { background: rgba(52,199,89,0.15); color: #34C759; }
+    .spec-card-badge.status-blocked { background: rgba(255,59,48,0.15); color: #FF3B30; }
     .spec-card-badge.priority-high { background: rgba(255,59,48,0.15); color: #FF3B30; }
     .spec-card-badge.priority-medium { background: rgba(255,159,10,0.15); color: #FF9F0A; }
     .spec-card-badge.priority-low { background: rgba(52,199,89,0.15); color: #34C759; }
@@ -2032,9 +2038,10 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
         <div class="field-label">Status</div>
         <select id="ann-status">
           <option value="">None</option>
-          <option value="draft">Draft</option>
-          <option value="in_progress">In Progress</option>
+          <option value="todo">To Do</option>
+          <option value="doing">Doing</option>
           <option value="done">Done</option>
+          <option value="blocked">Blocked</option>
         </select>
       </div>
       <div style="flex:1">

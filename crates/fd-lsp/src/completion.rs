@@ -211,10 +211,10 @@ fn value_completions(property: &str) -> Vec<CompletionItem> {
             ("spring", "Spring physics"),
         ],
         "status" => &[
-            ("draft", "Draft status"),
-            ("in_progress", "In progress"),
-            ("review", "Under review"),
+            ("todo", "To do (not started)"),
+            ("doing", "In progress"),
             ("done", "Completed"),
+            ("blocked", "Blocked / waiting"),
         ],
         "priority" => &[
             ("low", "Low priority"),

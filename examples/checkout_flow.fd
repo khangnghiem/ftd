@@ -16,7 +16,7 @@ group @checkout_page {
     accept: "cart review → shipping → payment"
     accept: "back button returns to previous step"
     accept: "progress indicator shows current step"
-    status: in_progress
+    status: doing
     priority: high
     tag: checkout, mvp, revenue
   }
@@ -30,7 +30,7 @@ group @checkout_page {
       "Step indicator — 3 steps"
       accept: "completed steps are highlighted"
       accept: "current step shows active color"
-      status: draft
+      status: todo
     }
 
     rect @step_1 {

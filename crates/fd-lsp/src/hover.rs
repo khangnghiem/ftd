@@ -141,7 +141,7 @@ fn hover_keyword(word: &str) -> Option<Hover> {
             "**## accept:** — Acceptance criterion annotation.\n\nFormat: `## accept: \"description\"`"
         }
         "status" => {
-            "**## status:** — Status annotation.\n\nValues: `draft`, `in_progress`, `review`, `done`"
+            "**## status:** — Status annotation.\n\nValues: `todo`, `doing`, `done`, `blocked`\n(Legacy: `draft` → todo, `in_progress` → doing)"
         }
         "priority" => {
             "**## priority:** — Priority annotation.\n\nValues: `low`, `medium`, `high`, `critical`"

@@ -52,7 +52,7 @@ let contextMenuNodeId = null;
 /** Current view mode: "design" | "spec" */
 let viewMode = "design";
 
-/** Current spec filter: "all" | "draft" | "in_progress" | "done" */
+/** Current spec filter: "all" | "todo" | "doing" | "done" | "blocked" */
 let specFilter = "all";
 
 /** Spec badge toggle — independent of view mode */
@@ -3425,9 +3425,10 @@ function refreshSpecSummary(panel) {
   html += `<button class="spec-action-btn" id="spec-export-btn" title="Export spec report (copies markdown to clipboard)">↗</button>`;
   html += `<select class="spec-bulk-status" id="spec-bulk-status" title="Set status on all visible specs">`;
   html += `<option value="">Bulk…</option>`;
-  html += `<option value="draft">→ Draft</option>`;
-  html += `<option value="in_progress">→ In Progress</option>`;
+  html += `<option value="todo">→ To Do</option>`;
+  html += `<option value="doing">→ Doing</option>`;
   html += `<option value="done">→ Done</option>`;
+  html += `<option value="blocked">→ Blocked</option>`;
   html += `</select>`;
   html += `</div>`;
   html += `</div>`;
@@ -3435,9 +3436,10 @@ function refreshSpecSummary(panel) {
   // Filter tabs
   const filters = [
     { key: "all", label: "All" },
-    { key: "draft", label: "Draft" },
-    { key: "in_progress", label: "In Prog" },
+    { key: "todo", label: "To Do" },
+    { key: "doing", label: "Doing" },
     { key: "done", label: "Done" },
+    { key: "blocked", label: "Blocked" },
   ];
   html += `<div class="spec-filter-tabs">`;
   for (const f of filters) {
