@@ -976,7 +976,7 @@ rect @login_btn {
         let input = r#"
 rect @card {
   spec {
-    status: in_progress
+    status: doing
     priority: high
     tag: mvp
   }
@@ -986,10 +986,7 @@ rect @card {
         let graph = parse_document(input).unwrap();
         let card = graph.get_by_id(NodeId::intern("card")).unwrap();
         assert_eq!(card.annotations.len(), 3);
-        assert_eq!(
-            card.annotations[0],
-            Annotation::Status("in_progress".into())
-        );
+        assert_eq!(card.annotations[0], Annotation::Status("doing".into()));
         assert_eq!(card.annotations[1], Annotation::Priority("high".into()));
         assert_eq!(card.annotations[2], Annotation::Tag("mvp".into()));
 
@@ -1164,7 +1161,7 @@ edge @login_flow {
   spec {
     "Primary CTA — triggers login API call"
     accept: "disabled when fields empty"
-    status: in_progress
+    status: doing
   }
 }
 "#;
@@ -1334,7 +1331,7 @@ rect @login_btn {
   spec {
     "Primary CTA for login"
     accept: "disabled when fields empty"
-    status: in_progress
+    status: doing
     priority: high
     tag: auth
   }
@@ -1349,7 +1346,7 @@ rect @login_btn {
         assert!(md.contains("## @login_btn `rect`"));
         assert!(md.contains("> Primary CTA for login"));
         assert!(md.contains("- [ ] disabled when fields empty"));
-        assert!(md.contains("- **Status:** in_progress"));
+        assert!(md.contains("- **Status:** doing"));
         assert!(md.contains("- **Priority:** high"));
         assert!(md.contains("- **Tag:** auth"));
         // Visual props must NOT appear

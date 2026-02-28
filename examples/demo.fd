@@ -17,7 +17,7 @@ group @login_form {
     "User authentication entry point"
     accept: "email + password fields visible"
     accept: "sign-in button triggers auth flow"
-    status: draft
+    status: todo
   }
   layout: column gap=16 pad=32
 

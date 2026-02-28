@@ -101,7 +101,7 @@ rect @error_toast {
 rect @dashboard {
   spec {
     "Main dashboard — post-login"
-    status: in_progress
+    status: doing
   }
   w: 400 h: 300
   use: bg_surface
@@ -114,7 +114,7 @@ rect @dashboard {
 rect @reset_page {
   spec {
     "Password reset flow"
-    status: draft
+    status: todo
   }
   w: 320 h: 200
   use: bg_surface

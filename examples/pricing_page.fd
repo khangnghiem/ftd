@@ -112,7 +112,7 @@ group @pricing {
         accept: "most popular badge visible"
         accept: "pre-selected on page load"
         priority: high
-        status: in_progress
+        status: doing
       }
       w: 320 h: 520
       fill: #FFFFFF
@@ -191,7 +191,7 @@ group @pricing {
       spec {
         "Enterprise tier — high-value leads"
         accept: "custom quote form"
-        status: draft
+        status: todo
         tag: sales
       }
       w: 300 h: 480

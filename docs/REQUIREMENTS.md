@@ -16,7 +16,7 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R1.6** _(done)_: Git-friendly plain text — line-oriented diffs work well
 - **R1.7** _(done)_: Comments via `#` prefix
 - **R1.8** _(done)_: Human-readable and AI-writable without special tooling
-- **R1.9** _(done)_: Structured annotations (`spec` blocks) — description, accept criteria, status, priority, tags — parsed and round-tripped as first-class metadata
+- **R1.9** _(done)_: Structured annotations (`spec` blocks) — description, accept criteria, status (todo/doing/done/blocked), priority, tags — parsed and round-tripped as first-class metadata
 - **R1.10** _(done)_: First-class edges — `edge @id { from: @a to: @b }` with arrow, curve, label, stroke, and `spec` annotations → [spec](specs/edge-system.md)
 - **R1.11** _(done)_: Edge trigger animations — edges support `when :hover { ... }` blocks identical to nodes (parser also accepts legacy `anim` keyword) → [spec](specs/edge-system.md)
 - **R1.12** _(done)_: Edge flow animations — `flow: pulse Nms` (traveling dot) and `flow: dash Nms` (marching dashes) → [spec](specs/edge-system.md)

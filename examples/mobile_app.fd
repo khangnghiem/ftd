@@ -54,7 +54,7 @@ group @phone {
     spec {
       "Horizontal story carousel"
       accept: "scrollable beyond viewport"
-      status: in_progress
+      status: doing
       priority: medium
     }
     layout: row gap=12 pad=16

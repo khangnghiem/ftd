@@ -5,6 +5,11 @@
 
 ## Completed Requirements
 
+### v0.8.65 — Status Rename
+
+- **BREAKING (R1.9)**: Renamed spec status values: `draft` → `todo`, `in_progress` → `doing`; added `blocked` (red badge). Parser accepts both old and new values for backward compatibility. LSP completions, hover docs, annotation card, filter tabs, bulk dropdown, and all 12+ example files updated
+- **UX**: Spec filter tabs now show: All | To Do | Doing | Done | Blocked
+
 ### v0.8.64 — Spec Badge Improvements
 
 - **UX (R3.14)**: Spec badge toggle button (◇) in toolbar — show/hide annotation badges on canvas independently of Spec View mode; state persists via webview state

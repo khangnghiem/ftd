@@ -19,7 +19,7 @@ group @wizard {
     accept: "skip button on every step"
     accept: "progress dots show current step"
     accept: "swipe gestures on mobile"
-    status: in_progress
+    status: doing
     priority: high
     tag: onboarding, ux, retention
   }

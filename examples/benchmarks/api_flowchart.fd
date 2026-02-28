@@ -109,7 +109,7 @@ rect @db_query {
   spec {
     "Database read/write operations"
     accept: "queries < 100ms p95"
-    status: in_progress
+    status: doing
   }
   w: 200 h: 48
   use: process_box
