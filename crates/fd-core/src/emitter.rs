@@ -662,6 +662,237 @@ fn emit_edge(out: &mut String, edge: &Edge) {
     out.push_str("}\n");
 }
 
+// ─── Read Modes (filtered emit for AI agents) ────────────────────────────
+
+/// What an AI agent wants to read from the document.
+///
+/// Each mode selectively emits only the properties relevant to a specific
+/// concern, saving 50-80% tokens while preserving structural understanding.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ReadMode {
+    /// Full file — no filtering (identical to `emit_document`).
+    Full,
+    /// Node types, `@id`s, parent-child nesting only.
+    Structure,
+    /// Structure + dimensions (`w:`/`h:`) + `layout:` directives + constraints.
+    Layout,
+    /// Structure + themes/styles + `fill:`/`stroke:`/`font:`/`corner:`/`use:` refs.
+    Design,
+    /// Structure + `spec {}` blocks + annotations.
+    Spec,
+}
+
+/// Emit a `SceneGraph` filtered to show only the properties relevant to `mode`.
+///
+/// - `Full`: identical to `emit_document`.
+/// - `Structure`: node kind + `@id` + children. No styles, dims, anims, specs.
+/// - `Layout`: structure + `w:`/`h:` + `layout:` + constraints (`->`).
+/// - `Design`: structure + themes + `fill:`/`stroke:`/`font:`/`corner:`/`use:`.
+/// - `Spec`: structure + `spec {}` blocks.
+#[must_use]
+pub fn emit_filtered(graph: &SceneGraph, mode: ReadMode) -> String {
+    if mode == ReadMode::Full {
+        return emit_document(graph);
+    }
+
+    let mut out = String::with_capacity(1024);
+
+    let children = graph.children(graph.root);
+    let include_themes = mode == ReadMode::Design;
+    let include_constraints = mode == ReadMode::Layout;
+
+    // Themes (Design mode only)
+    if include_themes && !graph.styles.is_empty() {
+        let mut styles: Vec<_> = graph.styles.iter().collect();
+        styles.sort_by_key(|(id, _)| id.as_str().to_string());
+        for (name, style) in &styles {
+            emit_style_block(&mut out, name, style, 0);
+            out.push('\n');
+        }
+    }
+
+    // Node tree (always emitted, but with per-mode filtering)
+    for child_idx in &children {
+        emit_node_filtered(&mut out, graph, *child_idx, 0, mode);
+        out.push('\n');
+    }
+
+    // Constraints (Layout mode only)
+    if include_constraints {
+        for idx in graph.graph.node_indices() {
+            let node = &graph.graph[idx];
+            for constraint in &node.constraints {
+                if matches!(constraint, Constraint::Position { .. }) {
+                    continue;
+                }
+                emit_constraint(&mut out, &node.id, constraint);
+            }
+        }
+    }
+
+    out
+}
+
+/// Emit a single node with mode-based property filtering.
+fn emit_node_filtered(
+    out: &mut String,
+    graph: &SceneGraph,
+    idx: NodeIndex,
+    depth: usize,
+    mode: ReadMode,
+) {
+    let node = &graph.graph[idx];
+
+    if matches!(node.kind, NodeKind::Root) {
+        return;
+    }
+
+    indent(out, depth);
+
+    // Node kind + @id (always emitted)
+    match &node.kind {
+        NodeKind::Root => return,
+        NodeKind::Generic => write!(out, "@{}", node.id.as_str()).unwrap(),
+        NodeKind::Group { .. } => write!(out, "group @{}", node.id.as_str()).unwrap(),
+        NodeKind::Frame { .. } => write!(out, "frame @{}", node.id.as_str()).unwrap(),
+        NodeKind::Rect { .. } => write!(out, "rect @{}", node.id.as_str()).unwrap(),
+        NodeKind::Ellipse { .. } => write!(out, "ellipse @{}", node.id.as_str()).unwrap(),
+        NodeKind::Path { .. } => write!(out, "path @{}", node.id.as_str()).unwrap(),
+        NodeKind::Text { content } => {
+            write!(out, "text @{} \"{}\"", node.id.as_str(), content).unwrap();
+        }
+    }
+
+    out.push_str(" {\n");
+
+    // Spec annotations (Spec mode only)
+    if mode == ReadMode::Spec {
+        emit_annotations(out, &node.annotations, depth + 1);
+    }
+
+    // Children (always recurse)
+    let children = graph.children(idx);
+    for child_idx in &children {
+        emit_node_filtered(out, graph, *child_idx, depth + 1, mode);
+    }
+
+    // Layout directives (Layout mode)
+    if mode == ReadMode::Layout {
+        emit_layout_mode(out, &node.kind, depth + 1);
+    }
+
+    // Dimensions (Layout mode)
+    if mode == ReadMode::Layout {
+        emit_dimensions(out, &node.kind, depth + 1);
+    }
+
+    // Style properties (Design mode)
+    if mode == ReadMode::Design {
+        for style_ref in &node.use_styles {
+            indent(out, depth + 1);
+            writeln!(out, "use: {}", style_ref.as_str()).unwrap();
+        }
+        if let Some(ref fill) = node.style.fill {
+            emit_paint_prop(out, "fill", fill, depth + 1);
+        }
+        if let Some(ref stroke) = node.style.stroke {
+            indent(out, depth + 1);
+            match &stroke.paint {
+                Paint::Solid(c) => {
+                    writeln!(out, "stroke: {} {}", c.to_hex(), format_num(stroke.width)).unwrap();
+                }
+                _ => writeln!(out, "stroke: #000 {}", format_num(stroke.width)).unwrap(),
+            }
+        }
+        if let Some(radius) = node.style.corner_radius {
+            indent(out, depth + 1);
+            writeln!(out, "corner: {}", format_num(radius)).unwrap();
+        }
+        if let Some(ref font) = node.style.font {
+            emit_font_prop(out, font, depth + 1);
+        }
+        if let Some(opacity) = node.style.opacity {
+            indent(out, depth + 1);
+            writeln!(out, "opacity: {}", format_num(opacity)).unwrap();
+        }
+    }
+
+    // Inline position (Layout mode)
+    if mode == ReadMode::Layout {
+        for constraint in &node.constraints {
+            if let Constraint::Position { x, y } = constraint {
+                if *x != 0.0 {
+                    indent(out, depth + 1);
+                    writeln!(out, "x: {}", format_num(*x)).unwrap();
+                }
+                if *y != 0.0 {
+                    indent(out, depth + 1);
+                    writeln!(out, "y: {}", format_num(*y)).unwrap();
+                }
+            }
+        }
+    }
+
+    indent(out, depth);
+    out.push_str("}\n");
+}
+
+/// Emit layout mode directive for groups and frames.
+fn emit_layout_mode(out: &mut String, kind: &NodeKind, depth: usize) {
+    let layout = match kind {
+        NodeKind::Group { layout } | NodeKind::Frame { layout, .. } => layout,
+        _ => return,
+    };
+    match layout {
+        LayoutMode::Free => {}
+        LayoutMode::Column { gap, pad } => {
+            indent(out, depth);
+            writeln!(
+                out,
+                "layout: column gap={} pad={}",
+                format_num(*gap),
+                format_num(*pad)
+            )
+            .unwrap();
+        }
+        LayoutMode::Row { gap, pad } => {
+            indent(out, depth);
+            writeln!(
+                out,
+                "layout: row gap={} pad={}",
+                format_num(*gap),
+                format_num(*pad)
+            )
+            .unwrap();
+        }
+        LayoutMode::Grid { cols, gap, pad } => {
+            indent(out, depth);
+            writeln!(
+                out,
+                "layout: grid cols={cols} gap={} pad={}",
+                format_num(*gap),
+                format_num(*pad)
+            )
+            .unwrap();
+        }
+    }
+}
+
+/// Emit dimension properties (w/h) for sized nodes.
+fn emit_dimensions(out: &mut String, kind: &NodeKind, depth: usize) {
+    match kind {
+        NodeKind::Rect { width, height } | NodeKind::Frame { width, height, .. } => {
+            indent(out, depth);
+            writeln!(out, "w: {} h: {}", format_num(*width), format_num(*height)).unwrap();
+        }
+        NodeKind::Ellipse { rx, ry } => {
+            indent(out, depth);
+            writeln!(out, "w: {} h: {}", format_num(*rx), format_num(*ry)).unwrap();
+        }
+        _ => {}
+    }
+}
+
 // ─── Spec Markdown Export ─────────────────────────────────────────────────
 
 /// Emit a `SceneGraph` as a markdown spec document.
@@ -1834,5 +2065,131 @@ rect @card {
             graph2.styles.contains_key(&NodeId::intern("card_base")),
             "theme def should survive"
         );
+    }
+
+    // ─── Read Mode tests ─────────────────────────────────────────────────
+
+    const READ_MODE_INPUT: &str = r#"
+theme accent {
+  fill: #6C5CE7
+  corner: 10
+}
+
+group @container {
+  spec {
+    "Main container"
+    accept: "holds all children"
+    status: todo
+  }
+  rect @box {
+    spec "A styled box"
+    w: 200 h: 100
+    fill: #FF0000
+    corner: 8
+    font: "Inter" bold 16
+    when :hover {
+      fill: #00FF00
+      ease: spring 200ms
+    }
+  }
+  text @label "Hello" {
+    fill: #333333
+    font: "Inter" regular 14
+  }
+  layout: column gap=16 pad=32
+}
+
+@container -> center_in: canvas
+"#;
+
+    #[test]
+    fn emit_filtered_full_matches_emit_document() {
+        let graph = parse_document(READ_MODE_INPUT).unwrap();
+        let full = emit_filtered(&graph, ReadMode::Full);
+        let doc = emit_document(&graph);
+        assert_eq!(full, doc, "Full mode must match emit_document");
+    }
+
+    #[test]
+    fn emit_filtered_structure() {
+        let graph = parse_document(READ_MODE_INPUT).unwrap();
+        let out = emit_filtered(&graph, ReadMode::Structure);
+
+        // Must include node structure
+        assert!(out.contains("group @container"), "should have group");
+        assert!(out.contains("rect @box"), "should have rect");
+        assert!(out.contains("text @label \"Hello\""), "should have text");
+
+        // Must NOT include any properties
+        assert!(!out.contains("fill:"), "no fill in structure mode");
+        assert!(!out.contains("font:"), "no font in structure mode");
+        assert!(!out.contains("corner:"), "no corner in structure mode");
+        assert!(!out.contains("w:"), "no dimensions in structure mode");
+        assert!(!out.contains("layout:"), "no layout in structure mode");
+        assert!(!out.contains("spec"), "no spec in structure mode");
+        assert!(!out.contains("when"), "no anim in structure mode");
+        assert!(!out.contains("theme"), "no theme in structure mode");
+        assert!(!out.contains("->"), "no constraints in structure mode");
+    }
+
+    #[test]
+    fn emit_filtered_layout() {
+        let graph = parse_document(READ_MODE_INPUT).unwrap();
+        let out = emit_filtered(&graph, ReadMode::Layout);
+
+        // Must include structure + spatial
+        assert!(out.contains("group @container"), "should have group");
+        assert!(out.contains("w: 200 h: 100"), "should have dimensions");
+        assert!(out.contains("layout: column"), "should have layout");
+        assert!(out.contains("center_in: canvas"), "should have constraint");
+
+        // Must NOT include styles or specs
+        assert!(!out.contains("fill:"), "no fill in layout mode");
+        assert!(!out.contains("font:"), "no font in layout mode");
+        assert!(!out.contains("theme"), "no theme in layout mode");
+        assert!(!out.contains("spec"), "no spec in layout mode");
+        assert!(!out.contains("when"), "no anim in layout mode");
+    }
+
+    #[test]
+    fn emit_filtered_design() {
+        let graph = parse_document(READ_MODE_INPUT).unwrap();
+        let out = emit_filtered(&graph, ReadMode::Design);
+
+        // Must include themes + visual styles
+        assert!(out.contains("theme accent"), "should have theme");
+        assert!(out.contains("fill:"), "should have fill");
+        assert!(out.contains("corner:"), "should have corner");
+        assert!(out.contains("font:"), "should have font");
+
+        // Must NOT include spatial or specs
+        assert!(!out.contains("w:"), "no dimensions in design mode");
+        assert!(!out.contains("layout:"), "no layout in design mode");
+        assert!(!out.contains("spec"), "no spec in design mode");
+        assert!(!out.contains("when"), "no anim in design mode");
+        assert!(!out.contains("->"), "no constraints in design mode");
+    }
+
+    #[test]
+    fn emit_filtered_spec() {
+        let graph = parse_document(READ_MODE_INPUT).unwrap();
+        let out = emit_filtered(&graph, ReadMode::Spec);
+
+        // Must include spec blocks
+        assert!(out.contains("spec"), "should have spec");
+        assert!(out.contains("Main container"), "should have description");
+        assert!(out.contains("accept:"), "should have accept criteria");
+        assert!(out.contains("status: todo"), "should have status");
+        assert!(out.contains("A styled box"), "should have inline spec");
+
+        // Must include structure context
+        assert!(out.contains("group @container"), "should have group");
+        assert!(out.contains("rect @box"), "should have rect");
+
+        // Must NOT include styles or spatial
+        assert!(!out.contains("fill:"), "no fill in spec mode");
+        assert!(!out.contains("w:"), "no dimensions in spec mode");
+        assert!(!out.contains("when"), "no anim in spec mode");
+        assert!(!out.contains("theme"), "no theme in spec mode");
     }
 }

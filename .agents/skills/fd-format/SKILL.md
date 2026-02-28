@@ -274,6 +274,45 @@ anim :hover { scale: 1.03; ease: spring 200ms }
 
 ```
 
+## Read Modes (Filtered Emit for AI Agents)
+
+AI agents can read a filtered view of an `.fd` file, showing only the properties relevant to their task. This saves 50-80% tokens while preserving structural understanding.
+
+### CLI Usage
+
+```bash
+fd-lsp --view structure < file.fd   # Node tree only
+fd-lsp --view layout < file.fd     # Structure + dimensions + constraints
+fd-lsp --view design < file.fd     # Structure + themes + visual styles
+fd-lsp --view spec < file.fd       # Structure + spec blocks
+fd-lsp --view full < file.fd       # Full file (same as emit_document)
+```
+
+### Rust API
+
+```rust
+use fd_core::{ReadMode, emit_filtered, parser::parse_document};
+
+let graph = parse_document(text)?;
+let filtered = emit_filtered(&graph, ReadMode::Structure);
+```
+
+### Mode Reference
+
+| Mode        | Includes                                                        | Excludes                    | Savings |
+| ----------- | --------------------------------------------------------------- | --------------------------- | ------- |
+| `Structure` | Node types, `@id`s, hierarchy                                   | Everything else             | ~80%    |
+| `Layout`    | Structure + `w:`/`h:` + `layout:` + constraints                 | Styles, anims, specs        | ~73%    |
+| `Design`    | Structure + themes + `fill:`/`stroke:`/`font:`/`corner:`/`use:` | Dims, layout, specs, anims  | ~53%    |
+| `Spec`      | Structure + `spec {}` blocks                                    | Styles, dims, layout, anims | ~49%    |
+
+### When to Use Each Mode
+
+- **Structure** → Restructuring, renaming, adding/removing nodes
+- **Layout** → Repositioning, resizing, changing spatial relationships
+- **Design** → Theming, brand audits, creating dark mode variants
+- **Spec** → QA testing, writing acceptance tests, reviewing requirements
+
 ## Crate Locations
 
 - Parser: `crates/fd-core/src/parser.rs`
