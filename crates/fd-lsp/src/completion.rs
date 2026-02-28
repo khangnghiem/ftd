@@ -86,9 +86,9 @@ fn top_level_completions() -> Vec<CompletionItem> {
         ),
         ("path", "Freeform path", "path @${1:name} {\n  $0\n}"),
         (
-            "style",
-            "Reusable style block",
-            "style ${1:name} {\n  fill: #${2:6C5CE7}\n}",
+            "theme",
+            "Reusable theme definition (legacy: style)",
+            "theme ${1:name} {\n  fill: #${2:6C5CE7}\n}",
         ),
     ];
 
@@ -173,10 +173,10 @@ fn node_body_completions() -> Vec<CompletionItem> {
 
     // Animation block
     items.push(CompletionItem {
-        label: "anim".to_string(),
+        label: "when".to_string(),
         kind: Some(CompletionItemKind::SNIPPET),
-        detail: Some("Animation block".to_string()),
-        insert_text: Some("anim :${1|hover,press,enter|} {\n  $0\n}".to_string()),
+        detail: Some("Animation block (legacy: anim)".to_string()),
+        insert_text: Some("when :${1|hover,press,enter|} {\n  $0\n}".to_string()),
         insert_text_format: Some(InsertTextFormat::SNIPPET),
         ..Default::default()
     });
@@ -246,7 +246,7 @@ mod tests {
         let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
         assert!(labels.contains(&"rect"));
         assert!(labels.contains(&"group"));
-        assert!(labels.contains(&"style"));
+        assert!(labels.contains(&"theme"), "should suggest `theme` not `style`");
     }
 
     #[test]
@@ -256,7 +256,7 @@ mod tests {
         let labels: Vec<&str> = items.iter().map(|i| i.label.as_str()).collect();
         assert!(labels.contains(&"w:"));
         assert!(labels.contains(&"fill:"));
-        assert!(labels.contains(&"anim"));
+        assert!(labels.contains(&"when"), "should suggest `when` not `anim`");
     }
 
     #[test]
