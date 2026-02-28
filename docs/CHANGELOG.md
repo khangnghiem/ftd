@@ -5,6 +5,12 @@
 
 ## Completed Requirements
 
+### GitHub Pages — Live Playground
+
+- **FEATURE (R6.5)**: GitHub Pages landing site at `khangnghiem.github.io/fast-draft` with premium dark-theme design — hero section, feature cards, benchmark comparison table (11 FD vs Excalidraw pairs), architecture diagram, and editor support matrix
+- **FEATURE (R6.5)**: Live WASM playground — embedded split-pane editor + canvas powered by `fd-wasm`; 3 pre-loaded examples (Card, Login Form, Welcome), theme toggle (dark/light), sketchy mode toggle, real-time rendering on keystroke
+- **CI**: GitHub Actions workflow `pages.yml` — auto-builds WASM via `wasm-pack` and deploys `site/` to GitHub Pages on every push to `main`
+
 ### v0.8.66 — Toolbar Consolidation
 
 - **UX**: Replaced bottom shape palette with `＋ Insert` dropdown in top bar — glassmorphism popover with Shapes (Rect, Ellipse, Line, Arrow) and Layout (Frame, Text) sections; clicking activates the tool; hidden in Zen mode
