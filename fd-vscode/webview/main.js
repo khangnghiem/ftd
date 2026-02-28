@@ -2464,6 +2464,44 @@ function setupContextMenu() {
       closeContextMenu();
     }
   });
+  // ── Layers panel: ⋮ button → open context menu (VS Code webview blocks contextmenu events) ──
+  const layersPanel = document.getElementById("layers-panel");
+  if (layersPanel) {
+    layersPanel.addEventListener("click", (e) => {
+      const actionsBtn = e.target.closest(".layer-actions");
+      if (!actionsBtn || !fdCanvas) return;
+      e.stopPropagation();
+      const nodeId = actionsBtn.getAttribute("data-actions-id");
+      if (!nodeId) return;
+      fdCanvas.select_by_id(nodeId);
+      render();
+      contextMenuNodeId = nodeId;
+      const menu = document.getElementById("context-menu");
+      const container = document.getElementById("canvas-container");
+      const containerRect = container.getBoundingClientRect();
+      menu.style.left = (e.clientX - containerRect.left) + "px";
+      menu.style.top = (e.clientY - containerRect.top) + "px";
+      const selectedIds = JSON.parse(fdCanvas.get_selected_ids());
+      const groupBtn = document.getElementById("ctx-group");
+      const ungroupBtn = document.getElementById("ctx-ungroup");
+      groupBtn.classList.toggle("disabled", selectedIds.length < 2);
+      let canUngroup = false;
+      const source = fdCanvas.get_text();
+      for (const id of selectedIds) {
+        if (new RegExp(`(?:^|\\n)\\s*group\\s+@${id}\\b`).test(source)) {
+          canUngroup = true;
+          break;
+        }
+      }
+      ungroupBtn.classList.toggle("disabled", !canUngroup);
+      const hasSpec = nodeHasSpec(nodeId);
+      document.getElementById("ctx-add-annotation").style.display = hasSpec ? "none" : "";
+      document.getElementById("ctx-view-spec").style.display = hasSpec ? "" : "none";
+      const showSpecsEl = document.getElementById("ctx-show-specs");
+      if (showSpecsEl) showSpecsEl.style.display = hasSpec ? "" : "none";
+      menu.classList.add("visible");
+    });
+  }
 }
 
 function closeContextMenu() {
@@ -3487,6 +3525,7 @@ function renderLayerNode(node, selectedId, depth = 0) {
   html += `<span class="layer-icon">${icon}</span>`;
   html += `<span class="layer-name">${escapeHtml(node.id)}${textPreview}</span>`;
   html += `<span class="layer-kind">${escapeHtml(node.kind)}</span>`;
+  html += `<span class="layer-actions" data-actions-id="${escapeAttr(node.id)}" title="More actions">⋮</span>`;
   html += `<span class="layer-eye" data-eye-id="${escapeAttr(node.id)}" title="Toggle visibility">👁</span>`;
   html += `</div>`;
 
@@ -4064,7 +4103,7 @@ function hideDimensionTooltip() {
 
 // ─── Center-Snap for Text Nodes (Fix 6) ──────────────────────────────────────
 
-const CENTER_SNAP_THRESHOLD = 12; // px in scene-space
+const CENTER_SNAP_THRESHOLD = 30; // px in scene-space
 
 /** State for center-snap guides. */
 let centerSnapTarget = null;
@@ -5042,8 +5081,8 @@ function setupGridToggle() {
 /** Toggle spec badge overlay on/off (independent of Spec View mode). */
 function toggleSpecBadges() {
   specBadgesVisible = !specBadgesVisible;
-  const btn = document.getElementById("spec-badge-toggle-btn");
-  if (btn) btn.classList.toggle("spec-on", specBadgesVisible);
+  const btn = document.getElementById("sm-spec-badge-toggle");
+  if (btn) btn.classList.toggle("active", specBadgesVisible);
   vscode.setState({ ...(vscode.getState() || {}), specBadgesVisible });
 
   const overlay = document.getElementById("spec-overlay");
@@ -5056,15 +5095,14 @@ function toggleSpecBadges() {
 
 /** Set up spec badge toggle button and restore persisted state. */
 function setupSpecBadgeToggle() {
-  const btn = document.getElementById("spec-badge-toggle-btn");
+  const btn = document.getElementById("sm-spec-badge-toggle");
   if (!btn) return;
 
   // Restore persisted state
   const savedState = vscode.getState();
   if (savedState && savedState.specBadgesVisible) {
     specBadgesVisible = true;
-    btn.classList.add("spec-on");
-    // Deferred badge refresh after WASM init
+    btn.classList.add("active");
     setTimeout(() => { if (fdCanvas) refreshSpecBadges(); }, 500);
   }
 
