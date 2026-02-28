@@ -1,3 +1,16 @@
+# FD v1
+# Login form — demonstrates themes, spec annotations, and animations
+
+theme base_text {
+  fill: #333333
+  font: "Inter" 400 14
+}
+
+theme accent {
+  fill: #6C5CE7
+  corner: 10
+}
+
 # ─── Layout ───
 group @login_form {
   spec {
@@ -7,12 +20,13 @@ group @login_form {
     status: draft
   }
   layout: column gap=16 pad=32
+
   text @title "Welcome Back" {
     spec "Brand greeting — sets emotional tone"
-    use: base_text
-    fill: #1A1A2E  # blue
-    font: "Inter" semibold 24
+    font: "Inter" 700 24
+    fill: #1A1A2E
   }
+
   rect @email_field {
     spec {
       "Email input field"
@@ -21,13 +35,14 @@ group @login_form {
       priority: high
     }
     w: 280 h: 44
-    text @email_hint "Email" {
-      use: base_text
-      fill: #999999  # gray
-    }
     stroke: #DDDDDD 1
     corner: 8
+    text @email_hint "Email" {
+      use: base_text
+      fill: #999999
+    }
   }
+
   rect @pass_field {
     spec {
       "Password input field"
@@ -35,13 +50,14 @@ group @login_form {
       priority: high
     }
     w: 280 h: 44
-    text @pass_hint "Password" {
-      use: base_text
-      fill: #999999  # gray
-    }
     stroke: #DDDDDD 1
     corner: 8
+    text @pass_hint "Password" {
+      use: base_text
+      fill: #999999
+    }
   }
+
   rect @login_btn {
     spec {
       "Primary CTA — triggers login API call"
@@ -51,13 +67,14 @@ group @login_form {
       priority: high
     }
     w: 280 h: 48
-    text @btn_label "Sign In" {
-      fill: #FFFFFF  # white
-      font: "Inter" semibold 16
-    }
     use: accent
-    fill: #5A4BD1  # blue
-    corner: 10
+    fill: #5A4BD1
+    text @btn_label "Sign In" {
+      fill: #FFFFFF
+      font: "Inter" 600 16
+    }
+    when :hover { fill: #4A3BC1; scale: 1.02; ease: spring 200ms }
+    when :press { scale: 0.97; ease: ease_out 100ms }
   }
 }
 

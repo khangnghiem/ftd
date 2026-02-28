@@ -1990,7 +1990,7 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
   </div>
   <div id="annotation-card">
     <div class="card-header">
-      <span id="card-title">Annotations</span>
+      <span id="card-title">Spec</span>
       <button class="card-close" id="card-close-btn">×</button>
     </div>
     <div class="field-group">
@@ -2028,7 +2028,7 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
     </div>
   </div>
   <div id="context-menu">
-    <div class="menu-item" id="ctx-add-annotation"><span class="menu-icon">◇</span><span class="menu-label">Add Annotation</span></div>
+    <div class="menu-item" id="ctx-add-annotation"><span class="menu-icon">◇</span><span class="menu-label">Add Spec</span></div>
     <div class="menu-item" id="ctx-ai-refine"><span class="menu-icon">✦</span><span class="menu-label">AI Refine</span></div>
     <div class="menu-separator"></div>
     <div class="menu-item" id="ctx-duplicate" data-action="duplicate"><span class="menu-icon">⊕</span><span class="menu-label">Duplicate</span><span class="menu-shortcut">⌘D</span></div>
