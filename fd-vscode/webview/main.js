@@ -575,6 +575,14 @@ function setupPointerEvents() {
         // Clear resize cursor when no longer over a handle
         canvas.style.cursor = "";
       }
+
+      // ── Spec hover tooltip (show spec on node hover) ──
+      const hoveredId = fdCanvas.hit_test_at(x, y);
+      if (hoveredId) {
+        showSpecTooltip(hoveredId, e.clientX, e.clientY);
+      } else {
+        hideSpecTooltip();
+      }
     }
 
     // Show dimension tooltip during drag
@@ -617,6 +625,22 @@ function setupPointerEvents() {
         animDropTargetId = null;
         animDropTargetBounds = null;
       }
+
+      // ── Center-snap detection for text nodes ──
+      const snap = detectCenterSnap(draggedNodeId, x, y);
+      if (snap) {
+        centerSnapTarget = snap;
+        showCenterSnapGuides(snap.cx, snap.cy);
+      } else {
+        hideCenterSnapGuides();
+      }
+
+      // ── Text drag-to-consume detection ──
+      const dropTarget = detectTextDropTarget(draggedNodeId, x, y);
+      textDropTarget = dropTarget;
+    } else if (!isDraggingNode) {
+      hideCenterSnapGuides();
+      textDropTarget = null;
     }
   });
 
@@ -703,10 +727,36 @@ function setupPointerEvents() {
       render(); // Clear glow ring
       openAnimPicker(targetId, e.clientX, e.clientY);
     }
+
+    // ── Center-snap commit: snap text to shape center on release ──
+    if (isDraggingNode && centerSnapTarget && draggedNodeId) {
+      const snap = centerSnapTarget;
+      try {
+        const db = JSON.parse(fdCanvas.get_node_bounds(draggedNodeId));
+        if (db.width) {
+          // Move text center to shape center
+          const newX = snap.cx - db.width / 2;
+          const newY = snap.cy - db.height / 2;
+          fdCanvas.set_node_prop("x", String(Math.round(newX)));
+          fdCanvas.set_node_prop("y", String(Math.round(newY)));
+          render();
+          syncTextToExtension();
+        }
+      } catch (_) { /* skip */ }
+    }
+    hideCenterSnapGuides();
+
+    // ── Text drag-to-consume: reparent text into target shape ──
+    if (isDraggingNode && textDropTarget && draggedNodeId) {
+      reparentTextIntoShape(draggedNodeId, textDropTarget.targetId);
+      textDropTarget = null;
+    }
+
     isDraggingNode = false;
     draggedNodeId = null;
     animDropTargetId = null;
     animDropTargetBounds = null;
+    textDropTarget = null;
 
     // ── Restore tool after ⌘+drag temp Select or Alt+drag clone ──
     if (cmdTempSelectActive && cmdTempSelectOriginalTool) {
@@ -2145,6 +2195,9 @@ function setupContextMenu() {
     const hasSpec = nodeHasSpec(contextMenuNodeId);
     document.getElementById("ctx-add-annotation").style.display = hasSpec ? "none" : "";
     document.getElementById("ctx-view-spec").style.display = hasSpec ? "" : "none";
+    document.getElementById("ctx-show-specs")?.style && (
+      document.getElementById("ctx-show-specs").style.display = hasSpec ? "" : "none"
+    );
 
     menu.classList.add("visible");
   });
@@ -2160,6 +2213,18 @@ function setupContextMenu() {
 
   // View Spec via context menu
   document.getElementById("ctx-view-spec")?.addEventListener("click", () => {
+    if (contextMenuNodeId) {
+      if (fdCanvas) fdCanvas.select_by_id(contextMenuNodeId);
+      render();
+      const menu = document.getElementById("context-menu");
+      const menuRect = menu.getBoundingClientRect();
+      openAnnotationCard(contextMenuNodeId, menuRect.left, menuRect.top);
+    }
+    closeContextMenu();
+  });
+
+  // Show Specs via context menu — opens spec annotation card
+  document.getElementById("ctx-show-specs")?.addEventListener("click", () => {
     if (contextMenuNodeId) {
       if (fdCanvas) fdCanvas.select_by_id(contextMenuNodeId);
       render();
@@ -3009,65 +3074,76 @@ function setViewMode(mode) {
 }
 
 /**
- * Render spec badge pins on the canvas overlay.
- * Called from scheduleSideEffects when spec view or badge toggle is active.
- * Badges are "faint" by default, "active" for the selected node.
+ * Render spec info for the selected node in the spec overlay.
+ * In Design/All view: only show spec details for the currently selected node.
+ * Badge pins are removed; specs appear on hover via tooltip.
  */
 function refreshSpecBadges() {
   const overlay = document.getElementById("spec-overlay");
   if (!overlay || !fdCanvas) return;
 
-  // Ensure overlay is visible
-  overlay.style.display = "";
+  // In design/all modes, hide the overlay (tooltip handles hover display)
+  overlay.style.display = "none";
+  overlay.innerHTML = "";
+}
 
-  // Parse source to find annotated nodes
+/** Cached annotated nodes for hover tooltip lookups. */
+let cachedAnnotatedNodes = [];
+let cachedAnnotatedSource = "";
+
+/** Refresh the annotated nodes cache if source changed. */
+function refreshAnnotatedCache() {
+  if (!fdCanvas) return;
   const source = fdCanvas.get_text();
-  const nodesWithAnnotations = parseAnnotatedNodes(source);
-  const selectedId = fdCanvas.get_selected_id() || "";
+  if (source !== cachedAnnotatedSource) {
+    cachedAnnotatedSource = source;
+    cachedAnnotatedNodes = parseAnnotatedNodes(source);
+  }
+}
 
-  let html = "";
-  for (const node of nodesWithAnnotations) {
-    // Only show badge for the currently selected node
-    if (node.id !== selectedId) continue;
+/** Show spec hover tooltip at screen position for a given node. */
+function showSpecTooltip(nodeId, clientX, clientY) {
+  const tooltip = document.getElementById("spec-hover-tooltip");
+  if (!tooltip) return;
 
-    const boundsJson = fdCanvas.get_node_bounds(node.id);
-    const b = JSON.parse(boundsJson);
-    if (!b.width) continue;
+  refreshAnnotatedCache();
+  const node = cachedAnnotatedNodes.find(n => n.id === nodeId);
+  if (!node || node.annotations.length === 0) {
+    hideSpecTooltip();
+    return;
+  }
 
-    // Position badge at top-right corner of node, adjusted for pan and zoom
-    const bx = (b.x + b.width) * zoomLevel + panX - 6;
-    const by = b.y * zoomLevel + panY - 6;
+  const descs = node.annotations.filter(a => a.type === "description");
+  const statuses = node.annotations.filter(a => a.type === "status");
+  const priorities = node.annotations.filter(a => a.type === "priority");
 
-    const annCount = node.annotations.length;
-    const descriptions = node.annotations.filter(a => a.type === "description");
-    const tooltip = descriptions.length > 0
-      ? escapeAttr(descriptions[0].value)
-      : `${annCount} annotation(s)`;
-
-    html += `<div class="spec-badge-pin active" style="left:${bx}px;top:${by}px" `;
-    html += `data-node-id="${escapeAttr(node.id)}" title="${tooltip}">`;
-    html += `<span class="spec-badge-count">${annCount}</span>`;
+  let html = `<div class="spec-tip-id">◇ @${escapeHtml(node.id)}</div>`;
+  if (descs.length > 0) {
+    html += `<div class="spec-tip-desc">${escapeHtml(descs[0].value)}</div>`;
+  }
+  if (statuses.length > 0 || priorities.length > 0) {
+    html += `<div class="spec-tip-badges">`;
+    for (const s of statuses) {
+      html += `<span class="spec-tip-badge status-${escapeAttr(s.value)}">${escapeHtml(s.value)}</span>`;
+    }
+    for (const p of priorities) {
+      html += `<span class="spec-tip-badge priority-${escapeAttr(p.value)}">⚡ ${escapeHtml(p.value)}</span>`;
+    }
     html += `</div>`;
   }
 
-  overlay.innerHTML = html;
+  tooltip.innerHTML = html;
+  const container = document.getElementById("canvas-container");
+  const containerRect = container.getBoundingClientRect();
+  tooltip.style.left = (clientX - containerRect.left + 14) + "px";
+  tooltip.style.top = (clientY - containerRect.top - 10) + "px";
+  tooltip.classList.add("visible");
+}
 
-  // Attach click handlers to badges to open annotation card
-  overlay.querySelectorAll(".spec-badge-pin").forEach(pin => {
-    pin.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const nodeId = pin.getAttribute("data-node-id");
-      if (nodeId) {
-        // Select the node on canvas
-        if (fdCanvas.select_by_id(nodeId)) render();
-        // Refresh badges to update active state
-        refreshSpecBadges();
-        // Open annotation card near the badge
-        const rect = pin.getBoundingClientRect();
-        openAnnotationCard(nodeId, rect.left, rect.bottom + 4);
-      }
-    });
-  });
+/** Hide the spec hover tooltip. */
+function hideSpecTooltip() {
+  const tooltip = document.getElementById("spec-hover-tooltip");
+  if (tooltip) tooltip.classList.remove("visible");
 }
 
 function refreshSpecView() {
@@ -3595,6 +3671,16 @@ function refreshLayersPanel() {
 
   // Skip DOM rebuild if nothing changed (uses generation counter instead of full-text hash)
   if (sceneGeneration === lastLayerGeneration && selectedId === lastLayerSelectedId) return;
+
+  // Selection-only change: update highlight on existing DOM without full rebuild
+  if (sceneGeneration === lastLayerGeneration && selectedId !== lastLayerSelectedId) {
+    lastLayerSelectedId = selectedId;
+    panel.querySelectorAll(".layer-item").forEach(el =>
+      el.classList.toggle("selected", el.getAttribute("data-node-id") === selectedId)
+    );
+    return;
+  }
+
   lastLayerGeneration = sceneGeneration;
   lastLayerSelectedId = selectedId;
 
@@ -3892,6 +3978,145 @@ function showDimensionTooltip(clientX, clientY, text) {
 function hideDimensionTooltip() {
   const el = document.getElementById("dimension-tooltip");
   if (el) el.style.display = "none";
+}
+
+// ─── Center-Snap for Text Nodes (Fix 6) ──────────────────────────────────────
+
+const CENTER_SNAP_THRESHOLD = 12; // px in scene-space
+
+/** State for center-snap guides. */
+let centerSnapTarget = null;
+
+/**
+ * Check if a dragged text node is near the center of any shape node.
+ * Returns { targetId, cx, cy } if within snap threshold, null otherwise.
+ */
+function detectCenterSnap(draggedId, sceneX, sceneY) {
+  if (!fdCanvas) return null;
+
+  const source = fdCanvas.get_text();
+  const nodeIdPattern = /@(\w+)/g;
+  let match;
+  const seenIds = new Set();
+
+  while ((match = nodeIdPattern.exec(source)) !== null) {
+    const id = match[1];
+    if (seenIds.has(id) || id === draggedId) continue;
+    seenIds.add(id);
+    try {
+      const b = JSON.parse(fdCanvas.get_node_bounds(id));
+      if (!b.width || b.width <= 0) continue;
+
+      // Check if this is a shape node (not text/edge/style)
+      const kindMatch = source.match(new RegExp(`(?:rect|ellipse|frame|group)\\s+@${id}\\b`));
+      if (!kindMatch) continue;
+
+      const cx = b.x + b.width / 2;
+      const cy = b.y + b.height / 2;
+      const dx = Math.abs(sceneX - cx);
+      const dy = Math.abs(sceneY - cy);
+
+      if (dx < CENTER_SNAP_THRESHOLD && dy < CENTER_SNAP_THRESHOLD) {
+        return { targetId: id, cx, cy, bounds: b };
+      }
+    } catch (_) { /* skip */ }
+  }
+  return null;
+}
+
+/** Show center-snap crosshair guide lines. */
+function showCenterSnapGuides(cx, cy) {
+  const container = document.getElementById("center-snap-guides");
+  if (!container) return;
+  const screenX = cx * zoomLevel + panX;
+  const screenY = cy * zoomLevel + panY;
+  container.innerHTML = `
+    <div class="center-snap-guide vertical" style="left:${screenX}px"></div>
+    <div class="center-snap-guide horizontal" style="top:${screenY}px"></div>
+  `;
+}
+
+/** Hide center-snap guide lines. */
+function hideCenterSnapGuides() {
+  const container = document.getElementById("center-snap-guides");
+  if (container) container.innerHTML = "";
+  centerSnapTarget = null;
+}
+
+// ─── Text Drag-to-Consume / Reparent (Fix 7) ────────────────────────────────
+
+/** State for text drag-to-consume. */
+let textDropTarget = null;
+
+/**
+ * Detect if a dragged text node is hovered over a shape node that can consume it.
+ * Shows a glow ring on the target shape.
+ */
+function detectTextDropTarget(draggedId, sceneX, sceneY) {
+  if (!fdCanvas) return null;
+
+  const hitId = fdCanvas.hit_test_at(sceneX, sceneY);
+  if (!hitId || hitId === draggedId) return null;
+
+  // Check if the hit target is a shape (not text, edge, etc.)
+  const source = fdCanvas.get_text();
+  const shapeMatch = source.match(new RegExp(`(?:rect|ellipse|frame)\\s+@${hitId}\\b`));
+  if (!shapeMatch) return null;
+
+  // Check if dragged node is a text node
+  const textMatch = source.match(new RegExp(`text\\s+@${draggedId}\\b`));
+  if (!textMatch) return null;
+
+  try {
+    const bounds = JSON.parse(fdCanvas.get_node_bounds(hitId));
+    return { targetId: hitId, bounds };
+  } catch (_) {
+    return null;
+  }
+}
+
+/**
+ * Reparent a text node inside a target shape node by rewriting FD source.
+ * Centers the text inside the shape using auto-center logic (R3.36).
+ */
+function reparentTextIntoShape(textId, targetShapeId) {
+  if (!fdCanvas) return false;
+  let source = fdCanvas.get_text();
+
+  // Extract text node block from source
+  const textBlockRe = new RegExp(`(^|\\n)(\\s*text\\s+@${textId}\\s+"[^"]*"\\s*\\{[^}]*\\}|\\s*text\\s+@${textId}\\s+"[^"]*")`, 'm');
+  const textLineRe = new RegExp(`(^|\\n)(\\s*text\\s+@${textId}\\b[^\\n]*)`, 'm');
+
+  let textBlock = "";
+  let textMatch = source.match(textBlockRe) || source.match(textLineRe);
+  if (!textMatch) return false;
+
+  textBlock = textMatch[2].trim();
+  // Remove the text block from its current position
+  source = source.replace(textMatch[2], "");
+
+  // Remove position constraints from the text block (it will auto-center)
+  textBlock = textBlock.replace(/\s*x:\s*\d+(\.\d+)?/g, "");
+  textBlock = textBlock.replace(/\s*y:\s*\d+(\.\d+)?/g, "");
+
+  // Find the target shape's closing brace and insert text before it
+  const shapeBlockRe = new RegExp(`(@${targetShapeId}\\s*\\{)`);
+  const shapeMatch = source.match(shapeBlockRe);
+  if (!shapeMatch) return false;
+
+  // Insert the text node right after the opening brace of the shape
+  const insertPos = source.indexOf(shapeMatch[0]) + shapeMatch[0].length;
+  source = source.slice(0, insertPos) + "\n  " + textBlock + source.slice(insertPos);
+
+  // Clean up double newlines
+  source = source.replace(/\n{3,}/g, "\n\n");
+
+  const ok = fdCanvas.set_text(source);
+  if (ok) {
+    render();
+    syncTextToExtension();
+  }
+  return ok;
 }
 
 // ─── Zoom Helpers ─────────────────────────────────────────────────────────────

@@ -792,6 +792,75 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
     .spec-badge.priority-medium { background: rgba(255,159,10,0.15); color: #FF9F0A; }
     .spec-badge.priority-low   { background: rgba(52,199,89,0.15); color: #34C759; }
     .spec-badge.tag            { background: var(--fd-accent-dim); color: var(--fd-accent); }
+
+    /* ── Spec Hover Tooltip (replaces badge pins) ── */
+    #spec-hover-tooltip {
+      display: none;
+      position: absolute;
+      z-index: 200;
+      max-width: 260px;
+      padding: 8px 12px;
+      background: var(--fd-surface);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 0.5px solid var(--fd-border);
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06);
+      font-size: 11px;
+      color: var(--fd-text);
+      pointer-events: none;
+      transition: opacity 0.12s ease;
+    }
+    .dark-theme #spec-hover-tooltip {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.2);
+    }
+    #spec-hover-tooltip.visible { display: block; }
+    .spec-tip-id {
+      font-weight: 600;
+      font-size: 12px;
+      margin-bottom: 4px;
+      letter-spacing: -0.01em;
+    }
+    .spec-tip-desc {
+      color: var(--fd-text-secondary);
+      line-height: 1.4;
+      margin-bottom: 4px;
+    }
+    .spec-tip-badges {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .spec-tip-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 8px;
+      font-size: 9px;
+      font-weight: 600;
+    }
+    .spec-tip-badge.status-todo { background: rgba(142,142,147,0.15); color: #8E8E93; }
+    .spec-tip-badge.status-doing { background: rgba(255,159,10,0.15); color: #FF9F0A; }
+    .spec-tip-badge.status-done { background: rgba(52,199,89,0.15); color: #34C759; }
+    .spec-tip-badge.status-blocked { background: rgba(255,59,48,0.15); color: #FF3B30; }
+    .spec-tip-badge.priority-high { background: rgba(255,59,48,0.15); color: #FF3B30; }
+    .spec-tip-badge.priority-medium { background: rgba(255,159,10,0.15); color: #FF9F0A; }
+    .spec-tip-badge.priority-low { background: rgba(52,199,89,0.15); color: #34C759; }
+
+    /* ── Center-Snap Guide Lines ── */
+    .center-snap-guide {
+      position: absolute;
+      background: rgba(108, 92, 231, 0.6);
+      pointer-events: none;
+      z-index: 15;
+    }
+    .center-snap-guide.vertical {
+      width: 1px;
+      top: 0; bottom: 0;
+    }
+    .center-snap-guide.horizontal {
+      height: 1px;
+      left: 0; right: 0;
+    }
     .spec-section-header {
       font-size: 10px;
       text-transform: uppercase;
@@ -2063,8 +2132,8 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
 <body>
   <button id="zen-toggle-btn" title="Switch between Zen and Full layout"><span class="zen-icon">🧘</span> Zen</button>
   <div id="toolbar">
-    <button class="tool-btn zen-full-only" id="ai-refine-btn" title="AI Touch selected node">&#x2728; Touch</button>
-    <button class="tool-btn zen-full-only" id="ai-refine-all-btn" title="AI Touch all anonymous nodes">&#x2728; All</button>
+    <button class="tool-btn zen-full-only" id="ai-refine-btn" title="AI Touch selected node">✦ AI Touch</button>
+    <button class="tool-btn zen-full-only" id="ai-refine-all-btn" title="AI Touch all anonymous nodes">✦✦ AI Touch All</button>
     <div class="tool-sep zen-full-only"></div>
     <div class="view-toggle zen-full-only" id="view-toggle">
       <button class="view-btn active" id="view-all" title="All View — full details">All</button>
@@ -2135,6 +2204,8 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
     <canvas id="fd-canvas" class="tool-select"></canvas>
     <div id="dimension-tooltip"></div>
     <div id="spec-overlay"></div>
+    <div id="spec-hover-tooltip"></div>
+    <div id="center-snap-guides"></div>
     <div id="layers-panel"></div>
     <div id="library-panel"></div>
     <div id="minimap-container"><canvas id="minimap-canvas"></canvas></div>
@@ -2290,6 +2361,7 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
     <div class="menu-item" id="ctx-ai-refine"><span class="menu-icon">✦</span><span class="menu-label">AI Touch</span></div>
     <div class="menu-item" id="ctx-add-annotation"><span class="menu-icon">◇</span><span class="menu-label">Add Spec</span></div>
     <div class="menu-item" id="ctx-view-spec" style="display:none"><span class="menu-icon">◈</span><span class="menu-label">View Spec</span><span class="menu-shortcut">⌘I</span></div>
+    <div class="menu-item" id="ctx-show-specs" style="display:none"><span class="menu-icon">◇</span><span class="menu-label">Show Specs</span></div>
 
     <div class="menu-separator"></div>
     <div class="menu-item" id="ctx-cut" data-action="cut"><span class="menu-icon">✂</span><span class="menu-label">Cut</span><span class="menu-shortcut">⌘X</span></div>
@@ -2339,8 +2411,8 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
         if (e.data.type === 'aiRefineComplete') {
           const btn = document.getElementById('ai-refine-btn');
           const allBtn = document.getElementById('ai-refine-all-btn');
-          if (btn) { btn.textContent = '✨ Touch'; btn.disabled = false; }
-          if (allBtn) { allBtn.disabled = false; }
+          if (btn) { btn.textContent = '✦ AI Touch'; btn.disabled = false; }
+          if (allBtn) { allBtn.textContent = '✦✦ AI Touch All'; allBtn.disabled = false; }
         }
       });
 
