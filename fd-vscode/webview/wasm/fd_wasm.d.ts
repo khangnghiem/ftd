@@ -49,6 +49,14 @@ export class FdCanvas {
      */
     duplicate_selected_at(dx: number, dy: number): boolean;
     /**
+     * Get last detach event info. Returns JSON:
+     * `{"detached":true,"nodeId":"...","fromGroupId":"..."}` or `""` if none.
+     * Clears the event after reading (one-shot).
+     * Evaluate a drop for structural detach. Returns JSON if detached, empty otherwise.
+     * Clears the event after reading (one-shot).
+     */
+    evaluate_drop(node_id: string): string;
+    /**
      * Export the current selection (or entire canvas if empty) as an SVG string.
      */
     export_svg(): string;
@@ -62,12 +70,6 @@ export class FdCanvas {
      * Returns JSON `{"x1":..,"y1":..,"x2":..,"y2":..}` or `""` if not dragging.
      */
     get_arrow_preview(): string;
-    /**
-     * Get last detach event info. Returns JSON:
-     * `{"detached":true,"nodeId":"...","fromGroupId":"..."}` or `""` if none.
-     * Clears the event after reading (one-shot).
-     */
-    get_last_detach_info(): string;
     /**
      * Get animations for a node as a JSON array.
      * Returns `[]` if node not found or has no animations.
@@ -250,10 +252,10 @@ export interface InitOutput {
     readonly fdcanvas_delete_selected: (a: number) => number;
     readonly fdcanvas_duplicate_selected: (a: number) => number;
     readonly fdcanvas_duplicate_selected_at: (a: number, b: number, c: number) => number;
+    readonly fdcanvas_evaluate_drop: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_export_svg: (a: number) => [number, number];
     readonly fdcanvas_get_annotations_json: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_get_arrow_preview: (a: number) => [number, number];
-    readonly fdcanvas_get_last_detach_info: (a: number) => [number, number];
     readonly fdcanvas_get_node_animations_json: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_get_node_bounds: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_get_selected_id: (a: number) => [number, number];

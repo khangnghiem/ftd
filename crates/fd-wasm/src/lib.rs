@@ -831,16 +831,23 @@ impl FdCanvas {
     /// Get last detach event info. Returns JSON:
     /// `{"detached":true,"nodeId":"...","fromGroupId":"..."}` or `""` if none.
     /// Clears the event after reading (one-shot).
-    pub fn get_last_detach_info(&mut self) -> String {
-        match self.engine.last_detach.take() {
-            Some((child_id, parent_id)) => {
-                format!(
-                    r#"{{"detached":true,"nodeId":"{}","fromGroupId":"{}"}}"#,
-                    child_id.as_str(),
-                    parent_id.as_str()
-                )
+    /// Evaluate a drop for structural detach. Returns JSON if detached, empty otherwise.
+    /// Clears the event after reading (one-shot).
+    pub fn evaluate_drop(&mut self, node_id: &str) -> String {
+        let id = NodeId::intern(node_id);
+        if self.engine.evaluate_drop(id) {
+            match self.engine.last_detach.take() {
+                Some((child_id, parent_id)) => {
+                    format!(
+                        r#"{{"detached":true,"nodeId":"{}","fromGroupId":"{}"}}"#,
+                        child_id.as_str(),
+                        parent_id.as_str()
+                    )
+                }
+                None => String::new(),
             }
-            None => String::new(),
+        } else {
+            String::new()
         }
     }
 

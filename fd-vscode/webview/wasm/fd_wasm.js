@@ -112,6 +112,29 @@ export class FdCanvas {
         return ret !== 0;
     }
     /**
+     * Get last detach event info. Returns JSON:
+     * `{"detached":true,"nodeId":"...","fromGroupId":"..."}` or `""` if none.
+     * Clears the event after reading (one-shot).
+     * Evaluate a drop for structural detach. Returns JSON if detached, empty otherwise.
+     * Clears the event after reading (one-shot).
+     * @param {string} node_id
+     * @returns {string}
+     */
+    evaluate_drop(node_id) {
+        let deferred2_0;
+        let deferred2_1;
+        try {
+            const ptr0 = passStringToWasm0(node_id, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+            const len0 = WASM_VECTOR_LEN;
+            const ret = wasm.fdcanvas_evaluate_drop(this.__wbg_ptr, ptr0, len0);
+            deferred2_0 = ret[0];
+            deferred2_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+        }
+    }
+    /**
      * Export the current selection (or entire canvas if empty) as an SVG string.
      * @returns {string}
      */
@@ -157,24 +180,6 @@ export class FdCanvas {
         let deferred1_1;
         try {
             const ret = wasm.fdcanvas_get_arrow_preview(this.__wbg_ptr);
-            deferred1_0 = ret[0];
-            deferred1_1 = ret[1];
-            return getStringFromWasm0(ret[0], ret[1]);
-        } finally {
-            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-        }
-    }
-    /**
-     * Get last detach event info. Returns JSON:
-     * `{"detached":true,"nodeId":"...","fromGroupId":"..."}` or `""` if none.
-     * Clears the event after reading (one-shot).
-     * @returns {string}
-     */
-    get_last_detach_info() {
-        let deferred1_0;
-        let deferred1_1;
-        try {
-            const ret = wasm.fdcanvas_get_last_detach_info(this.__wbg_ptr);
             deferred1_0 = ret[0];
             deferred1_1 = ret[1];
             return getStringFromWasm0(ret[0], ret[1]);

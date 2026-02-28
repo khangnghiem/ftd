@@ -133,13 +133,6 @@ impl SyncEngine {
                         let ry = (rel_y * 100.0).round() / 100.0;
                         node.constraints.push(Constraint::Position { x: rx, y: ry });
                     }
-                    // Handle group relationship: expand if partially outside,
-                    // detach (reparent) if fully outside the parent group.
-                    if let Some(info) =
-                        handle_child_group_relationship(&mut self.graph, idx, &mut self.bounds)
-                    {
-                        self.last_detach = Some(info);
-                    }
                 }
             }
             GraphMutation::ResizeNode { id, width, height } => {
@@ -424,6 +417,21 @@ impl SyncEngine {
 
     // ─── Queries ─────────────────────────────────────────────────────────
 
+    /// Evaluate if a dropped node should structurally detach from its parent.
+    /// Returns true if the graph changed (node was detached).
+    pub fn evaluate_drop(&mut self, node_id: NodeId) -> bool {
+        if let Some(idx) = self.graph.index_of(node_id) {
+            if let Some(info) =
+                handle_child_group_relationship(&mut self.graph, idx, &mut self.bounds)
+            {
+                self.last_detach = Some(info);
+                self.text_dirty = true;
+                return true;
+            }
+        }
+        false
+    }
+
     /// Get current text (synced).
     pub fn current_text(&mut self) -> &str {
         self.flush_to_text();
@@ -502,8 +510,26 @@ fn handle_child_group_relationship(
         return None;
     }
 
-    let child_b = *bounds.get(&child_idx)?;
+    let mut child_b = *bounds.get(&child_idx)?;
     let parent_b = *bounds.get(&parent_idx)?;
+
+    // If the child is a Text node inside a shape, its layout bounds might have been
+    // inflated to match the parent's size (from CenterIn or default layout).
+    // For drag-to-detach, we want to test the actual visual text bounds.
+    if let NodeKind::Text { content } = child_kind {
+        // Naive intrinsic text size matching what layout.rs uses
+        let text_w = (content.len() as f32) * 8.0;
+        let text_h = 16.0;
+        
+        // If the box is massive, the text is actually drawn at the center.
+        // We shrink the overlap test box to the visual text area.
+        let cx = child_b.x + child_b.width / 2.0;
+        let cy = child_b.y + child_b.height / 2.0;
+        child_b.width = text_w;
+        child_b.height = text_h;
+        child_b.x = cx - text_w / 2.0;
+        child_b.y = cy - text_h / 2.0;
+    }
 
     if bboxes_overlap(&child_b, &parent_b) {
         // Child still overlaps the parent's current bounds — stay in group.
@@ -1231,6 +1257,7 @@ group @container {
             dx: 500.0,
             dy: 400.0,
         });
+        engine.evaluate_drop(b_id);
 
         // @b should now be reparented to root
         let b_idx = engine.graph.index_of(b_id).unwrap();
@@ -1272,6 +1299,7 @@ group @container {
             dx: 50.0,
             dy: 0.0,
         });
+        engine.evaluate_drop(b_id);
 
         // @b should still be a child of @container
         let b_idx = engine.graph.index_of(b_id).unwrap();
@@ -1317,6 +1345,7 @@ group @outer {
             dx: 600.0,
             dy: 500.0,
         });
+        engine.evaluate_drop(leaf_id);
 
         // @leaf should be reparented to root (jumped 2 levels)
         let leaf_idx = engine.graph.index_of(leaf_id).unwrap();
@@ -1356,6 +1385,7 @@ group @container {
                 dy: 10.0,
             });
         }
+        engine.evaluate_drop(b_id);
 
         // @b should now be reparented to root
         let b_idx = engine.graph.index_of(b_id).unwrap();
