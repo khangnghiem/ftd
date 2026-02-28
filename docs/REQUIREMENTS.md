@@ -47,6 +47,8 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R3.34** _(done)_: Group reparent on drag-out — child fully outside group bounds detaches to nearest containing ancestor; partial overlap expands group → [spec](specs/group-reparent.md)
 - **R3.35** _(planned)_: Detach snap animation — purple glow on near-detach, rubber-band line, scale pop + glow on detach; all animations <200ms → [spec](specs/group-reparent.md)
 - **R3.36** _(done)_: Auto-center text in shapes — single text child inside rect/ellipse/frame auto-expands bounds to parent; renderer's center/middle alignment visually centers the label
+- **R3.37** _(done)_: Center-snap for text nodes — dragging text near a shape's center shows purple crosshair guides (12px threshold); releasing snaps text to exact center; multiple centered texts stack vertically
+- **R3.38** _(done)_: Text drag-to-consume — dragging a text node onto a rect/ellipse/frame reparents it as a child inside the shape, auto-centered; position constraints stripped on reparent
 
 #### R3b: Drawing Tools
 
@@ -235,11 +237,11 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for full crate map, dependency graph, dat
 | rendering           | R5.1, R5.2, R5.4, R5.5                                            |
 | platform            | R6.1, R6.2, R6.3, R6.4, R6.5                                      |
 | inline editing      | R3.28                                                             |
-| text alignment      | R1.17, R3.28, R3.36                                               |
-| layout / centering  | R3.36                                                             |
+| text alignment      | R1.17, R3.28, R3.36, R3.37                                        |
+| layout / centering  | R3.36, R3.37                                                      |
 | layers / navigation | R3.30                                                             |
 | group / drill-down  | R3.24, R3.34                                                      |
-| group / reparent    | R3.34, R3.35                                                      |
+| group / reparent    | R3.34, R3.35, R3.38                                               |
 | image               | R3.32                                                             |
 | library             | R3.33, R3.34                                                      |
 

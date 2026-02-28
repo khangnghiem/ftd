@@ -5,7 +5,16 @@
 
 ## Completed Requirements
 
-### v0.8.69 — Full Audit & Improvement Pass
+### v0.8.70 — Canvas UX Overhaul
+
+- **FIX (R2.5)**: Layer–canvas selection sync — clicking a node on canvas now always highlights it in the Layers panel; fixed generation-counter optimization that skipped `.selected` CSS class update when only selection changed (no structural edit)
+- **FIX (R3.17)**: Smart guides snap threshold increased from 1px to 5px — guides now appear at usable distances during drag, matching industry-standard (Figma ~5px) behavior
+- **UX (R4.8)**: AI Touch toolbar icons changed from ✨ to ✦ (4-point star) for "AI Touch" and ✦✦ (double star) for "AI Touch All" — clearer visual distinction
+- **UX (R3.14)**: Spec badge pins removed — spec info now appears as a hover tooltip on annotated nodes with glassmorphic styling showing status, priority, and description
+- **UX (R3.14)**: "Show Specs" added to right-click context menu for nodes with spec annotations
+- **NEW (R3.37)**: Center-snap for text nodes — dragging text near a shape's center shows purple crosshair guides; releasing snaps text to exact center with coordinate update
+- **NEW (R3.38)**: Text drag-to-consume — dragging a text node onto a shape reparents it as a child, auto-centered inside the shape; position constraints stripped automatically
+- **DOCS**: Added 2 lessons to `LESSONS.md` — layer panel selection sync, smart guide threshold
 
 - **Parser hardening**: Added 13 new round-trip tests covering empty groups, 3-level nesting, unicode text (emoji/CJK), spec blocks with all fields, path nodes, linear/radial gradients, shadow, opacity, clip frames, multiple animations, inline spec shorthand, and all layout modes (column/row/grid)
 - **LSP completions**: Overhauled `completion.rs` — added `frame`, `edge`, `import`, `spec` snippets to top-level; `shadow:`, `clip:`, `x:`, `y:`, `align:` properties to node body; value completions for `fill` (named colors + hex palette), `align`, `clip`, `arrow`, `curve`; 9 total tests

@@ -1525,7 +1525,7 @@ impl FdCanvas {
             None => return vec![],
         };
 
-        let snap_threshold = 1.0_f32;
+        let snap_threshold = 5.0_f32;
         let mut guides = Vec::new();
 
         // Selected node reference points

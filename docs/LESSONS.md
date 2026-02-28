@@ -29,3 +29,29 @@ Engineering lessons discovered through building FD.
 3. **Layout solver** (`layout.rs`): no text-in-shape awareness ❌
 
 **Lesson**: When a feature spans multiple layers (model → layout → renderer → UI), ensure each layer agrees on behavior. A default in the UI (panel) or renderer is useless if the layout solver doesn't produce the right geometry.
+
+---
+
+## Layer Panel Skips Selection Highlight on Canvas Click
+
+**Date**: 2026-02-28
+**Context**: Clicking a node on canvas did not highlight it in the Layers panel. Reported multiple times.
+
+**Root cause**: `refreshLayersPanel()` in `main.js` uses a generation-counter optimization: `if (sceneGeneration === lastLayerGeneration && selectedId === lastLayerSelectedId) return;`. When the user clicks a node on canvas, `sceneGeneration` doesn't change (no structural edit), so when the _selection_ changes but the _scene_ doesn't, the function skips the entire DOM update — including the `.selected` CSS class toggle.
+
+**Fix**: Added a separate code path: when `sceneGeneration` matches but `selectedId` differs, update `.selected` class on existing layer items without a full DOM rebuild.
+
+**Lesson**: Optimization shortcuts that skip DOM updates must account for all change dimensions. Selection changes and structural changes are independent — caching on one dimension (generation) can silently skip the other (selection state).
+
+---
+
+## Smart Guides: 1px Threshold Too Tight + Scoping Concerns
+
+**Date**: 2026-02-28
+**Context**: Smart guides (snap alignment lines) stopped appearing when dragging nodes, especially text outside parent shapes.
+
+**Root cause**: The `compute_smart_guides()` function in `lib.rs` used a `snap_threshold` of 1.0px — guides only appeared at near-pixel-perfect alignment, making them practically invisible during normal drag operations. Additionally, while the function iterates all nodes (not just siblings), the tight threshold meant guides disappeared before the user could see them.
+
+**Fix**: Increased `snap_threshold` from 1.0 to 5.0 pixels, matching industry-standard snap distances (Figma uses ~5px).
+
+**Lesson**: Snap thresholds should match user interaction precision, not render precision. A 1px snap window is mathematically correct but practically useless at standard zoom levels. Always test snap features by dragging — not by computing distances in code.
