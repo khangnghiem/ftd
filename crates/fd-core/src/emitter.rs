@@ -2092,6 +2092,312 @@ rect @card {
         );
     }
 
+    // ─── Hardening: edge-case round-trip tests ─────────────────────────────
+
+    #[test]
+    fn roundtrip_empty_group() {
+        let input = "group @empty {\n}\n";
+        let graph = parse_document(input).unwrap();
+        let output = emit_document(&graph);
+        let graph2 = parse_document(&output).expect("re-parse of empty group failed");
+        let node = graph2.get_by_id(NodeId::intern("empty")).unwrap();
+        assert!(matches!(node.kind, NodeKind::Group { .. }));
+    }
+
+    #[test]
+    fn roundtrip_deeply_nested_groups() {
+        let input = r#"
+group @outer {
+  group @middle {
+    group @inner {
+      rect @leaf {
+        w: 40 h: 20
+        fill: #FF0000
+      }
+    }
+  }
+}
+"#;
+        let graph = parse_document(input).unwrap();
+        let output = emit_document(&graph);
+        let graph2 = parse_document(&output).expect("re-parse of nested groups failed");
+        let leaf = graph2.get_by_id(NodeId::intern("leaf")).unwrap();
+        assert!(matches!(leaf.kind, NodeKind::Rect { .. }));
+        // Verify 3-level nesting preserved
+        let inner_idx = graph2.index_of(NodeId::intern("inner")).unwrap();
+        assert_eq!(graph2.children(inner_idx).len(), 1);
+        let middle_idx = graph2.index_of(NodeId::intern("middle")).unwrap();
+        assert_eq!(graph2.children(middle_idx).len(), 1);
+    }
+
+    #[test]
+    fn roundtrip_unicode_text() {
+        let input = "text @emoji \"Hello 🎨 café 日本語\" {\n  fill: #333333\n}\n";
+        let graph = parse_document(input).unwrap();
+        let output = emit_document(&graph);
+        assert!(
+            output.contains("Hello 🎨 café 日本語"),
+            "unicode should survive emit"
+        );
+        let graph2 = parse_document(&output).expect("re-parse of unicode failed");
+        let node = graph2.get_by_id(NodeId::intern("emoji")).unwrap();
+        match &node.kind {
+            NodeKind::Text { content } => {
+                assert!(content.contains("🎨"));
+                assert!(content.contains("café"));
+                assert!(content.contains("日本語"));
+            }
+            _ => panic!("expected Text node"),
+        }
+    }
+
+    #[test]
+    fn roundtrip_spec_all_fields() {
+        let input = r#"
+rect @full_spec {
+  spec {
+    "Full specification node"
+    accept: "all fields present"
+    status: doing
+    priority: high
+    tag: mvp, auth
+  }
+  w: 100 h: 50
+}
+"#;
+        let graph = parse_document(input).unwrap();
+        let node = graph.get_by_id(NodeId::intern("full_spec")).unwrap();
+        assert_eq!(node.annotations.len(), 5, "should have 5 annotations");
+
+        let output = emit_document(&graph);
+        let graph2 = parse_document(&output).expect("re-parse of full spec failed");
+        let node2 = graph2.get_by_id(NodeId::intern("full_spec")).unwrap();
+        assert_eq!(node2.annotations.len(), 5);
+        assert_eq!(node2.annotations, node.annotations);
+    }
+
+    #[test]
+    fn roundtrip_path_node() {
+        let input = "path @sketch {\n}\n";
+        let graph = parse_document(input).unwrap();
+        let output = emit_document(&graph);
+        let graph2 = parse_document(&output).expect("re-parse of path failed");
+        let node = graph2.get_by_id(NodeId::intern("sketch")).unwrap();
+        assert!(matches!(node.kind, NodeKind::Path { .. }));
+    }
+
+    #[test]
+    fn roundtrip_gradient_linear() {
+        let input = r#"
+rect @grad {
+  w: 200 h: 100
+  fill: linear(90deg, #FF0000 0, #0000FF 1)
+}
+"#;
+        let graph = parse_document(input).unwrap();
+        let node = graph.get_by_id(NodeId::intern("grad")).unwrap();
+        assert!(matches!(
+            node.style.fill,
+            Some(Paint::LinearGradient { .. })
+        ));
+
+        let output = emit_document(&graph);
+        assert!(output.contains("linear("), "should emit linear gradient");
+        let graph2 = parse_document(&output).expect("re-parse of linear gradient failed");
+        let node2 = graph2.get_by_id(NodeId::intern("grad")).unwrap();
+        assert!(matches!(
+            node2.style.fill,
+            Some(Paint::LinearGradient { .. })
+        ));
+    }
+
+    #[test]
+    fn roundtrip_gradient_radial() {
+        let input = r#"
+rect @radial_box {
+  w: 100 h: 100
+  fill: radial(#FFFFFF 0, #000000 1)
+}
+"#;
+        let graph = parse_document(input).unwrap();
+        let node = graph.get_by_id(NodeId::intern("radial_box")).unwrap();
+        assert!(matches!(
+            node.style.fill,
+            Some(Paint::RadialGradient { .. })
+        ));
+
+        let output = emit_document(&graph);
+        assert!(output.contains("radial("), "should emit radial gradient");
+        let graph2 = parse_document(&output).expect("re-parse of radial gradient failed");
+        let node2 = graph2.get_by_id(NodeId::intern("radial_box")).unwrap();
+        assert!(matches!(
+            node2.style.fill,
+            Some(Paint::RadialGradient { .. })
+        ));
+    }
+
+    #[test]
+    fn roundtrip_shadow_property() {
+        let input = r#"
+rect @shadowed {
+  w: 200 h: 100
+  shadow: (0,4,20,#000000)
+}
+"#;
+        let graph = parse_document(input).unwrap();
+        let node = graph.get_by_id(NodeId::intern("shadowed")).unwrap();
+        let shadow = node.style.shadow.as_ref().expect("shadow should exist");
+        assert_eq!(shadow.blur, 20.0);
+
+        let output = emit_document(&graph);
+        assert!(output.contains("shadow:"), "should emit shadow");
+        let graph2 = parse_document(&output).expect("re-parse of shadow failed");
+        let node2 = graph2.get_by_id(NodeId::intern("shadowed")).unwrap();
+        let shadow2 = node2.style.shadow.as_ref().expect("shadow should survive");
+        assert_eq!(shadow2.offset_y, 4.0);
+        assert_eq!(shadow2.blur, 20.0);
+    }
+
+    #[test]
+    fn roundtrip_opacity() {
+        let input = r#"
+rect @faded {
+  w: 100 h: 100
+  fill: #6C5CE7
+  opacity: 0.5
+}
+"#;
+        let graph = parse_document(input).unwrap();
+        let node = graph.get_by_id(NodeId::intern("faded")).unwrap();
+        assert_eq!(node.style.opacity, Some(0.5));
+
+        let output = emit_document(&graph);
+        let graph2 = parse_document(&output).expect("re-parse of opacity failed");
+        let node2 = graph2.get_by_id(NodeId::intern("faded")).unwrap();
+        assert_eq!(node2.style.opacity, Some(0.5));
+    }
+
+    #[test]
+    fn roundtrip_clip_frame() {
+        let input = r#"
+frame @clipped {
+  w: 300 h: 200
+  clip: true
+  fill: #FFFFFF
+  corner: 12
+}
+"#;
+        let graph = parse_document(input).unwrap();
+        let output = emit_document(&graph);
+        assert!(output.contains("clip: true"), "should emit clip");
+        let graph2 = parse_document(&output).expect("re-parse of clip frame failed");
+        let node = graph2.get_by_id(NodeId::intern("clipped")).unwrap();
+        match &node.kind {
+            NodeKind::Frame { clip, .. } => assert!(clip, "clip should be true"),
+            _ => panic!("expected Frame node"),
+        }
+    }
+
+    #[test]
+    fn roundtrip_multiple_animations() {
+        let input = r#"
+rect @animated {
+  w: 120 h: 40
+  fill: #6C5CE7
+  when :hover {
+    fill: #5A4BD1
+    scale: 1.05
+    ease: ease_out 200ms
+  }
+  when :press {
+    scale: 0.95
+    ease: spring 150ms
+  }
+}
+"#;
+        let graph = parse_document(input).unwrap();
+        let node = graph.get_by_id(NodeId::intern("animated")).unwrap();
+        assert_eq!(node.animations.len(), 2, "should have 2 animations");
+
+        let output = emit_document(&graph);
+        let graph2 = parse_document(&output).expect("re-parse of multi-anim failed");
+        let node2 = graph2.get_by_id(NodeId::intern("animated")).unwrap();
+        assert_eq!(node2.animations.len(), 2);
+        assert_eq!(node2.animations[0].trigger, AnimTrigger::Hover);
+        assert_eq!(node2.animations[1].trigger, AnimTrigger::Press);
+    }
+
+    #[test]
+    fn roundtrip_inline_spec_shorthand() {
+        let input = r#"
+rect @btn {
+  spec "Primary action button"
+  w: 180 h: 48
+  fill: #6C5CE7
+}
+"#;
+        let graph = parse_document(input).unwrap();
+        let node = graph.get_by_id(NodeId::intern("btn")).unwrap();
+        assert_eq!(node.annotations.len(), 1);
+        assert!(matches!(
+            &node.annotations[0],
+            Annotation::Description(d) if d == "Primary action button"
+        ));
+
+        let output = emit_document(&graph);
+        let graph2 = parse_document(&output).expect("re-parse of inline spec failed");
+        let node2 = graph2.get_by_id(NodeId::intern("btn")).unwrap();
+        assert_eq!(node2.annotations, node.annotations);
+    }
+
+    #[test]
+    fn roundtrip_layout_modes() {
+        let input = r#"
+group @col {
+  layout: column gap=16 pad=24
+  rect @c1 { w: 100 h: 50 }
+}
+
+group @rw {
+  layout: row gap=8 pad=12
+  rect @r1 { w: 50 h: 50 }
+}
+
+group @grd {
+  layout: grid cols=2 gap=10 pad=20
+  rect @g1 { w: 80 h: 80 }
+}
+"#;
+        let graph = parse_document(input).unwrap();
+        let output = emit_document(&graph);
+        assert!(output.contains("layout: column gap=16 pad=24"));
+        assert!(output.contains("layout: row gap=8 pad=12"));
+        assert!(output.contains("layout: grid cols=2 gap=10 pad=20"));
+
+        let graph2 = parse_document(&output).expect("re-parse of layout modes failed");
+        let col = graph2.get_by_id(NodeId::intern("col")).unwrap();
+        assert!(matches!(
+            col.kind,
+            NodeKind::Group {
+                layout: LayoutMode::Column { .. }
+            }
+        ));
+        let rw = graph2.get_by_id(NodeId::intern("rw")).unwrap();
+        assert!(matches!(
+            rw.kind,
+            NodeKind::Group {
+                layout: LayoutMode::Row { .. }
+            }
+        ));
+        let grd = graph2.get_by_id(NodeId::intern("grd")).unwrap();
+        assert!(matches!(
+            grd.kind,
+            NodeKind::Group {
+                layout: LayoutMode::Grid { .. }
+            }
+        ));
+    }
+
     // ─── emit_filtered tests ─────────────────────────────────────────────
 
     fn make_test_graph() -> SceneGraph {

@@ -23,16 +23,28 @@ pub fn parse_document(input: &str) -> Result<SceneGraph, String> {
     let mut pending_comments = collect_leading_comments(&mut rest);
 
     while !rest.is_empty() {
+        let line = line_number(input, rest);
+        let end = {
+            let max = rest.len().min(40);
+            // Find a valid UTF-8 char boundary at or before `max`
+            let mut e = max;
+            while e > 0 && !rest.is_char_boundary(e) {
+                e -= 1;
+            }
+            e
+        };
+        let ctx = &rest[..end];
+
         if rest.starts_with("import ") {
             let import = parse_import_line
                 .parse_next(&mut rest)
-                .map_err(|e| format!("Import parse error: {e}"))?;
+                .map_err(|e| format!("line {line}: import error — expected `import \"path\" as name`, got `{ctx}…`: {e}"))?;
             graph.imports.push(import);
             pending_comments.clear();
         } else if rest.starts_with("style ") || rest.starts_with("theme ") {
             let (name, style) = parse_style_block
                 .parse_next(&mut rest)
-                .map_err(|e| format!("Style parse error: {e}"))?;
+                .map_err(|e| format!("line {line}: theme/style error — expected `theme name {{ props }}`, got `{ctx}…`: {e}"))?;
             graph.define_style(name, style);
             pending_comments.clear();
         } else if rest.starts_with("spec ") || rest.starts_with("spec{") {
@@ -41,16 +53,16 @@ pub fn parse_document(input: &str) -> Result<SceneGraph, String> {
             pending_comments.clear();
         } else if rest.starts_with('@') {
             if is_generic_node_start(rest) {
-                let mut node_data = parse_node
-                    .parse_next(&mut rest)
-                    .map_err(|e| format!("Node parse error: {e}"))?;
+                let mut node_data = parse_node.parse_next(&mut rest).map_err(|e| {
+                    format!("line {line}: node error — expected `@id {{ ... }}`, got `{ctx}…`: {e}")
+                })?;
                 node_data.comments = std::mem::take(&mut pending_comments);
                 let root = graph.root;
                 insert_node_recursive(&mut graph, root, node_data);
             } else {
                 let (node_id, constraint) = parse_constraint_line
                     .parse_next(&mut rest)
-                    .map_err(|e| format!("Constraint parse error: {e}"))?;
+                    .map_err(|e| format!("line {line}: constraint error — expected `@id -> type: value`, got `{ctx}…`: {e}"))?;
                 if let Some(node) = graph.get_by_id_mut(node_id) {
                     node.constraints.push(constraint);
                 }
@@ -59,13 +71,15 @@ pub fn parse_document(input: &str) -> Result<SceneGraph, String> {
         } else if rest.starts_with("edge ") {
             let edge = parse_edge_block
                 .parse_next(&mut rest)
-                .map_err(|e| format!("Edge parse error: {e}"))?;
+                .map_err(|e| format!("line {line}: edge error — expected `edge @id {{ from: @a to: @b }}`, got `{ctx}…`: {e}"))?;
             graph.edges.push(edge);
             pending_comments.clear();
         } else if starts_with_node_keyword(rest) {
-            let mut node_data = parse_node
-                .parse_next(&mut rest)
-                .map_err(|e| format!("Node parse error: {e}"))?;
+            let mut node_data = parse_node.parse_next(&mut rest).map_err(|e| {
+                format!(
+                    "line {line}: node error — expected `kind @id {{ ... }}`, got `{ctx}…`: {e}"
+                )
+            })?;
             node_data.comments = std::mem::take(&mut pending_comments);
             let root = graph.root;
             insert_node_recursive(&mut graph, root, node_data);
@@ -85,6 +99,12 @@ pub fn parse_document(input: &str) -> Result<SceneGraph, String> {
     }
 
     Ok(graph)
+}
+
+/// Compute the 1-based line number of `remaining` within `full_input`.
+fn line_number(full_input: &str, remaining: &str) -> usize {
+    let consumed = full_input.len() - remaining.len();
+    full_input[..consumed].matches('\n').count() + 1
 }
 
 fn starts_with_node_keyword(s: &str) -> bool {
