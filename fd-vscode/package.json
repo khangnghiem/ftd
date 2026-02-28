@@ -2,7 +2,7 @@
   "name": "fast-draft",
   "displayName": "Fast Draft",
   "description": "Design Specs as Code",
-  "version": "0.8.66",
+  "version": "0.8.67",
   "publisher": "KhangNghiem",
   "license": "MIT",
   "icon": "icon.png",
@@ -195,6 +195,16 @@
         "command": "fd.toggleViewMode",
         "title": "FD: Toggle Design/Spec/Tree View",
         "icon": "$(list-unordered)"
+      },
+      {
+        "command": "fd.openReadOnlyView",
+        "title": "FD: Open Read-Only Code View",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "fd.changeViewMode",
+        "title": "FD: Change View Mode",
+        "icon": "$(filter)"
       }
     ],
     "menus": {

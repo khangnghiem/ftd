@@ -109,6 +109,7 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R4.16** _(done)_: Property aliases — `background:`/`color:` → fill, `rounded:`/`radius:` → corner
 - **R4.17** _(done)_: Dimension units — `w: 320px` accepted, `px` stripped by parser
 - **R4.18** _(done)_: Theme/When rename + emitter reorder — `style` → `theme`, `anim` → `when` for clarity; emitter order: spec → children → style → when; old keywords accepted for backward compatibility
+- **R4.19** _(done)_: ReadMode filtered views — `emit_filtered(graph, mode)` with 8 modes (Full/Structure/Layout/Design/Spec/Visual/When/Edges); CLI `fd-lsp --view <mode>` for AI token savings; VS Code read-only virtual document provider with status bar mode selector
 
 ### R5: Rendering
 
