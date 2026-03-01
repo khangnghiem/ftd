@@ -882,6 +882,14 @@ function setupPointerEvents() {
       }
     }
 
+    // ── Post-release: expand parents to contain overflowing children ──
+    if (isDraggingNode && fdCanvas) {
+      if (fdCanvas.finalize_bounds()) {
+        render();
+        syncTextToExtension();
+      }
+    }
+
     isDraggingNode = false;
     draggedNodeId = null;
     animDropTargetId = null;

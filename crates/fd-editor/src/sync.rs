@@ -534,6 +534,65 @@ impl SyncEngine {
         }
         result
     }
+
+    /// Post-release pass: expand parent groups/frames to contain children
+    /// that overflow after resize or text growth.
+    ///
+    /// Only called once on pointer release — never per-frame — to avoid
+    /// the "chasing envelope" bug. Processes groups bottom-up so inner
+    /// groups expand first, then outer groups see the expanded children.
+    /// Skips frames with `clip: true` (they intentionally clip).
+    pub fn finalize_child_bounds(&mut self) -> bool {
+        let groups = Self::collect_groups_bottom_up(&self.graph);
+        let mut changed = false;
+
+        for group_idx in groups {
+            // Skip clip frames — they intentionally clip content
+            let is_clip = matches!(
+                &self.graph.graph[group_idx].kind,
+                NodeKind::Frame { clip: true, .. }
+            );
+            if is_clip {
+                continue;
+            }
+
+            let old_bounds = self.bounds.get(&group_idx).copied();
+            expand_group_to_children(&self.graph, group_idx, &mut self.bounds, None);
+            if self.bounds.get(&group_idx).copied() != old_bounds {
+                changed = true;
+            }
+        }
+
+        if changed {
+            self.text_dirty = true;
+        }
+        changed
+    }
+
+    /// Collect all Group/Frame node indices in bottom-up order (deepest first).
+    /// This ensures inner groups expand before outer groups see them.
+    fn collect_groups_bottom_up(graph: &SceneGraph) -> Vec<NodeIndex> {
+        let mut result = Vec::new();
+        let mut stack = vec![(graph.root, false)];
+
+        // Post-order traversal: process children before parent
+        while let Some((idx, visited)) = stack.pop() {
+            if visited {
+                let kind = &graph.graph[idx].kind;
+                let is_container = matches!(kind, NodeKind::Group { .. } | NodeKind::Frame { .. });
+                if is_container && idx != graph.root {
+                    result.push(idx);
+                }
+                continue;
+            }
+            stack.push((idx, true));
+            for child_idx in graph.children(idx) {
+                stack.push((child_idx, false));
+            }
+        }
+
+        result
+    }
 }
 
 /// Returns true if two axis-aligned bounding boxes overlap (non-zero area).
@@ -1587,6 +1646,170 @@ rect @card {
             parent_after, card_idx,
             "@label should remain in @card with partial overlap"
         );
+    }
+
+    #[test]
+    fn sync_resize_child_expands_parent_on_finalize() {
+        // Simulates a resize drag: child bounds updated directly (no re-resolve).
+        // After release, finalize_child_bounds should expand the group.
+        let input = r#"
+group @container {
+  rect @child { w: 80 h: 40 }
+}
+"#;
+        let viewport = Viewport {
+            width: 800.0,
+            height: 600.0,
+        };
+        let mut engine = SyncEngine::from_text(input, viewport).unwrap();
+        let container_idx = engine.graph.index_of(NodeId::intern("container")).unwrap();
+        let child_idx = engine.graph.index_of(NodeId::intern("child")).unwrap();
+
+        let container_before = engine.bounds[&container_idx];
+
+        // Simulate resize drag: directly widen the child's bounds
+        // (the real canvas does this via handle drag, not via resolve)
+        if let Some(cb) = engine.bounds.get_mut(&child_idx) {
+            cb.width = container_before.width + 100.0;
+        }
+
+        // Group bounds are stale (not updated during drag — chasing envelope fix)
+        let container_mid = engine.bounds[&container_idx];
+        assert_eq!(
+            container_mid.width, container_before.width,
+            "container should NOT expand during drag"
+        );
+
+        // Call finalize (simulates pointer release)
+        let changed = engine.finalize_child_bounds();
+        assert!(changed, "finalize should detect overflow and expand");
+
+        let container_after = engine.bounds[&container_idx];
+        assert!(
+            container_after.width > container_before.width,
+            "container should expand after finalize: {} > {}",
+            container_after.width,
+            container_before.width
+        );
+    }
+
+    #[test]
+    fn sync_resize_child_within_bounds_no_expand() {
+        // Child bounds shrink within parent — finalize may shrink but should not grow.
+        let input = r#"
+group @container {
+  rect @child { w: 80 h: 40 }
+}
+"#;
+        let viewport = Viewport {
+            width: 800.0,
+            height: 600.0,
+        };
+        let mut engine = SyncEngine::from_text(input, viewport).unwrap();
+        let container_idx = engine.graph.index_of(NodeId::intern("container")).unwrap();
+        let child_idx = engine.graph.index_of(NodeId::intern("child")).unwrap();
+
+        let container_before = engine.bounds[&container_idx];
+
+        // Simulate resize: shrink the child
+        if let Some(cb) = engine.bounds.get_mut(&child_idx) {
+            cb.width = 40.0;
+        }
+
+        engine.finalize_child_bounds();
+
+        let container_after = engine.bounds[&container_idx];
+        assert!(
+            container_after.width <= container_before.width + 0.01,
+            "container should not grow when child fits: {} <= {}",
+            container_after.width,
+            container_before.width
+        );
+    }
+
+    #[test]
+    fn sync_cascade_expand_two_levels() {
+        // Resizing a leaf inside nested groups → both groups expand on finalize.
+        let input = r#"
+group @outer {
+  group @inner {
+    rect @leaf { w: 40 h: 30 }
+  }
+}
+"#;
+        let viewport = Viewport {
+            width: 800.0,
+            height: 600.0,
+        };
+        let mut engine = SyncEngine::from_text(input, viewport).unwrap();
+        let outer_idx = engine.graph.index_of(NodeId::intern("outer")).unwrap();
+        let inner_idx = engine.graph.index_of(NodeId::intern("inner")).unwrap();
+        let leaf_idx = engine.graph.index_of(NodeId::intern("leaf")).unwrap();
+
+        let outer_before = engine.bounds[&outer_idx].width;
+        let inner_before = engine.bounds[&inner_idx].width;
+
+        // Simulate resize: widen the leaf way beyond both groups
+        if let Some(lb) = engine.bounds.get_mut(&leaf_idx) {
+            lb.width = 300.0;
+        }
+
+        let changed = engine.finalize_child_bounds();
+        assert!(changed, "finalize should cascade expansion");
+
+        let inner_after = engine.bounds[&inner_idx].width;
+        let outer_after = engine.bounds[&outer_idx].width;
+
+        assert!(
+            inner_after > inner_before,
+            "inner group should expand: {} > {}",
+            inner_after,
+            inner_before
+        );
+        assert!(
+            outer_after > outer_before,
+            "outer group should expand: {} > {}",
+            outer_after,
+            outer_before
+        );
+    }
+
+    #[test]
+    fn sync_cascade_stops_at_clip_frame() {
+        // Clip frame should NOT expand even when child overflows.
+        let input = r#"
+frame @clip_frame {
+  w: 200 h: 100
+  clip: true
+
+  rect @child { w: 80 h: 40 }
+}
+"#;
+        let viewport = Viewport {
+            width: 800.0,
+            height: 600.0,
+        };
+        let mut engine = SyncEngine::from_text(input, viewport).unwrap();
+        let frame_idx = engine.graph.index_of(NodeId::intern("clip_frame")).unwrap();
+        let child_idx = engine.graph.index_of(NodeId::intern("child")).unwrap();
+
+        let frame_before = engine.bounds[&frame_idx];
+
+        // Simulate resize: widen child beyond frame
+        if let Some(cb) = engine.bounds.get_mut(&child_idx) {
+            cb.width = 400.0;
+        }
+
+        let changed = engine.finalize_child_bounds();
+
+        // Frame should NOT expand (clip: true)
+        let frame_after = engine.bounds[&frame_idx];
+        assert_eq!(
+            frame_before.width, frame_after.width,
+            "clip frame should not expand: {} == {}",
+            frame_before.width, frame_after.width
+        );
+        assert!(!changed, "no changes expected for clip frame");
     }
 }
 

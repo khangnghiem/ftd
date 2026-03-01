@@ -1,25 +1,25 @@
 theme check {
-  fill: #00B894
+  fill: #00B894  # teal
 }
 
 theme feature {
-  fill: #333333
-  font: "Inter" 400 14
+  fill: #333333  # gray
+  font: "Inter" regular 14
 }
 
 theme heading {
-  fill: #1A1A2E
-  font: "Inter" 700 32
+  fill: #1A1A2E  # blue
+  font: "Inter" bold 32
 }
 
 theme price {
-  fill: #1A1A2E
-  font: "Inter" 800 48
+  fill: #1A1A2E  # blue
+  font: "Inter" extrabold 48
 }
 
 theme subhead {
-  fill: #6B7280
-  font: "Inter" 400 16
+  fill: #6B7280  # blue
+  font: "Inter" regular 16
 }
 
 group @pricing {
@@ -30,45 +30,36 @@ group @pricing {
     priority: high
     tag: conversion, revenue
   }
-  layout: column gap=40 pad=48
+  text @title "Simple, transparent pricing" {
+    use: heading
+    x: 23.29
+    y: -116.17
+  }
   group @header {
     layout: column gap=8 pad=0
-    text @title "Simple, transparent pricing" {
-      use: heading
-    }
-    text @subtitle "No hidden fees. Cancel anytime." {
-      use: subhead
-    }
   }
   group @cards {
-    layout: row gap=23 pad=0
     rect @tier_free {
       spec {
         "Free tier — acquisition funnel entry"
         accept: "no credit card required"
         status: done
       }
-      w: 300 h: 480
-      fill: #FFFFFF
-      stroke: #E8E8EC 1
-      corner: 16
-      shadow: (0,2,12,#00000011)
       group @_anon_31 {
-        layout: column gap=16 pad=28
         text @_anon_32 "Starter" {
-          fill: #6B7280
-          font: "Inter" 600 20
+          fill: #6B7280  # blue
+          font: "Inter" semibold 20
         }
         text @_anon_33 "$0" {
           use: price
         }
         text @_anon_34 "per month" {
-          fill: #9CA3AF
-          font: "Inter" 400 14
+          fill: #9CA3AF  # blue
+          font: "Inter" regular 14
         }
         rect @divider_free {
           w: 244 h: 1
-          fill: #E8E8EC
+          fill: #E8E8EC  # white
         }
         text @_anon_35 "✓ 3 projects" {
           use: feature
@@ -80,27 +71,35 @@ group @pricing {
           use: feature
         }
         text @_anon_38 "✗ Animations" {
-          fill: #CCCCCC
-          font: "Inter" 400 14
+          fill: #CCCCCC  # white
+          font: "Inter" regular 14
         }
         text @_anon_39 "✗ Team sharing" {
-          fill: #CCCCCC
-          font: "Inter" 400 14
+          fill: #CCCCCC  # white
+          font: "Inter" regular 14
         }
         rect @btn_free {
-          w: 244 h: 48
-          fill: #F5F5F7
-          corner: 10
           text @_anon_40 "Get Started" {
-            fill: #333333
-            font: "Inter" 600 15
+            fill: #333333  # gray
+            font: "Inter" semibold 15
           }
+          w: 244 h: 48
+          fill: #F5F5F7  # white
+          corner: 10
           when :hover {
-            fill: #EDEDF0
+            fill: #EDEDF0  # white
             ease: ease_out 150ms
           }
         }
+        layout: column gap=16 pad=28
+        x: -2.65
+        y: -0.1
       }
+      w: 300 h: 480
+      fill: #FFFFFF  # white
+      stroke: #E8E8EC 1
+      corner: 16
+      shadow: (0,2,12,#00000011)
       when :hover {
         scale: 1.02
         ease: spring 300ms
@@ -114,39 +113,33 @@ group @pricing {
         priority: high
         status: doing
       }
-      w: 320 h: 520
-      fill: #FFFFFF
-      stroke: #6C5CE7 2
-      corner: 16
-      shadow: (0,8,32,#6C5CE730)
       group @_anon_41 {
-        layout: column gap=16 pad=28
         group @popular_badge {
-          layout: row gap=0 pad=0
           rect @badge {
-            w: 100 h: 28
-            fill: #6C5CE7
-            corner: 14
             text @_anon_42 "Popular" {
-              fill: #FFFFFF
-              font: "Inter" 600 12
+              fill: #FFFFFF  # white
+              font: "Inter" semibold 12
             }
+            w: 100 h: 28
+            fill: #6C5CE7  # blue
+            corner: 14
           }
+          layout: row gap=0 pad=0
         }
         text @_anon_43 "Pro" {
-          fill: #6C5CE7
-          font: "Inter" 600 20
+          fill: #6C5CE7  # blue
+          font: "Inter" semibold 20
         }
         text @_anon_44 "$29" {
           use: price
         }
         text @_anon_45 "per month" {
-          fill: #9CA3AF
-          font: "Inter" 400 14
+          fill: #9CA3AF  # blue
+          font: "Inter" regular 14
         }
         rect @divider_pro {
           w: 264 h: 1
-          fill: #E8E8EC
+          fill: #E8E8EC  # white
         }
         text @_anon_46 "✓ Unlimited projects" {
           use: feature
@@ -164,15 +157,15 @@ group @pricing {
           use: feature
         }
         rect @btn_pro {
-          w: 264 h: 48
-          fill: #6C5CE7
-          corner: 10
           text @_anon_51 "Start Free Trial" {
-            fill: #FFFFFF
-            font: "Inter" 600 15
+            fill: #FFFFFF  # white
+            font: "Inter" semibold 15
           }
+          w: 264 h: 48
+          fill: #6C5CE7  # blue
+          corner: 10
           when :hover {
-            fill: #5A4BD1
+            fill: #5A4BD1  # blue
             scale: 1.03
             ease: spring 200ms
           }
@@ -181,7 +174,13 @@ group @pricing {
             ease: ease_out 100ms
           }
         }
+        layout: column gap=16 pad=28
       }
+      w: 320 h: 520
+      fill: #FFFFFF  # white
+      stroke: #6C5CE7 2
+      corner: 16
+      shadow: (0,8,32,#6C5CE730)
       when :hover {
         scale: 1.02
         ease: spring 300ms
@@ -194,29 +193,23 @@ group @pricing {
         status: todo
         tag: sales
       }
-      w: 300 h: 480
-      fill: #FFFFFF
-      stroke: #E8E8EC 1
-      corner: 16
-      shadow: (0,2,12,#00000011)
       group @_anon_52 {
         spec "???"
-        layout: column gap=16 pad=28
         text @_anon_53 "Enterprise" {
-          fill: #6B7280
-          font: "Inter" 600 20
+          fill: #6B7280  # blue
+          font: "Inter" semibold 20
         }
         text @_anon_54 "Custom" {
-          fill: #1A1A2E
-          font: "Inter" 800 40
+          fill: #1A1A2E  # blue
+          font: "Inter" extrabold 40
         }
         text @_anon_55 "contact sales" {
-          fill: #9CA3AF
-          font: "Inter" 400 14
+          fill: #9CA3AF  # blue
+          font: "Inter" regular 14
         }
         rect @divider_ent {
           w: 244 h: 1
-          fill: #E8E8EC
+          fill: #E8E8EC  # white
         }
         text @_anon_56 "✓ Everything in Pro" {
           use: feature
@@ -234,26 +227,41 @@ group @pricing {
           use: feature
         }
         rect @btn_enterprise {
-          w: 244 h: 48
-          fill: #1A1A2E
-          corner: 10
           text @_anon_61 "Contact Sales" {
-            fill: #FFFFFF
-            font: "Inter" 600 15
+            fill: #FFFFFF  # white
+            font: "Inter" semibold 15
           }
+          w: 244 h: 48
+          fill: #1A1A2E  # blue
+          corner: 10
           when :hover {
-            fill: #2D2D44
+            fill: #2D2D44  # blue
             scale: 1.03
             ease: spring 200ms
           }
         }
+        layout: column gap=16 pad=28
       }
+      w: 300 h: 480
+      fill: #FFFFFF  # white
+      stroke: #E8E8EC 1
+      corner: 16
+      shadow: (0,2,12,#00000011)
       when :hover {
         scale: 1.02
         ease: spring 300ms
       }
     }
+    layout: row gap=23 pad=0
   }
+  layout: column gap=40 pad=48
+  x: -313.81
+  y: 97.24
 }
 
-@pricing -> center_in: canvas
+text @subtitle "No hidden fees. Cancel anytime." {
+  use: subhead
+  x: 14.8
+  y: 245.15
+}
+

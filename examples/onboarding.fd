@@ -12,6 +12,8 @@ theme step_title {
 
 # ─── Layout ───
 
+# ─── Layout ───
+# ─── Layout ───
 # ─── Wizard container ───────────────────────────────────────────────────
 group @wizard {
   spec {
@@ -90,22 +92,16 @@ group @wizard {
       }
       group @buttons {
         rect @btn_skip {
-          text @skip_label "Skip" {
-            fill: #999999  # gray
-            font: "Inter" medium 15
-          }
           w: 100 h: 48
           corner: 10
+          x: -2.6
+          y: 2.3
           when :hover {
             fill: #F5F5F7  # white
             ease: ease_out 150ms
           }
         }
         rect @btn_next {
-          text @next_label "Next" {
-            fill: #FFFFFF  # white
-            font: "Inter" semibold 15
-          }
           w: 280 h: 48
           fill: #6C5CE7  # blue
           corner: 10
@@ -130,6 +126,20 @@ group @wizard {
     shadow: (0,8,40,#00000022)
   }
   layout: column gap=0 pad=0
+}
+
+text @skip_label "Skip" {
+  fill: #999999  # gray
+  font: "Inter" medium 15
+  x: 321.26
+  y: 691.8
+}
+
+text @next_label "Next" {
+  fill: #FFFFFF  # white
+  font: "Inter" semibold 15
+  x: 523.32
+  y: 686.31
 }
 
 # ─── Constraints ───
