@@ -5,6 +5,15 @@
 
 ## Completed Requirements
 
+### v0.8.92 — Group vs Frame Refactoring (Figma Alignment)
+
+- **REFACTOR**: `NodeKind::Group` is now a unit variant — purely organizational container (like Figma Group); no own styles, layout modes, or visual rendering; auto-sizes to children bounding box
+- **REFACTOR**: `layout:` directives inside `group {}` blocks are parsed but silently ignored (backward compat); layout modes only apply to `frame` nodes
+- **CLEANUP**: Removed `draw_group_bg()` dead code from Canvas2D renderer
+- **LSP**: Updated group/frame hover descriptions to clarify semantic distinction
+- **EXAMPLES**: Migrated `checkout_flow.fd`, `constraints.fd`, and `nested_layout.fd` test fixture from `group + layout:` to `frame + layout:`
+- **TESTING**: 10 tests migrated from group+layout to frame+layout; all 142 Rust tests pass
+
 ### v0.8.91 — Canvas Interaction Fixes
 
 - **FIX**: Resize handles now work in all 8 directions — `ResizeNode` handler in `sync.rs` now updates cached bounds so `resize_origin` stays accurate across frames

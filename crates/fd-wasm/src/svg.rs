@@ -290,15 +290,8 @@ fn render_node_svg(
                 d, fill, stroke, stroke_width
             ));
         }
-        NodeKind::Group { .. } | NodeKind::Root | NodeKind::Generic => {
-            // Groups might have a background optionally (if style has fill)
-            if fill != "none" {
-                let r = style.corner_radius.unwrap_or(0.0);
-                out.push_str(&format!(
-                    "  <rect x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" rx=\"{}\" ry=\"{}\" fill=\"{}\" stroke=\"{}\" stroke-width=\"{}\" />\n",
-                    b.x, b.y, b.width, b.height, r, r, fill, stroke, stroke_width
-                ));
-            }
+        NodeKind::Group | NodeKind::Root | NodeKind::Generic => {
+            // Groups are purely organizational — no visual output
         }
     }
 

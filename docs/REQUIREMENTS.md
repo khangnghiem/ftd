@@ -257,6 +257,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for full crate map, dependency graph, dat
 | group / reparent    | R3.34, R3.35, R3.38                                               |
 | image               | R3.32                                                             |
 | library             | R3.33, R3.34                                                      |
+| group / frame       | R3.24, R3.34, R1.1                                                |
 
 | content-first | R4.12 |
 | mermaid | R1.18 |

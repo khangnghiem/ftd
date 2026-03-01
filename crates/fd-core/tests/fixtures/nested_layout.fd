@@ -1,6 +1,7 @@
 # Nested layout — exercises the layout solver with groups, columns, and constraints
 
-group @sidebar {
+frame @sidebar {
+  w: 232 h: 200
   layout: column gap=8 pad=16
 
   rect @nav_item_1 {
@@ -22,7 +23,8 @@ group @sidebar {
   }
 }
 
-group @main_content {
+frame @main_content {
+  w: 448 h: 400
   layout: column gap=12 pad=24
 
   text @heading "Dashboard" {

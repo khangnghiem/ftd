@@ -3,7 +3,8 @@
 
 # ─── Canvas-centered hero ────────────────────────────────────────────────
 
-group @hero {
+frame @hero {
+  w: 400 h: 200
   layout: column gap=16 pad=40
 
   spec "Hero section — demonstrates center_in constraint"
@@ -55,7 +56,9 @@ rect @full_width_bg {
   corner: 0
   spec "Background that fills parent width with 24px padding"
 
-  group { layout: row gap=16 pad=24
+  frame @_panel_layout {
+    w: 752 h: 72
+    layout: row gap=16 pad=24
     text "This panel uses fill_parent with 24px inset" {
       font: "Inter" 14; fill: #6B7280
     }

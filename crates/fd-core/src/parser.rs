@@ -549,7 +549,7 @@ fn parse_node(input: &mut &str) -> ModalResult<ParsedNode> {
     let _ = '}'.parse_next(input)?;
 
     let kind = match kind_str {
-        "group" => NodeKind::Group { layout },
+        "group" => NodeKind::Group, // Group is purely organizational — layout ignored
         "frame" => NodeKind::Frame {
             width: width.unwrap_or(200.0),
             height: height.unwrap_or(200.0),
