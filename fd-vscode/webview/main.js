@@ -4194,10 +4194,10 @@ function applyZenMode(isZen) {
   const btn = document.getElementById("zen-toggle-btn");
   if (isZen) {
     document.body.classList.add("zen-mode");
-    if (btn) btn.innerHTML = '<span class="zen-icon">🔧</span> Full';
+    if (btn) { btn.textContent = '🔧'; btn.title = 'Switch to Full mode'; }
   } else {
     document.body.classList.remove("zen-mode");
-    if (btn) btn.innerHTML = '<span class="zen-icon">🧘</span> Zen';
+    if (btn) { btn.textContent = '🧘'; btn.title = 'Switch to Zen mode'; }
     // Clear any zen-visible overrides when leaving zen mode
     document.getElementById("layers-panel")?.classList.remove("zen-visible");
     document.getElementById("props-panel")?.classList.remove("zen-visible");

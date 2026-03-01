@@ -5,6 +5,12 @@
 
 ## Completed Requirements
 
+### v0.8.87 — Three-Zone Toolbar + Inline Zen Toggle (Option C)
+
+- **UX**: Restructured top toolbar into three zones — LEFT (✦ AI Touch, ✦ Renamify), CENTER (All|Design|Spec view toggle), RIGHT (status, Zen toggle, ☰ settings) — balanced layout replacing the old flat left-aligned arrangement
+- **UX**: Moved Zen toggle from floating top-right pill into the toolbar's right zone as icon-only button (🧘↔🔧) — cleaner UI, accessible via title attribute
+- **CLEANUP**: Removed dead CSS (`.tool-sep`, floating `#zen-toggle-btn`, `.zen-icon`, duplicate `#spec-overlay` rule), removed `flex:1` spacer div
+
 ### v0.8.86 / v0.1.4 — Auto-Expand + Text Sizing + Edge Label Offset
 
 - **FEATURE (R3.45)**: Auto-expand parent on release — `finalize_child_bounds()` expands parent groups/frames to contain overflowing children after resize or text growth; processes bottom-up for recursive cascade; skips `clip: true` frames; runs only on pointer-up to avoid chasing-envelope bug

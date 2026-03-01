@@ -172,6 +172,16 @@ export class FdCanvas {
         }
     }
     /**
+     * Post-release: expand parent groups to contain overflowing children.
+     * Called once on pointer release (never per-frame).
+     * Returns `true` if any parent was expanded.
+     * @returns {boolean}
+     */
+    finalize_bounds() {
+        const ret = wasm.fdcanvas_finalize_bounds(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
      * Get annotations for a node as JSON array.
      * Returns `[]` if node not found or has no annotations.
      * @param {string} node_id
@@ -687,6 +697,21 @@ export class FdCanvas {
      */
     ungroup_selected() {
         const ret = wasm.fdcanvas_ungroup_selected(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * Update a text node's resolved bounds using JS-measured dimensions.
+     * Called from JS after `measureText()` to set the tight bounding box.
+     * Returns `true` if bounds changed (and parent expansion may be needed).
+     * @param {string} node_id
+     * @param {number} measured_width
+     * @param {number} measured_height
+     * @returns {boolean}
+     */
+    update_text_metrics(node_id, measured_width, measured_height) {
+        const ptr0 = passStringToWasm0(node_id, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.fdcanvas_update_text_metrics(this.__wbg_ptr, ptr0, len0, measured_width, measured_height);
         return ret !== 0;
     }
 }
