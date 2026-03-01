@@ -157,3 +157,29 @@ Engineering lessons discovered through building FD.
 **Fix**: Removed all 3 code sites together: detection, rendering, and trigger. Also cleaned up the state variables (`animDropTargetId`, `animDropTargetBounds`) in the reset block at L901-904.
 
 **Lesson**: When removing a feature, trace its full call chain: **detect → render → trigger → cleanup**. Search for all variable names associated with the feature (e.g., `animDropTargetId`, `animDropTargetBounds`) and remove every read/write site. A partial removal leaves orphaned state and wasted computation.
+
+---
+
+## Resize: Cached Bounds Must Track Model Mutations
+
+**Date**: 2026-03-01
+**Context**: 5 of 8 resize handles only resized down and to the right. BottomRight was the only handle that worked correctly.
+
+**Root cause**: `ResizeNode` in `sync.rs` updated the node's `NodeKind` dimensions (width/height) but NOT the cached `ResolvedBounds`. The `SelectTool` computed incremental `dx = new_x - resize_origin.0` using `resize_origin` which was updated from the _tool's_ local state, but the actual bounds used for hit-testing and rendering were stale. For handles that need to move the node's position (all except BottomRight), the stale bounds caused `MoveNode` deltas to fight with the tool's geometry.
+
+**Fix**: Added `bounds.width = rw; bounds.height = rh;` after the `ResizeNode` mutation. One-line fix, massive impact.
+
+**Lesson**: The sync engine maintains cached `ResolvedBounds` as a performance optimization. Every mutation that changes a node's dimensions or position **must update both** the graph model AND the cached bounds map. Failing to sync these creates subtle bugs where interactive operations work on stale data.
+
+---
+
+## Animations: Always Add Time Limits
+
+**Date**: 2026-03-01
+**Context**: Hover scale animation persisted indefinitely while the cursor was over a node — the "bigger on hover" effect never ended.
+
+**Root cause**: `resolve_style()` applies the `when :hover` animation properties (including `scale`) instantly and for the entire duration the trigger is active. There was no time-based envelope — the animation started at full strength and stayed there.
+
+**Fix**: Added a time envelope in `render_node`: 200ms ease-in (smoothstep) → 300ms hold → 200ms ease-out. After 700ms total, scale returns to 1.0 even while still hovered. `hover_start_ms` tracked in `FdCanvas` and passed to renderer.
+
+**Lesson**: Interactive animations must always have explicit time bounds. An indefinite animation on a state trigger (hover, press) feels broken because it never "finishes." Use ease-in/hold/ease-out envelopes to give animations a perceptible start and end.
