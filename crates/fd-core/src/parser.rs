@@ -653,13 +653,8 @@ fn named_color_to_hex(name: &str) -> Option<Color> {
         "purple" | "violet" => Some(Color::rgba(139.0 / 255.0, 92.0 / 255.0, 246.0 / 255.0, 1.0)),
         "pink" => Some(Color::rgba(236.0 / 255.0, 72.0 / 255.0, 153.0 / 255.0, 1.0)),
         "rose" => Some(Color::rgba(244.0 / 255.0, 63.0 / 255.0, 94.0 / 255.0, 1.0)),
-        "white" => Some(Color::rgba(
-            255.0 / 255.0,
-            255.0 / 255.0,
-            255.0 / 255.0,
-            1.0,
-        )),
-        "black" => Some(Color::rgba(0.0 / 255.0, 0.0 / 255.0, 0.0 / 255.0, 1.0)),
+        "white" => Some(Color::rgba(1.0, 1.0, 1.0, 1.0)),
+        "black" => Some(Color::rgba(0.0, 0.0, 0.0, 1.0)),
         "gray" | "grey" => Some(Color::rgba(
             107.0 / 255.0,
             114.0 / 255.0,
