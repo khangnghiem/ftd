@@ -1,3 +1,5 @@
+# ─── Themes ───
+
 theme accent {
   fill: #6C5CE7  # blue
   corner: 10
@@ -9,9 +11,7 @@ theme base_text {
 }
 
 # ─── Layout ───
-# ─── Layout ───
-# ─── Layout ───
-# ─── Layout ───
+
 # ─── Layout ───
 # ─── Layout ───
 # ─── Layout ───
@@ -28,13 +28,6 @@ group @login_form {
       accept: "validates email format on blur"
       accept: "shows error state with red border"
       priority: high
-    }
-    text @title "Welcome Back" {
-      spec "Brand greeting — sets emotional tone"
-      fill: #1A1A2E  # blue
-      font: "Inter" bold 24
-      x: 9.15
-      y: -49.96
     }
     text @email_hint "Email" {
       use: base_text
@@ -57,8 +50,8 @@ group @login_form {
     text @pass_hint "Password" {
       use: base_text
       fill: #999999  # gray
-      x: 0.3
-      y: -0.04
+      x: 106.98
+      y: 15.88
     }
     w: 280 h: 44
     stroke: #DDDDDD 1
@@ -72,15 +65,11 @@ group @login_form {
       status: done
       priority: high
     }
-    text @btn_label "Sign In" {
-      fill: #FFFFFF  # white
-      font: "Inter" semibold 16
-      x: 4.3
-      y: 0.84
-    }
     w: 280 h: 48
     use: accent
     fill: #5A4BD1  # blue
+    x: 28.11
+    y: 170.17
     when :hover {
       fill: #4A3BC1  # blue
       scale: 1.02
@@ -93,7 +82,15 @@ group @login_form {
   }
   layout: column gap=16 pad=32
   x: 316.65
-  y: 377.78
+  y: 378.93
+}
+
+text @title "Welcome Back" {
+  spec "Brand greeting — sets emotional tone"
+  fill: #1A1A2E  # blue
+  font: "Inter" bold 24
+  x: 362.63
+  y: 347.77
 }
 
 rect @rect_0 {
@@ -108,3 +105,40 @@ rect @rect_1 {
   y: 631.19
 }
 
+text @btn_label "Sign In" {
+  fill: #FFFFFF  # white
+  font: "Inter" semibold 16
+  x: 445.88
+  y: 667.3
+}
+
+text @_anon_1 "Test" {
+  x: 531.32
+  y: 637.2
+}
+
+rect @_anon_2 {
+  w: 100 h: 80
+  stroke: #333333 2.5
+  corner: 8
+  x: 126.4
+  y: 642.36
+}
+
+rect @_anon_4 {
+  w: 100 h: 80
+  stroke: #333333 2.5
+  corner: 8
+  x: 134.91
+  y: 790.5
+}
+
+# ─── Flows ───
+
+edge @edge_3 {
+  from: @rect_1
+  to: @_anon_2
+  stroke: #6B7080 1.5
+  arrow: end
+  curve: smooth
+}

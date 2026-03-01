@@ -5,6 +5,11 @@
 
 ## Completed Requirements
 
+### v0.8.81 — Arrow Head Tangent Alignment
+
+- **BUG FIX (R5.7)**: Fixed arrowhead misalignment on Smooth and Step edge curves — arrowheads now follow the curve's tangent direction at the endpoint instead of the straight-line center-to-center angle; Smooth uses quadratic bezier control point tangent, Step uses horizontal last-segment direction
+- **CLEANUP**: Suppressed pre-existing `clippy::type_complexity` warning on `evaluate_near_detach` return type
+
 ### v0.8.80 / v0.1.2 — Drag-and-Drop Detach Fix
 
 - **BUG FIX**: Fixed an issue where text nodes inside shapes would not detach when dragged out. The overlap test now uses intrinsic visual bounds.
