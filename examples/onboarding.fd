@@ -8,9 +8,6 @@ theme step_title {
   font: "Inter" bold 28
 }
 
-# ─── Layout ───
-# ─── Layout ───
-# ─── Layout ───
 # ─── Wizard container ───────────────────────────────────────────────────
 group @wizard {
   spec {
@@ -30,17 +27,6 @@ group @wizard {
         spec {
           "Step illustration — animated SVG"
           accept: "subtle loop animation"
-        }
-        ellipse @shape_1 {
-          w: 80 h: 80
-          fill: #6C5CE740  # blue
-          x: -193.64
-          y: 42.85
-          when :enter {
-            opacity: 1
-            scale: 1
-            ease: spring 800ms
-          }
         }
         rect @shape_2 {
           w: 100 h: 60
@@ -63,6 +49,19 @@ group @wizard {
             scale: 1
             ease: spring 1000ms
           }
+        }
+        group @_group_1 {
+          ellipse @shape_1 {
+            w: 80 h: 80
+            fill: #6C5CE740  # blue
+            when :enter {
+              opacity: 1
+              scale: 1
+              ease: spring 800ms
+            }
+          }
+          x: -193.64
+          y: 42.85
         }
         w: 400 h: 240
         fill: #F0EDFC  # blue
@@ -132,8 +131,8 @@ group @wizard {
     y: -12.11
   }
   layout: column gap=0 pad=0
-  x: 257.46
-  y: 427.46
+  x: 259.91
+  y: 409.97
 }
 
 rect @btn_next {
@@ -166,5 +165,11 @@ text @next_label "Next" {
   font: "Inter" semibold 15
   x: 523.32
   y: 686.31
+}
+
+rect @rect_0 {
+  w: 120 h: 80
+  x: 195.41
+  y: 913.13
 }
 
