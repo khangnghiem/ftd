@@ -162,6 +162,13 @@ impl SyncEngine {
                         _ => {}
                     }
                 }
+                // Keep cached bounds in sync so resize_origin tracks correctly
+                if let Some(idx) = self.graph.index_of(id)
+                    && let Some(bounds) = self.bounds.get_mut(&idx)
+                {
+                    bounds.width = rw;
+                    bounds.height = rh;
+                }
             }
             GraphMutation::AddNode { parent_id, node } => {
                 let parent_idx = self.graph.index_of(parent_id).unwrap_or(self.graph.root);

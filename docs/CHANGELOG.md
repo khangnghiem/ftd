@@ -5,6 +5,19 @@
 
 ## Completed Requirements
 
+### v0.8.91 — Canvas Interaction Fixes
+
+- **FIX**: Resize handles now work in all 8 directions — `ResizeNode` handler in `sync.rs` now updates cached bounds so `resize_origin` stays accurate across frames
+- **FIX**: Hover scale animation capped at 700ms total (200ms ease-in, 300ms hold, 200ms ease-out) instead of persisting indefinitely — implemented time envelope in `render2d.rs` with smoothstep interpolation
+- **FIX**: New shapes (rect, ellipse) now created with white fill + bezeled stroke by default, matching ScreenBrush aesthetic
+- **FIX**: Annotation badge corner dots already removed — WASM rebuild propagates fix
+
+### v0.8.90 — Scroll Toolbar Bug Fixes
+
+- **FIX**: Removed dead inline script in `webview-html.ts` that conflicted with `main.js` scroll toolbar logic — script referenced non-existent `#ft-drag-handle` and used wrong CSS class (`collapsed` vs `rolled-up`)
+- **FIX**: Toolbar now snaps closer to the bottom — CSS default changed from `bottom: 56px` to `bottom: 12px`, drag snap default changed from `4vh` to `1.5vh`
+- **FIX**: Drag-to-create from toolbar buttons now works on touch devices — added `touch-action: none` to `.ft-tool-btn`
+
 ### v0.8.88 — Text Reparent Fix + Figma-Style Group Selection
 
 - **BUG FIX (R3.38)**: Fixed text reparent silently failing — `evaluateTextAdoption()` was gated on `&& changed` from WASM, causing `textDropTarget` to null out on frames where the pointer didn't move enough to trigger a model change; moved text adoption evaluation outside the `changed` gate so it runs on every pointermove frame

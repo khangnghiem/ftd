@@ -49,6 +49,8 @@ pub struct FdCanvas {
     sketchy_mode: bool,
     hovered_id: Option<fd_core::id::NodeId>,
     pressed_id: Option<fd_core::id::NodeId>,
+    /// Timestamp (ms) when hover started on the current node.
+    hover_start_ms: f64,
     /// Deferred drill-down: when pointer-down on a child of a selected
     /// group, keep the group selected for drag; drill into child on
     /// pointer-up without drag.
@@ -89,6 +91,7 @@ impl FdCanvas {
             sketchy_mode: false,
             hovered_id: None,
             pressed_id: None,
+            hover_start_ms: 0.0,
             pending_drill_target: None,
             pointer_down_pos: None,
         }
@@ -140,6 +143,7 @@ impl FdCanvas {
             self.pressed_id.as_ref().map(|id| id.as_str()),
             &guides,
             self.sketchy_mode,
+            self.hover_start_ms,
         );
     }
 
@@ -283,6 +287,9 @@ impl FdCanvas {
         let prev_hovered = self.hovered_id;
         self.hovered_id = hit;
         let hovered_changed = prev_hovered != self.hovered_id;
+        if hovered_changed && self.hovered_id.is_some() {
+            self.hover_start_ms = js_sys::Date::now();
+        }
 
         let mutations = match self.active_tool {
             ToolKind::Select => self.select_tool.handle(&event, hit),
@@ -1590,6 +1597,7 @@ impl FdCanvas {
                 join: StrokeJoin::Miter,
             });
         } else if kind == "rect" {
+            node.style.fill = Some(Paint::Solid(Color::rgba(1.0, 1.0, 1.0, 1.0)));
             node.style.stroke = Some(Stroke {
                 paint: Paint::Solid(Color::rgba(0.2, 0.2, 0.2, 1.0)),
                 width: 2.5,
@@ -1598,6 +1606,7 @@ impl FdCanvas {
             });
             node.style.corner_radius = Some(8.0);
         } else if kind == "ellipse" {
+            node.style.fill = Some(Paint::Solid(Color::rgba(1.0, 1.0, 1.0, 1.0)));
             node.style.stroke = Some(Stroke {
                 paint: Paint::Solid(Color::rgba(0.2, 0.2, 0.2, 1.0)),
                 width: 2.5,

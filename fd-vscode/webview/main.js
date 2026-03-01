@@ -4785,7 +4785,7 @@ function setupFloatingToolbar() {
       } else {
         newOrientation = "horizontal";
         // Default relative position
-        newPos = { bottom: "4vh", left: Math.max(2, (finalX / viewW) * 100) + "vw" };
+        newPos = { bottom: "1.5vh", left: Math.max(2, (finalX / viewW) * 100) + "vw" };
       }
 
       toolbar.classList.remove("horizontal", "vertical");
