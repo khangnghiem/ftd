@@ -1024,6 +1024,7 @@ fn parse_edge_block(input: &mut &str) -> ModalResult<Edge> {
     let mut annotations = Vec::new();
     let mut animations = Vec::new();
     let mut flow = None;
+    let mut label_offset = None;
 
     skip_ws_and_comments(input);
 
@@ -1104,6 +1105,12 @@ fn parse_edge_block(input: &mut &str) -> ModalResult<Edge> {
                         duration_ms: dur,
                     });
                 }
+                "label_offset" => {
+                    let ox = parse_number.parse_next(input)?;
+                    skip_space(input);
+                    let oy = parse_number.parse_next(input)?;
+                    label_offset = Some((ox, oy));
+                }
                 _ => {
                     let _ = take_till::<_, _, ContextError>(0.., |c: char| {
                         c == '\n' || c == ';' || c == '}'
@@ -1140,6 +1147,7 @@ fn parse_edge_block(input: &mut &str) -> ModalResult<Edge> {
         annotations,
         animations: animations.into(),
         flow,
+        label_offset,
     })
 }
 
@@ -1746,5 +1754,37 @@ text @heading "Hello" {
         let node = reparsed.get_by_id(crate::id::NodeId::intern("r")).unwrap();
         assert!(node.style.fill.is_some());
         assert_eq!(node.style.corner_radius, Some(12.0));
+    }
+
+    #[test]
+    fn roundtrip_edge_label_offset() {
+        let input = r#"
+rect @a { w: 100 h: 50 }
+rect @b { w: 100 h: 50 }
+
+edge @link {
+  from: @a
+  to: @b
+  arrow: end
+  label_offset: 15.5 -8.3
+}
+"#;
+        let graph = parse_document(input).expect("parse failed");
+        assert_eq!(graph.edges.len(), 1);
+        let edge = &graph.edges[0];
+        assert_eq!(edge.id, crate::id::NodeId::intern("link"));
+        assert_eq!(edge.label_offset, Some((15.5, -8.3)));
+
+        // Emit and re-parse
+        let emitted = crate::emitter::emit_document(&graph);
+        assert!(
+            emitted.contains("label_offset:"),
+            "emitter should include label_offset"
+        );
+
+        let reparsed = parse_document(&emitted).expect("re-parse failed");
+        assert_eq!(reparsed.edges.len(), 1);
+        let re_edge = &reparsed.edges[0];
+        assert_eq!(re_edge.label_offset, Some((15.5, -8.3)));
     }
 }

@@ -867,6 +867,7 @@ impl Tool for ArrowTool {
                             annotations: Vec::new(),
                             animations: Default::default(),
                             flow: None,
+                            label_offset: None,
                         };
                         vec![GraphMutation::AddEdge {
                             edge: Box::new(edge),

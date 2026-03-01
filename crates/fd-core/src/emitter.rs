@@ -658,6 +658,11 @@ fn emit_edge(out: &mut String, edge: &Edge) {
         writeln!(out, "  flow: {} {}ms", kind, flow.duration_ms).unwrap();
     }
 
+    // Label offset (dragged position)
+    if let Some((ox, oy)) = edge.label_offset {
+        writeln!(out, "  label_offset: {} {}", format_num(ox), format_num(oy)).unwrap();
+    }
+
     // Trigger animations
     for anim in &edge.animations {
         emit_anim(out, anim, 1);
