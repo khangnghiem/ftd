@@ -42,7 +42,7 @@ fn paint_node(
     let style = graph.resolve_style(node, &[]);
 
     match &node.kind {
-        NodeKind::Root | NodeKind::Generic => {}
+        NodeKind::Root | NodeKind::Generic | NodeKind::Group => {}
 
         NodeKind::Rect { .. } => paint_rect(scene, nb, &style),
 
@@ -60,12 +60,6 @@ fn paint_node(
         }
 
         NodeKind::Path { commands } => paint_path(scene, commands, nb, &style),
-
-        NodeKind::Group { .. } => {
-            if style.fill.is_some() {
-                paint_rect(scene, nb, &style);
-            }
-        }
 
         NodeKind::Frame { .. } => {
             // Frames always render their background (like a visible container)

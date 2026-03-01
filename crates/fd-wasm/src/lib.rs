@@ -431,7 +431,7 @@ impl FdCanvas {
                 // Skip bring_forward for groups — they should stay behind children
                 let is_group = matches!(
                     self.engine.graph.graph[idx].kind,
-                    fd_core::model::NodeKind::Group { .. }
+                    fd_core::model::NodeKind::Group
                 );
                 if is_group {
                     false
@@ -737,7 +737,7 @@ impl FdCanvas {
                 self.engine
                     .graph
                     .get_by_id(*id)
-                    .is_some_and(|n| matches!(n.kind, fd_core::model::NodeKind::Group { .. }))
+                    .is_some_and(|n| matches!(n.kind, fd_core::model::NodeKind::Group))
             })
             .collect();
 
@@ -1245,7 +1245,7 @@ impl FdCanvas {
                 props.insert("kind".into(), "text".into());
                 props.insert("content".into(), serde_json::Value::String(content.clone()));
             }
-            NodeKind::Group { .. } => {
+            NodeKind::Group => {
                 props.insert("kind".into(), "group".into());
             }
             NodeKind::Frame { width, height, .. } => {
@@ -2045,7 +2045,7 @@ fn collect_node_tree(graph: &fd_core::SceneGraph, idx: fd_core::NodeIndex) -> se
     let kind_str = match &node.kind {
         fd_core::NodeKind::Root => "root",
         fd_core::NodeKind::Generic => "generic",
-        fd_core::NodeKind::Group { .. } => "group",
+        fd_core::NodeKind::Group => "group",
         fd_core::NodeKind::Frame { .. } => "frame",
         fd_core::NodeKind::Rect { .. } => "rect",
         fd_core::NodeKind::Ellipse { .. } => "ellipse",

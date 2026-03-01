@@ -88,9 +88,7 @@ fn is_parent_managed(graph: &SceneGraph, node_idx: NodeIndex) -> bool {
     };
     let parent_node = &graph.graph[parent_idx];
     match &parent_node.kind {
-        NodeKind::Group { layout } | NodeKind::Frame { layout, .. } => {
-            !matches!(layout, LayoutMode::Free)
-        }
+        NodeKind::Frame { layout, .. } => !matches!(layout, LayoutMode::Free),
         _ => false,
     }
 }
@@ -107,21 +105,10 @@ fn recompute_group_auto_sizes(
     }
 
     let node = &graph.graph[node_idx];
-    let pad = match &node.kind {
-        NodeKind::Group {
-            layout: LayoutMode::Column { pad, .. },
-        }
-        | NodeKind::Group {
-            layout: LayoutMode::Row { pad, .. },
-        }
-        | NodeKind::Group {
-            layout: LayoutMode::Grid { pad, .. },
-        } => *pad,
-        NodeKind::Group {
-            layout: LayoutMode::Free,
-        } => 0.0,
-        _ => return, // not a group
-    };
+    // Only groups auto-size — frames use declared dimensions
+    if !matches!(node.kind, NodeKind::Group) {
+        return;
+    }
 
     let children = graph.children(node_idx);
     if children.is_empty() {
@@ -146,10 +133,10 @@ fn recompute_group_auto_sizes(
         bounds.insert(
             node_idx,
             ResolvedBounds {
-                x: min_x - pad,
-                y: min_y - pad,
-                width: (max_x - min_x) + 2.0 * pad,
-                height: (max_y - min_y) + 2.0 * pad,
+                x: min_x,
+                y: min_y,
+                width: max_x - min_x,
+                height: max_y - min_y,
             },
         );
     }
@@ -172,7 +159,7 @@ fn resolve_children(
 
     // Determine layout mode
     let layout = match &parent_node.kind {
-        NodeKind::Group { layout } => layout.clone(),
+        NodeKind::Group => LayoutMode::Free, // Group is always Free
         NodeKind::Frame { layout, .. } => layout.clone(),
         _ => LayoutMode::Free,
     };
@@ -325,15 +312,8 @@ fn resolve_children(
         }
     }
 
-    // Auto-size groups to the union bounding box of their children + padding
-    if matches!(parent_node.kind, NodeKind::Group { .. }) && !children.is_empty() {
-        let pad = match &layout {
-            LayoutMode::Column { pad, .. }
-            | LayoutMode::Row { pad, .. }
-            | LayoutMode::Grid { pad, .. } => *pad,
-            LayoutMode::Free => 0.0,
-        };
-
+    // Auto-size groups to the union bounding box of their children
+    if matches!(parent_node.kind, NodeKind::Group) && !children.is_empty() {
         let mut min_x = f32::MAX;
         let mut min_y = f32::MAX;
         let mut max_x = f32::MIN;
@@ -341,8 +321,6 @@ fn resolve_children(
 
         for &child_idx in &children {
             if let Some(cb) = bounds.get(&child_idx) {
-                // Use resolved absolute positions directly — by this point,
-                // bounds already hold correct positions from the layout pass.
                 min_x = min_x.min(cb.x);
                 min_y = min_y.min(cb.y);
                 max_x = max_x.max(cb.x + cb.width);
@@ -351,15 +329,13 @@ fn resolve_children(
         }
 
         if min_x < f32::MAX {
-            // Include padding on all sides: origin moves back by pad,
-            // size grows by pad on the trailing edge
             bounds.insert(
                 parent_idx,
                 ResolvedBounds {
-                    x: min_x - pad,
-                    y: min_y - pad,
-                    width: (max_x - min_x) + 2.0 * pad,
-                    height: (max_y - min_y) + 2.0 * pad,
+                    x: min_x,
+                    y: min_y,
+                    width: max_x - min_x,
+                    height: max_y - min_y,
                 },
             );
         }
@@ -400,7 +376,7 @@ fn intrinsic_size(node: &SceneNode) -> (f32, f32) {
             let char_width = font_size * 0.6;
             (content.len() as f32 * char_width, font_size)
         }
-        NodeKind::Group { .. } => (0.0, 0.0), // Auto-sized: computed after children resolve
+        NodeKind::Group => (0.0, 0.0), // Auto-sized: computed after children resolve
         NodeKind::Frame { width, height, .. } => (*width, *height),
         NodeKind::Path { .. } => (100.0, 100.0), // Computed from path bounds
         NodeKind::Generic => (120.0, 40.0),      // Placeholder label box
@@ -504,7 +480,8 @@ mod tests {
     #[test]
     fn layout_column() {
         let input = r#"
-group @form {
+frame @form {
+  w: 800 h: 600
   layout: column gap=10 pad=20
 
   rect @a { w: 100 h: 40 }
@@ -571,12 +548,11 @@ rect @box {
 
     #[test]
     fn layout_group_auto_bounds() {
+        // Group auto-sizing: group dimensions are computed from children bounding box
         let input = r#"
 group @container {
-  layout: column gap=10 pad=0
-
-  rect @a { w: 100 h: 40 }
-  rect @b { w: 80 h: 30 }
+  rect @a { w: 100 h: 40 x: 10 y: 10 }
+  rect @b { w: 80 h: 30 x: 10 y: 60 }
 }
 "#;
         let graph = parse_document(input).unwrap();
@@ -589,7 +565,7 @@ group @container {
         let container_idx = graph.index_of(NodeId::intern("container")).unwrap();
         let cb = &bounds[&container_idx];
 
-        // Group should auto-size to cover both children (not hardcoded 200x200)
+        // Group should auto-size to cover both children
         assert!(cb.width > 0.0, "group width should be positive");
         assert!(cb.height > 0.0, "group height should be positive");
         // Width should be at least the wider child (100px)
@@ -597,12 +573,6 @@ group @container {
             cb.width >= 100.0,
             "group width ({}) should be >= 100",
             cb.width
-        );
-        // Height should cover both children + gap (40 + 10 + 30 = 80)
-        assert!(
-            cb.height >= 80.0,
-            "group height ({}) should be >= 80 (children + gap)",
-            cb.height
         );
     }
 
@@ -629,17 +599,14 @@ frame @card {
 
     #[test]
     fn layout_nested_group_auto_size() {
+        // Nested groups: both outer and inner auto-size to children
         let input = r#"
 group @outer {
-  layout: column gap=10 pad=0
-
   group @inner {
-    layout: column gap=5 pad=0
-
-    rect @a { w: 100 h: 40 }
-    rect @b { w: 80 h: 30 }
+    rect @a { w: 100 h: 40 x: 0 y: 0 }
+    rect @b { w: 80 h: 30 x: 0 y: 50 }
   }
-  rect @c { w: 120 h: 50 }
+  rect @c { w: 120 h: 50 x: 0 y: 100 }
 }
 "#;
         let graph = parse_document(input).unwrap();
@@ -651,68 +618,35 @@ group @outer {
 
         let inner_idx = graph.index_of(NodeId::intern("inner")).unwrap();
         let outer_idx = graph.index_of(NodeId::intern("outer")).unwrap();
-        let c_idx = graph.index_of(NodeId::intern("c")).unwrap();
 
         let inner = bounds[&inner_idx];
         let outer = bounds[&outer_idx];
-        let c = bounds[&c_idx];
 
-        // Inner group: height = 40 + 5 + 30 = 75
+        // Inner group: height should cover both children
         assert!(
-            inner.height >= 75.0,
-            "inner group height ({}) should be >= 75 (children + gap)",
+            inner.height >= 70.0,
+            "inner group height ({}) should be >= 70 (children bbox)",
             inner.height
-        );
-
-        // @c and @inner should NOT overlap (regardless of order)
-        let c_range = c.y..(c.y + c.height);
-        let inner_range = inner.y..(inner.y + inner.height);
-        assert!(
-            c_range.end <= inner_range.start || inner_range.end <= c_range.start,
-            "@c [{}, {}] and @inner [{}, {}] should not overlap",
-            c.y,
-            c.y + c.height,
-            inner.y,
-            inner.y + inner.height
-        );
-
-        // Gap between siblings should be 10
-        let gap = if c.y < inner.y {
-            inner.y - (c.y + c.height)
-        } else {
-            c.y - (inner.y + inner.height)
-        };
-        assert!(
-            (gap - 10.0).abs() < 0.01,
-            "gap between siblings should be 10, got {gap}"
         );
 
         // Outer group should contain both @inner and @c
         let outer_bottom = outer.y + outer.height;
-        let c_bottom = c.y + c.height;
-        let inner_bottom = inner.y + inner.height;
         assert!(
-            outer_bottom >= c_bottom && outer_bottom >= inner_bottom,
-            "outer bottom ({outer_bottom}) should contain @c ({c_bottom}) and @inner ({inner_bottom})"
+            outer_bottom >= 150.0,
+            "outer bottom ({outer_bottom}) should contain all children"
         );
     }
 
     #[test]
     fn layout_group_child_inside_column_parent() {
+        // Frame with column layout containing a group child
         let input = r#"
-group @wizard {
+frame @wizard {
+  w: 480 h: 800
   layout: column gap=0 pad=0
 
   rect @card {
     w: 480 h: 520
-
-    group @content {
-      layout: column gap=24 pad=40
-
-      rect @illustration { w: 400 h: 240 }
-      rect @title { w: 400 h: 20 }
-      rect @desc { w: 400 h: 20 }
-    }
   }
 }
 "#;
@@ -723,32 +657,26 @@ group @wizard {
         };
         let bounds = resolve_layout(&graph, viewport);
 
-        let content_idx = graph.index_of(NodeId::intern("content")).unwrap();
         let wizard_idx = graph.index_of(NodeId::intern("wizard")).unwrap();
+        let card_idx = graph.index_of(NodeId::intern("card")).unwrap();
 
-        let content = bounds[&content_idx];
         let wizard = bounds[&wizard_idx];
+        let card = bounds[&card_idx];
 
-        // Content group should auto-size to fit: pad(40) + 240 + gap(24) + 20 + gap(24) + 20 + pad(40) = 408
+        // Card should be inside wizard
         assert!(
-            content.height >= 280.0,
-            "content group height ({}) should be >= 280 (children + gaps)",
-            content.height
-        );
-
-        // Wizard should contain the content
-        let wizard_bottom = wizard.y + wizard.height;
-        let content_bottom = content.y + content.height;
-        assert!(
-            wizard_bottom >= content_bottom,
-            "wizard ({wizard_bottom}) should contain content ({content_bottom})"
+            card.y >= wizard.y,
+            "card.y ({}) must be >= wizard.y ({})",
+            card.y,
+            wizard.y
         );
     }
 
     #[test]
     fn layout_column_preserves_document_order() {
         let input = r#"
-group @card {
+frame @card {
+  w: 800 h: 600
   layout: column gap=12 pad=24
 
   text @heading "Monthly Revenue" {
@@ -800,7 +728,8 @@ group @card {
     #[test]
     fn layout_dashboard_card_with_center_in() {
         let input = r#"
-group @card {
+frame @card {
+  w: 800 h: 600
   layout: column gap=12 pad=24
   text @heading "Monthly Revenue" { font: "Inter" 600 18 }
   text @amount "$48,250" { font: "Inter" 700 36 }
@@ -881,7 +810,8 @@ group @card {
         // Children with stale Position constraints inside a column layout
         // should be positioned by the column, not by their Position.
         let input = r#"
-group @card {
+frame @card {
+  w: 800 h: 600
   layout: column gap=10 pad=20
 
   rect @a { w: 100 h: 40 }

@@ -154,7 +154,7 @@ fn is_style_empty(style: &Style) -> bool {
 fn kind_priority(kind: &NodeKind) -> u8 {
     match kind {
         NodeKind::Root => 0,
-        NodeKind::Group { .. } | NodeKind::Frame { .. } => 1,
+        NodeKind::Group | NodeKind::Frame { .. } => 1,
         NodeKind::Rect { .. } => 2,
         NodeKind::Ellipse { .. } => 3,
         NodeKind::Text { .. } => 4,

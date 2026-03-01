@@ -251,8 +251,8 @@ fn render_node(
             });
             draw_text(ctx, node_bounds, content, &style, parent_is_shape);
         }
-        NodeKind::Group { .. } => {
-            draw_group_bg(ctx, node_bounds, &style);
+        NodeKind::Group => {
+            // Group is purely organizational — no background fill
 
             // Draw hover/selection borders for groups
             if is_selected || Some(node.id.as_str()) == hovered_id {
@@ -530,35 +530,6 @@ fn pick_label_color(style: &Style) -> String {
         }
         _ => "#1C1C1E".to_string(),
     }
-}
-
-fn draw_group_bg(ctx: &CanvasRenderingContext2d, b: &ResolvedBounds, style: &Style) {
-    if style.fill.is_none() && style.stroke.is_none() {
-        return;
-    }
-
-    let (x, y, w, h) = (b.x as f64, b.y as f64, b.width as f64, b.height as f64);
-    let radius = style.corner_radius.unwrap_or(0.0) as f64;
-
-    ctx.save();
-    apply_opacity(ctx, style);
-
-    if style.fill.is_some() {
-        let fill_color = resolve_fill_color(style);
-        ctx.set_fill_style_str(&fill_color);
-        rounded_rect_path(ctx, x, y, w, h, radius);
-        ctx.fill();
-    }
-
-    if let Some(ref stroke) = style.stroke {
-        let stroke_color = resolve_paint_color(&stroke.paint);
-        ctx.set_stroke_style_str(&stroke_color);
-        ctx.set_line_width(stroke.width as f64);
-        rounded_rect_path(ctx, x, y, w, h, radius);
-        ctx.stroke();
-    }
-
-    ctx.restore();
 }
 
 /// Draw a freehand path from its PathCmd commands.

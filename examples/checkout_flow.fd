@@ -8,7 +8,8 @@ theme muted { font: "Inter" 12; fill: #999 }
 
 # ─── Checkout page ───────────────────────────────────────────────────────
 
-group @checkout_page {
+frame @checkout_page {
+  w: 500 h: 800
   layout: column gap=20 pad=32
 
   spec {
@@ -23,7 +24,8 @@ group @checkout_page {
 
   # ─── Progress bar ────────────────────────────────────────────────
 
-  group @progress {
+  frame @progress {
+    w: 420 h: 4
     layout: row gap=0 pad=0
 
     spec {
@@ -59,7 +61,8 @@ group @checkout_page {
 
   # ─── Form fields ─────────────────────────────────────────────────
 
-  group @form {
+  frame @form {
+    w: 412 h: 400
     layout: column gap=12 pad=0
 
     spec {
@@ -71,7 +74,8 @@ group @checkout_page {
       tag: form, ux
     }
 
-    group @name_row {
+    frame @name_row {
+      w: 412 h: 48
       layout: row gap=12 pad=0
 
       rect @first_name {
@@ -121,7 +125,8 @@ group @checkout_page {
       text "Apt, suite, etc. (optional)" { use: muted }
     }
 
-    group @city_state {
+    frame @city_state {
+      w: 412 h: 48
       layout: row gap=12 pad=0
 
       rect @city {
@@ -174,7 +179,9 @@ group @checkout_page {
       tag: checkout
     }
 
-    group { layout: column gap=8 pad=20
+    frame @_summary_layout {
+      w: 372 h: 160
+      layout: column gap=8 pad=20
       text "Order Summary" { font: "Inter" 600 16; fill: #1A1A2E }
       text "Widget Pro × 2" { use: label }
       text "Cable Pack × 1" { use: label }
@@ -187,7 +194,8 @@ group @checkout_page {
 
   # ─── Action buttons ────────────────────────────────────────────
 
-  group @actions {
+  frame @actions {
+    w: 412 h: 48
     layout: row gap=12 pad=0
 
     rect @btn_back {

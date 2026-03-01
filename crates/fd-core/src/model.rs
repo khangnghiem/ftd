@@ -412,8 +412,9 @@ pub enum NodeKind {
     /// Used for spec-only nodes: `@login_btn { spec "CTA" }`
     Generic,
 
-    /// Group / frame — contains children.
-    Group { layout: LayoutMode },
+    /// Organizational container (like Figma Group).
+    /// Auto-sizes to children, no own styles or layout modes.
+    Group,
 
     /// Frame — visible container with explicit size and optional clipping.
     /// Like a Figma frame: has fill/stroke, declared dimensions, clips overflow.
@@ -443,7 +444,7 @@ impl NodeKind {
         match self {
             Self::Root => "root",
             Self::Generic => "generic",
-            Self::Group { .. } => "group",
+            Self::Group => "group",
             Self::Frame { .. } => "frame",
             Self::Rect { .. } => "rect",
             Self::Ellipse { .. } => "ellipse",
@@ -810,7 +811,7 @@ impl SceneGraph {
             if matches!(parent.kind, NodeKind::Root) {
                 break;
             }
-            if matches!(parent.kind, NodeKind::Group { .. }) {
+            if matches!(parent.kind, NodeKind::Group) {
                 // If this group is already selected, stop bubbling — let inner target through
                 if selected.contains(&parent.id) {
                     break;
@@ -1018,12 +1019,7 @@ mod tests {
         let group_id = NodeId::intern("my_group");
         let rect_id = NodeId::intern("my_rect");
 
-        let group = SceneNode::new(
-            group_id,
-            NodeKind::Group {
-                layout: LayoutMode::Free,
-            },
-        );
+        let group = SceneNode::new(group_id, NodeKind::Group);
         let rect = SceneNode::new(
             rect_id,
             NodeKind::Rect {
@@ -1055,18 +1051,8 @@ mod tests {
         let inner_id = NodeId::intern("group_inner");
         let leaf_id = NodeId::intern("rect_leaf");
 
-        let outer = SceneNode::new(
-            outer_id,
-            NodeKind::Group {
-                layout: LayoutMode::Free,
-            },
-        );
-        let inner = SceneNode::new(
-            inner_id,
-            NodeKind::Group {
-                layout: LayoutMode::Free,
-            },
-        );
+        let outer = SceneNode::new(outer_id, NodeKind::Group);
+        let inner = SceneNode::new(inner_id, NodeKind::Group);
         let leaf = SceneNode::new(
             leaf_id,
             NodeKind::Rect {
@@ -1118,12 +1104,7 @@ mod tests {
         let rect_id = NodeId::intern("r1");
         let other_id = NodeId::intern("other");
 
-        let group = SceneNode::new(
-            group_id,
-            NodeKind::Group {
-                layout: LayoutMode::Free,
-            },
-        );
+        let group = SceneNode::new(group_id, NodeKind::Group);
         let rect = SceneNode::new(
             rect_id,
             NodeKind::Rect {

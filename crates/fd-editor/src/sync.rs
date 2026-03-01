@@ -283,12 +283,7 @@ impl SyncEngine {
                 let rel_group_y = min_y - parent_offset.1;
 
                 // Create the new group node
-                let mut group_node = SceneNode::new(
-                    new_group_id,
-                    NodeKind::Group {
-                        layout: LayoutMode::Free,
-                    },
-                );
+                let mut group_node = SceneNode::new(new_group_id, NodeKind::Group);
                 group_node.constraints.push(Constraint::Position {
                     x: rel_group_x,
                     y: rel_group_y,
@@ -464,7 +459,7 @@ impl SyncEngine {
         let child_kind = &self.graph.graph[child_idx].kind;
 
         let is_container_parent = match parent_kind {
-            NodeKind::Group { .. } | NodeKind::Frame { .. } => true,
+            NodeKind::Group | NodeKind::Frame { .. } => true,
             NodeKind::Rect { .. } | NodeKind::Ellipse { .. } => {
                 matches!(child_kind, NodeKind::Text { .. })
             }
@@ -586,7 +581,7 @@ impl SyncEngine {
         while let Some((idx, visited)) = stack.pop() {
             if visited {
                 let kind = &graph.graph[idx].kind;
-                let is_container = matches!(kind, NodeKind::Group { .. } | NodeKind::Frame { .. });
+                let is_container = matches!(kind, NodeKind::Group | NodeKind::Frame { .. });
                 if is_container && idx != graph.root {
                     result.push(idx);
                 }
@@ -629,7 +624,7 @@ fn handle_child_group_relationship(
 
     // Only act on container parents (Group/Frame) or shape parents (Rect/Ellipse) if the child is Text.
     let is_container_parent = match parent_kind {
-        NodeKind::Group { .. } | NodeKind::Frame { .. } => true,
+        NodeKind::Group | NodeKind::Frame { .. } => true,
         NodeKind::Rect { .. } | NodeKind::Ellipse { .. } => {
             matches!(child_kind, NodeKind::Text { .. })
         }
@@ -674,20 +669,10 @@ fn handle_child_group_relationship(
 }
 
 /// Extract padding from a group's layout mode.
+/// Groups are purely organizational — always 0 padding.
 fn group_padding(graph: &SceneGraph, group_idx: NodeIndex) -> f32 {
     match &graph.graph[group_idx].kind {
-        NodeKind::Group {
-            layout: LayoutMode::Column { pad, .. },
-        }
-        | NodeKind::Group {
-            layout: LayoutMode::Row { pad, .. },
-        }
-        | NodeKind::Group {
-            layout: LayoutMode::Grid { pad, .. },
-        } => *pad,
-        NodeKind::Group {
-            layout: LayoutMode::Free,
-        } => 0.0,
+        NodeKind::Group => 0.0,
         _ => 0.0,
     }
 }

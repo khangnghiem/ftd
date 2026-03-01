@@ -154,7 +154,7 @@ fn emit_node(out: &mut String, graph: &SceneGraph, idx: NodeIndex, depth: usize)
     match &node.kind {
         NodeKind::Root => return,
         NodeKind::Generic => write!(out, "@{}", node.id.as_str()).unwrap(),
-        NodeKind::Group { .. } => write!(out, "group @{}", node.id.as_str()).unwrap(),
+        NodeKind::Group => write!(out, "group @{}", node.id.as_str()).unwrap(),
         NodeKind::Frame { .. } => write!(out, "frame @{}", node.id.as_str()).unwrap(),
         NodeKind::Rect { .. } => write!(out, "rect @{}", node.id.as_str()).unwrap(),
         NodeKind::Ellipse { .. } => write!(out, "ellipse @{}", node.id.as_str()).unwrap(),
@@ -176,42 +176,7 @@ fn emit_node(out: &mut String, graph: &SceneGraph, idx: NodeIndex, depth: usize)
         emit_node(out, graph, *child_idx, depth + 1);
     }
 
-    // Layout mode (for groups)
-    if let NodeKind::Group { layout } = &node.kind {
-        match layout {
-            LayoutMode::Free => {}
-            LayoutMode::Column { gap, pad } => {
-                indent(out, depth + 1);
-                writeln!(
-                    out,
-                    "layout: column gap={} pad={}",
-                    format_num(*gap),
-                    format_num(*pad)
-                )
-                .unwrap();
-            }
-            LayoutMode::Row { gap, pad } => {
-                indent(out, depth + 1);
-                writeln!(
-                    out,
-                    "layout: row gap={} pad={}",
-                    format_num(*gap),
-                    format_num(*pad)
-                )
-                .unwrap();
-            }
-            LayoutMode::Grid { cols, gap, pad } => {
-                indent(out, depth + 1);
-                writeln!(
-                    out,
-                    "layout: grid cols={cols} gap={} pad={}",
-                    format_num(*gap),
-                    format_num(*pad)
-                )
-                .unwrap();
-            }
-        }
-    }
+    // Group is purely organizational — no layout mode emission
 
     // Layout mode (for frames)
     if let NodeKind::Frame { layout, .. } = &node.kind {
@@ -780,7 +745,7 @@ fn emit_node_filtered(
     match &node.kind {
         NodeKind::Root => return,
         NodeKind::Generic => write!(out, "@{}", node.id.as_str()).unwrap(),
-        NodeKind::Group { .. } => write!(out, "group @{}", node.id.as_str()).unwrap(),
+        NodeKind::Group => write!(out, "group @{}", node.id.as_str()).unwrap(),
         NodeKind::Frame { .. } => write!(out, "frame @{}", node.id.as_str()).unwrap(),
         NodeKind::Rect { .. } => write!(out, "rect @{}", node.id.as_str()).unwrap(),
         NodeKind::Ellipse { .. } => write!(out, "ellipse @{}", node.id.as_str()).unwrap(),
@@ -874,8 +839,8 @@ fn emit_node_filtered(
 /// Emit layout mode directive for groups and frames (filtered path).
 fn emit_layout_mode_filtered(out: &mut String, kind: &NodeKind, depth: usize) {
     let layout = match kind {
-        NodeKind::Group { layout } | NodeKind::Frame { layout, .. } => layout,
-        _ => return,
+        NodeKind::Frame { layout, .. } => layout,
+        _ => return, // Group is always Free — no layout emission
     };
     match layout {
         LayoutMode::Free => {}
@@ -986,7 +951,7 @@ fn emit_spec_node(out: &mut String, graph: &SceneGraph, idx: NodeIndex, heading_
     let kind_label = match &node.kind {
         NodeKind::Root => return,
         NodeKind::Generic => "spec",
-        NodeKind::Group { .. } => "group",
+        NodeKind::Group => "group",
         NodeKind::Frame { .. } => "frame",
         NodeKind::Rect { .. } => "rect",
         NodeKind::Ellipse { .. } => "ellipse",
@@ -2110,7 +2075,7 @@ rect @card {
         let output = emit_document(&graph);
         let graph2 = parse_document(&output).expect("re-parse of empty group failed");
         let node = graph2.get_by_id(NodeId::intern("empty")).unwrap();
-        assert!(matches!(node.kind, NodeKind::Group { .. }));
+        assert!(matches!(node.kind, NodeKind::Group));
     }
 
     #[test]
@@ -2362,17 +2327,20 @@ rect @btn {
     #[test]
     fn roundtrip_layout_modes() {
         let input = r#"
-group @col {
+frame @col {
+  w: 400 h: 300
   layout: column gap=16 pad=24
   rect @c1 { w: 100 h: 50 }
 }
 
-group @rw {
+frame @rw {
+  w: 400 h: 300
   layout: row gap=8 pad=12
   rect @r1 { w: 50 h: 50 }
 }
 
-group @grd {
+frame @grd {
+  w: 400 h: 300
   layout: grid cols=2 gap=10 pad=20
   rect @g1 { w: 80 h: 80 }
 }
@@ -2385,26 +2353,11 @@ group @grd {
 
         let graph2 = parse_document(&output).expect("re-parse of layout modes failed");
         let col = graph2.get_by_id(NodeId::intern("col")).unwrap();
-        assert!(matches!(
-            col.kind,
-            NodeKind::Group {
-                layout: LayoutMode::Column { .. }
-            }
-        ));
+        assert!(matches!(col.kind, NodeKind::Frame { .. }));
         let rw = graph2.get_by_id(NodeId::intern("rw")).unwrap();
-        assert!(matches!(
-            rw.kind,
-            NodeKind::Group {
-                layout: LayoutMode::Row { .. }
-            }
-        ));
+        assert!(matches!(rw.kind, NodeKind::Frame { .. }));
         let grd = graph2.get_by_id(NodeId::intern("grd")).unwrap();
-        assert!(matches!(
-            grd.kind,
-            NodeKind::Group {
-                layout: LayoutMode::Grid { .. }
-            }
-        ));
+        assert!(matches!(grd.kind, NodeKind::Frame { .. }));
     }
 
     // ─── emit_filtered tests ─────────────────────────────────────────────
@@ -2417,7 +2370,8 @@ theme accent {
   font: "Inter" bold 16
 }
 
-group @container {
+frame @container {
+  w: 600 h: 400
   layout: column gap=16 pad=24
 
   rect @card {
@@ -2466,12 +2420,11 @@ edge @card_to_label {
         let graph = make_test_graph();
         let out = emit_filtered(&graph, ReadMode::Structure);
         // Should have node declarations
-        assert!(out.contains("group @container"), "should include group");
+        assert!(out.contains("frame @container"), "should include frame");
         assert!(out.contains("rect @card"), "should include rect");
         assert!(out.contains("text @label"), "should include text");
         // Should NOT have styles, dimensions, specs, or anims
         assert!(!out.contains("fill:"), "no fill in structure mode");
-        assert!(!out.contains("w:"), "no dimensions in structure mode");
         assert!(!out.contains("spec"), "no spec in structure mode");
         assert!(!out.contains("when"), "no when in structure mode");
         assert!(!out.contains("theme"), "no theme in structure mode");

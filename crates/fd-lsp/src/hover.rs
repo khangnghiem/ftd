@@ -58,7 +58,7 @@ fn hover_node_id(id: &str, graph: Option<&SceneGraph>) -> Option<Hover> {
     let kind_str = match &node.kind {
         fd_core::NodeKind::Root => "Root",
         fd_core::NodeKind::Generic => "Generic (placeholder)",
-        fd_core::NodeKind::Group { .. } => "Group",
+        fd_core::NodeKind::Group => "Group",
         fd_core::NodeKind::Frame { width, height, .. } => {
             let desc = format!("**Frame** — {}×{}", width, height);
             return Some(make_hover(&desc));
@@ -89,7 +89,7 @@ fn hover_keyword(word: &str) -> Option<Hover> {
     let info = match word {
         // Node types
         "group" => {
-            "**group** — Logical container for child elements.\n\nInvisible on canvas. Supports `layout:` for automatic arrangement of children."
+            "**group** — Organizational container (like Figma Group).\n\nInvisible on canvas. Auto-sizes to children. No own styles or layout modes."
         }
         "frame" => {
             "**frame** — Visible container with explicit size.\n\nLike a Figma frame: has fill/stroke, declared `w:` `h:`, optional `clip: true`.\nSupports `layout:` for automatic arrangement of children."
