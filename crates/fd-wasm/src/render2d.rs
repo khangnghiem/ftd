@@ -866,12 +866,44 @@ fn draw_edges(
         }
         ctx.stroke();
 
-        // Arrowheads
+        // Arrowheads — use curve tangent direction, not center-to-center
+        let (end_from_x, end_from_y, start_from_x, start_from_y) = match edge.curve {
+            CurveKind::Straight => (x1, y1, x2, y2),
+            CurveKind::Smooth => {
+                let mx = (x1 + x2) / 2.0;
+                let my = (y1 + y2) / 2.0;
+                let dx = (x2 - x1).abs();
+                let dy = (y2 - y1).abs();
+                let offset = dx.max(dy) * 0.3;
+                let cp_y = my - offset;
+                (mx, cp_y, mx, cp_y)
+            }
+            CurveKind::Step => {
+                let mx = (x1 + x2) / 2.0;
+                (mx, y2, mx, y1)
+            }
+        };
         if matches!(edge.arrow, ArrowKind::End | ArrowKind::Both) {
-            draw_arrowhead(ctx, x1, y1, x2, y2, &stroke_color, stroke_width);
+            draw_arrowhead(
+                ctx,
+                end_from_x,
+                end_from_y,
+                x2,
+                y2,
+                &stroke_color,
+                stroke_width,
+            );
         }
         if matches!(edge.arrow, ArrowKind::Start | ArrowKind::Both) {
-            draw_arrowhead(ctx, x2, y2, x1, y1, &stroke_color, stroke_width);
+            draw_arrowhead(
+                ctx,
+                start_from_x,
+                start_from_y,
+                x1,
+                y1,
+                &stroke_color,
+                stroke_width,
+            );
         }
 
         // Flow animation (pulse dot or marching dashes)
