@@ -128,6 +128,22 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
       align-items: center;
       z-index: 10;
     }
+    .tb-zone {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .tb-left {
+      flex: 0 0 auto;
+    }
+    .tb-center {
+      flex: 1 1 auto;
+      justify-content: center;
+    }
+    .tb-right {
+      flex: 0 0 auto;
+      gap: 4px;
+    }
 
     /* ── Tool Buttons (segmented control) ── */
     .tool-btn {
@@ -356,14 +372,6 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
       opacity: 0.55;
       border-color: rgba(0, 0, 0, 0.1);
     }
-    .tool-sep {
-      width: 1px;
-      height: 16px;
-      background: var(--fd-border);
-      margin: 0 5px;
-      opacity: 0.6;
-    }
-
     /* ── View Toggle (Design | Spec segmented control) ── */
     .view-toggle {
       display: flex;
@@ -2206,37 +2214,10 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
       border-top: 0.5px solid var(--fd-border);
     }
 
-    /* ── Zen Mode Toggle Button (top-right floating) ── */
+    /* ── Zen Mode Toggle Button (inline toolbar) ── */
     #zen-toggle-btn {
-      position: fixed;
-      top: 52px;
-      right: 14px;
-      z-index: 300;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      padding: 6px 12px;
-      border: 0.5px solid var(--fd-border);
-      border-radius: 20px;
-      background: var(--fd-surface);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      color: var(--fd-text-secondary);
-      font-size: 11px;
-      font-weight: 500;
-      font-family: inherit;
-      cursor: pointer;
-      box-shadow: var(--fd-shadow-sm);
-      transition: all 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
-      letter-spacing: -0.01em;
+      font-size: 15px;
     }
-    #zen-toggle-btn:hover {
-      background: var(--fd-surface-hover);
-      color: var(--fd-text);
-      box-shadow: var(--fd-shadow-md);
-      transform: translateY(-1px);
-    }
-    #zen-toggle-btn .zen-icon { font-size: 13px; }
 
     /* ── Zen Mode overrides ── */
     .zen-mode #toolbar {
@@ -2247,7 +2228,6 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
     .zen-mode #layers-panel { display: none !important; }
     .zen-mode #props-panel { display: none !important; }
     .zen-mode #minimap-container { display: none !important; }
-    .zen-mode #spec-overlay { display: none !important; }
     .zen-mode #spec-overlay { display: none !important; }
 
     /* Panel toggle via keyboard in zen mode */
@@ -2395,20 +2375,23 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
   </style>
 </head>
 <body>
-  <button id="zen-toggle-btn" title="Switch between Zen and Full layout"><span class="zen-icon">🧘</span> Zen</button>
   <div id="toolbar">
-    <button class="tool-btn zen-full-only" id="ai-refine-btn" title="AI Touch selected node (select a node first)">✦ AI Touch</button>
-    <button class="tool-btn zen-full-only" id="renamify-btn" title="Renamify — batch AI rename anonymous node IDs">✦ Renamify</button>
-    <div class="tool-sep zen-full-only"></div>
-    <div class="view-toggle zen-full-only" id="view-toggle">
-      <button class="view-btn active" id="view-all" title="All View — full details">All</button>
-      <button class="view-btn" id="view-design" title="Design View — visual properties">Design</button>
-      <button class="view-btn" id="view-spec" title="Spec View — requirements and structure">Spec</button>
+    <div class="tb-zone tb-left zen-full-only">
+      <button class="tool-btn" id="ai-refine-btn" title="AI Touch selected node (select a node first)">✦ AI Touch</button>
+      <button class="tool-btn" id="renamify-btn" title="Renamify — batch AI rename anonymous node IDs">✦ Renamify</button>
     </div>
-    <div style="flex:1"></div>
-    <span class="zen-full-only" id="status">Loading WASM…</span>
-    <!-- Settings Hamburger ☰ -->
-    <div class="settings-dropdown-container zen-full-only" id="settings-dropdown-container">
+    <div class="tb-zone tb-center zen-full-only">
+      <div class="view-toggle" id="view-toggle">
+        <button class="view-btn active" id="view-all" title="All View — full details">All</button>
+        <button class="view-btn" id="view-design" title="Design View — visual properties">Design</button>
+        <button class="view-btn" id="view-spec" title="Spec View — requirements and structure">Spec</button>
+      </div>
+    </div>
+    <div class="tb-zone tb-right">
+      <span class="zen-full-only" id="status">Loading WASM…</span>
+      <button class="tool-btn" id="zen-toggle-btn" title="Switch to Zen mode">🧘</button>
+      <!-- Settings Hamburger ☰ -->
+      <div class="settings-dropdown-container" id="settings-dropdown-container">
       <button class="tool-btn" id="settings-menu-btn" title="Settings & tools">☰</button>
       <div class="settings-menu" id="settings-menu">
         <button class="settings-menu-item" id="sm-grid-toggle"><span class="sm-icon">⊞</span><span class="sm-label">Grid</span><span class="sm-shortcut">G</span></button>
@@ -2423,6 +2406,7 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
         <button class="settings-menu-item" data-export="fd-clip"><span class="sm-icon">📝</span><span class="sm-label">Copy as .fd</span></button>
         <div class="settings-menu-sep"></div>
         <button class="settings-menu-item" id="sm-shortcuts"><span class="sm-icon">⌨️</span><span class="sm-label">Keyboard Shortcuts</span><span class="sm-shortcut">?</span></button>
+      </div>
       </div>
     </div>
   </div>

@@ -67,6 +67,12 @@ export class FdCanvas {
      */
     export_svg(): string;
     /**
+     * Post-release: expand parent groups to contain overflowing children.
+     * Called once on pointer release (never per-frame).
+     * Returns `true` if any parent was expanded.
+     */
+    finalize_bounds(): boolean;
+    /**
      * Get annotations for a node as JSON array.
      * Returns `[]` if node not found or has no annotations.
      */
@@ -242,6 +248,12 @@ export class FdCanvas {
      * Ungroup all selected groups. Returns true if any were ungrouped.
      */
     ungroup_selected(): boolean;
+    /**
+     * Update a text node's resolved bounds using JS-measured dimensions.
+     * Called from JS after `measureText()` to set the tight bounding box.
+     * Returns `true` if bounds changed (and parent expansion may be needed).
+     */
+    update_text_metrics(node_id: string, measured_width: number, measured_height: number): boolean;
 }
 
 /**
@@ -270,6 +282,7 @@ export interface InitOutput {
     readonly fdcanvas_evaluate_drop: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_evaluate_near_detach: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_export_svg: (a: number) => [number, number];
+    readonly fdcanvas_finalize_bounds: (a: number) => number;
     readonly fdcanvas_get_annotations_json: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_get_arrow_preview: (a: number) => [number, number];
     readonly fdcanvas_get_node_animations_json: (a: number, b: number, c: number) => [number, number];
@@ -307,6 +320,7 @@ export interface InitOutput {
     readonly fdcanvas_set_tool: (a: number, b: number, c: number) => void;
     readonly fdcanvas_undo: (a: number) => number;
     readonly fdcanvas_ungroup_selected: (a: number) => number;
+    readonly fdcanvas_update_text_metrics: (a: number, b: number, c: number, d: number, e: number) => number;
     readonly parse_to_json: (a: number, b: number) => [number, number];
     readonly validate: (a: number, b: number) => [number, number];
     readonly __wbindgen_malloc: (a: number, b: number) => number;
