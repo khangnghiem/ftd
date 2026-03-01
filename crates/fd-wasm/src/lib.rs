@@ -421,11 +421,20 @@ impl FdCanvas {
             && !prev_selected.contains(&self.select_tool.selected[0])
         {
             if let Some(idx) = self.engine.graph.index_of(self.select_tool.selected[0]) {
-                let raised = self.engine.graph.bring_forward(idx);
-                if raised {
-                    self.engine.flush_to_text();
+                // Skip bring_forward for groups — they should stay behind children
+                let is_group = matches!(
+                    self.engine.graph.graph[idx].kind,
+                    fd_core::model::NodeKind::Group { .. }
+                );
+                if is_group {
+                    false
+                } else {
+                    let raised = self.engine.graph.bring_forward(idx);
+                    if raised {
+                        self.engine.flush_to_text();
+                    }
+                    raised
                 }
-                raised
             } else {
                 false
             }

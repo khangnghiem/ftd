@@ -87,7 +87,8 @@ After implementation prompts, always include:
 
 | Rule                  | Description                                             |
 | --------------------- | ------------------------------------------------------- |
-| **Max 8 prompts**     | If more needed, split into sub-features                 |
+| **Min 3 prompts**     | We want agents to spend time doing work                 |
+| **Max 10 prompts**    | If more needed, split into sub-features                 |
 | **Copy-paste ready**  | Each prompt works standalone — no "see above"           |
 | **Concrete refs**     | Actual file paths, line numbers, selectors              |
 | **No ambiguity**      | Agent should never guess                                |

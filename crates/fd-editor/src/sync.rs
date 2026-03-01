@@ -1811,6 +1811,95 @@ frame @clip_frame {
         );
         assert!(!changed, "no changes expected for clip frame");
     }
+
+    #[test]
+    fn sync_move_group_propagates_to_children() {
+        let input = r#"
+group @grp {
+  rect @a { w: 40 h: 30 x: 0 y: 0 }
+  rect @b { w: 40 h: 30 x: 50 y: 0 }
+}
+"#;
+        let viewport = Viewport {
+            width: 800.0,
+            height: 600.0,
+        };
+        let mut engine = SyncEngine::from_text(input, viewport).unwrap();
+        let grp_id = NodeId::intern("grp");
+        let a_id = NodeId::intern("a");
+        let b_id = NodeId::intern("b");
+
+        let a_before = engine.bounds[&engine.graph.index_of(a_id).unwrap()];
+        let b_before = engine.bounds[&engine.graph.index_of(b_id).unwrap()];
+
+        engine.apply_mutation(GraphMutation::MoveNode {
+            id: grp_id,
+            dx: 100.0,
+            dy: 50.0,
+        });
+
+        let a_after = engine.bounds[&engine.graph.index_of(a_id).unwrap()];
+        let b_after = engine.bounds[&engine.graph.index_of(b_id).unwrap()];
+
+        assert!(
+            (a_after.x - a_before.x - 100.0).abs() < 0.1,
+            "child @a x should shift by 100"
+        );
+        assert!(
+            (a_after.y - a_before.y - 50.0).abs() < 0.1,
+            "child @a y should shift by 50"
+        );
+        assert!(
+            (b_after.x - b_before.x - 100.0).abs() < 0.1,
+            "child @b x should shift by 100"
+        );
+        assert!(
+            (b_after.y - b_before.y - 50.0).abs() < 0.1,
+            "child @b y should shift by 50"
+        );
+    }
+
+    #[test]
+    fn sync_move_nested_group_propagates() {
+        let input = r#"
+group @outer {
+  group @inner {
+    rect @leaf { w: 20 h: 20 x: 0 y: 0 }
+  }
+}
+"#;
+        let viewport = Viewport {
+            width: 800.0,
+            height: 600.0,
+        };
+        let mut engine = SyncEngine::from_text(input, viewport).unwrap();
+        let outer_id = NodeId::intern("outer");
+        let leaf_id = NodeId::intern("leaf");
+
+        let leaf_before = engine.bounds[&engine.graph.index_of(leaf_id).unwrap()];
+
+        // Move the outer group — leaf (grandchild) should also move
+        engine.apply_mutation(GraphMutation::MoveNode {
+            id: outer_id,
+            dx: 200.0,
+            dy: 100.0,
+        });
+
+        let leaf_after = engine.bounds[&engine.graph.index_of(leaf_id).unwrap()];
+
+        assert!(
+            (leaf_after.x - leaf_before.x - 200.0).abs() < 0.1,
+            "grandchild @leaf x should shift by 200: got {} → {}",
+            leaf_before.x,
+            leaf_after.x
+        );
+        assert!(
+            (leaf_after.y - leaf_before.y - 100.0).abs() < 0.1,
+            "grandchild @leaf y should shift by 100: got {} → {}",
+            leaf_before.y,
+            leaf_after.y
+        );
+    }
 }
 
 #[test]
