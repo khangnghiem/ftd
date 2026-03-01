@@ -911,7 +911,7 @@ impl FdCanvas {
             return false;
         }
 
-        let padding = 8.0_f32;
+        let padding = 4.0_f32;
         let new_width = (measured_width as f32) + padding * 2.0;
         let new_height = (measured_height as f32) + padding * 2.0;
 
@@ -1695,7 +1695,7 @@ impl FdCanvas {
         let by = b.y;
         let bw = b.width;
         let bh = b.height;
-        let radius = 5.0_f32; // Hit radius in scene-space pixels
+        let radius = 8.0_f32; // Hit radius in scene-space pixels (increased for usability)
 
         let handles = [
             (bx, by, ResizeHandle::TopLeft),

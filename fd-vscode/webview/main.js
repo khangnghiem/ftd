@@ -438,23 +438,7 @@ function render() {
     } catch (_) { /* ignore parse errors */ }
   }
 
-  // ── Draw animation drop-zone glow ring ──
-  if (animDropTargetId && animDropTargetBounds) {
-    const b = animDropTargetBounds;
-    const pad = 4;
-    ctx.save();
-    ctx.strokeStyle = "#6C5CE7";
-    ctx.lineWidth = 2.5;
-    ctx.shadowColor = "#6C5CE7";
-    ctx.shadowBlur = 12;
-    ctx.beginPath();
-    ctx.roundRect(b.x - pad, b.y - pad, b.width + pad * 2, b.height + pad * 2, 8);
-    ctx.stroke();
-    // Double-draw for extra glow intensity
-    ctx.shadowBlur = 24;
-    ctx.stroke();
-    ctx.restore();
-  }
+  // Animation drop-zone glow ring removed (bug #4)
 
   // ── Draw near-detach rubber-band and glow ──
   if (nearDetachState) {
@@ -720,23 +704,7 @@ function setupPointerEvents() {
       }
     }
 
-    // ── Animation drop-zone detection (only when model changed) ──
-    if (isDraggingNode && draggedNodeId && changed) {
-      // Hit-test for a node under pointer that isn't the dragged node
-      const selIds = JSON.parse(fdCanvas.get_selected_ids());
-      const hitId = fdCanvas.hit_test_at(x, y);
-      if (hitId && !selIds.includes(hitId)) {
-        if (animDropTargetId !== hitId) {
-          animDropTargetId = hitId;
-          try {
-            animDropTargetBounds = JSON.parse(fdCanvas.get_node_bounds(hitId));
-          } catch (_) { animDropTargetBounds = null; }
-        }
-      } else {
-        animDropTargetId = null;
-        animDropTargetBounds = null;
-      }
-    }
+    // Animation drop-zone detection removed (bug #4)
 
     // ── Text adoption + near-detach (evaluate EVERY frame, not gated on changed) ──
     if (isDraggingNode && draggedNodeId) {
@@ -852,15 +820,7 @@ function setupPointerEvents() {
     pointerIsDown = false;
     hideDimensionTooltip();
 
-    // ── Animation drop: open picker if dropped on a target ──
-    // Skip when textDropTarget is set — text reparent takes priority over animation binding
-    if (isDraggingNode && animDropTargetId && draggedNodeId !== animDropTargetId && !textDropTarget) {
-      const targetId = animDropTargetId;
-      animDropTargetId = null;
-      animDropTargetBounds = null;
-      render(); // Clear glow ring
-      openAnimPicker(targetId, e.clientX, e.clientY);
-    }
+    // Animation drop on release removed (bug #4)
 
     // ── Unified text reparent on release ──
     // When textDropTarget is set, reparent text into target. Skip evaluate_drop
@@ -1681,7 +1641,7 @@ function getResizeHandleCursor(x, y) {
   } catch (_) { return ""; }
   if (b.x === undefined) return "";
 
-  const r = 5; // hit radius in scene-space px
+  const r = 8; // hit radius in scene-space px (bug #6: increased from 5)
   const handles = [
     { hx: b.x, hy: b.y, cursor: "nwse-resize" }, // top-left
     { hx: b.x + b.width / 2, hy: b.y, cursor: "ns-resize" }, // top-center

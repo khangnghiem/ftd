@@ -19,6 +19,15 @@
 - **UX**: Moved Zen toggle from floating top-right pill into the toolbar's right zone as icon-only button (🧘↔🔧) — cleaner UI, accessible via title attribute
 - **CLEANUP**: Removed dead CSS (`.tool-sep`, floating `#zen-toggle-btn`, `.zen-icon`, duplicate `#spec-overlay` rule), removed `flex:1` spacer div
 
+### v0.8.89 / v0.1.6 — Canvas Bug Fixes Batch
+
+- **FIX**: Remove animation picker on drag-onto-node — no more glow ring or animation assignment prompt when dragging nodes onto other nodes
+- **FIX**: Remove top-right annotation badge circles from all nodes — cleaner canvas
+- **FIX**: Resize handles now respond reliably — hit radius increased from 5px to 8px in both JS and WASM
+- **FIX**: Text boundary tightened to just cover actual text — padding reduced from 8px to 4px per side
+- **VERIFIED**: Inline editor preserves text styles on double-click commit — `SetText` mutation leaves style untouched
+- **VERIFIED**: Multi-select drag moves all selected nodes at the same speed — Rust `SelectTool` applies identical `(dx,dy)` delta to all selected nodes
+
 ### v0.8.86 / v0.1.4 — Auto-Expand + Text Sizing + Edge Label Offset
 
 - **FEATURE (R3.45)**: Auto-expand parent on release — `finalize_child_bounds()` expands parent groups/frames to contain overflowing children after resize or text growth; processes bottom-up for recursive cascade; skips `clip: true` frames; runs only on pointer-up to avoid chasing-envelope bug

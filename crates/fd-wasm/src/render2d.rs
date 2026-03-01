@@ -294,10 +294,7 @@ fn render_node(
         );
     }
 
-    // Annotation badge (drawn after children so it's on top)
-    if !node.annotations.is_empty() && !matches!(node.kind, NodeKind::Root) {
-        draw_annotation_badge(ctx, node_bounds, &node.annotations, theme);
-    }
+    // Annotation badge removed — user preference (bug #5)
 
     // Selection overlay (drawn after children so it's on top)
     if is_selected {
@@ -725,7 +722,7 @@ fn draw_smart_guides(ctx: &CanvasRenderingContext2d, guides: &[(f64, f64, f64, f
 
 // ─── Annotation badge ────────────────────────────────────────────────────
 
-/// Draw a colored dot at the top-right of annotated nodes.
+#[allow(dead_code)]
 ///
 /// Color encodes the first status found:
 ///   - draft → red (#EF4444)
