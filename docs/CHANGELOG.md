@@ -5,6 +5,15 @@
 
 ## Completed Requirements
 
+### v0.8.86 / v0.1.4 — Auto-Expand + Text Sizing + Edge Label Offset
+
+- **FEATURE (R3.45)**: Auto-expand parent on release — `finalize_child_bounds()` expands parent groups/frames to contain overflowing children after resize or text growth; processes bottom-up for recursive cascade; skips `clip: true` frames; runs only on pointer-up to avoid chasing-envelope bug
+- **FEATURE (R3.46)**: Text intrinsic sizing via JS `measureText()` bridge — `update_text_metrics()` WASM API receives measured dimensions from Canvas2D, updates text node bounds with 8px padding; `measureAndUpdateTextBounds()` JS helper wired into inline editor commit flow; calls `finalize_bounds()` for parent cascade
+- **FEATURE (R1.19)**: Edge label offset — `label_offset: <x> <y>` property on edges for draggable text labels; full parse/emit roundtrip support
+- **WASM**: 3 new APIs — `finalize_bounds()`, `update_text_metrics()`, `label_offset` parsing
+- **CORE**: `PartialEq` derive on `ResolvedBounds`; `collect_groups_bottom_up()` helper for post-order group traversal
+- **TESTING**: 5 new Rust tests — `sync_resize_child_expands_parent_on_finalize`, `sync_resize_child_within_bounds_no_expand`, `sync_cascade_expand_two_levels`, `sync_cascade_stops_at_clip_frame`, `roundtrip_edge_label_offset`
+
 ### v0.8.85 — Type-Prefixed Anonymous IDs
 
 - **REFACTOR**: Replaced `_anon_N` anonymous IDs with type-prefixed `_kind_N` pattern (e.g. `_rect_0`, `_text_1`, `_group_2`) — clearer at a glance which component an auto-generated ID refers to
