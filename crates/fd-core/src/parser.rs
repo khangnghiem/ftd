@@ -69,9 +69,25 @@ pub fn parse_document(input: &str) -> Result<SceneGraph, String> {
                 pending_comments.clear();
             }
         } else if rest.starts_with("edge ") {
-            let edge = parse_edge_block
+            let (edge, text_child_data) = parse_edge_block
                 .parse_next(&mut rest)
                 .map_err(|e| format!("line {line}: edge error — expected `edge @id {{ from: @a to: @b }}`, got `{ctx}…`: {e}"))?;
+            // Insert text child node into graph if label: created one
+            if let Some((text_id, content)) = text_child_data {
+                let text_node = crate::model::SceneNode {
+                    id: text_id,
+                    kind: crate::model::NodeKind::Text { content },
+                    style: crate::model::Style::default(),
+                    use_styles: Default::default(),
+                    constraints: Default::default(),
+                    annotations: Vec::new(),
+                    animations: Default::default(),
+                    comments: Vec::new(),
+                };
+                let idx = graph.graph.add_node(text_node);
+                graph.graph.add_edge(graph.root, idx, ());
+                graph.id_index.insert(text_id, idx);
+            }
             graph.edges.push(edge);
             pending_comments.clear();
         } else if starts_with_node_keyword(rest) {
@@ -1016,7 +1032,7 @@ fn parse_edge_anchor(input: &mut &str) -> ModalResult<EdgeAnchor> {
 
 // ─── Edge block parser ─────────────────────────────────────────────────
 
-fn parse_edge_block(input: &mut &str) -> ModalResult<Edge> {
+fn parse_edge_block(input: &mut &str) -> ModalResult<(Edge, Option<(NodeId, String)>)> {
     let _ = "edge".parse_next(input)?;
     let _ = space1.parse_next(input)?;
 
@@ -1031,8 +1047,8 @@ fn parse_edge_block(input: &mut &str) -> ModalResult<Edge> {
 
     let mut from = None;
     let mut to = None;
-    let text_child = None;
-    let mut label = None;
+    let mut text_child = None;
+    let mut text_child_content = None; // (NodeId, content_string)
     let mut style = Style::default();
     let mut use_styles = Vec::new();
     let mut arrow = ArrowKind::None;
@@ -1049,6 +1065,13 @@ fn parse_edge_block(input: &mut &str) -> ModalResult<Edge> {
             annotations.extend(parse_spec_block.parse_next(input)?);
         } else if input.starts_with("when") || input.starts_with("anim") {
             animations.push(parse_anim_block.parse_next(input)?);
+        } else if input.starts_with("text ") || input.starts_with("text@") {
+            // Nested text child: text @id "content" { ... }
+            let node = parse_node.parse_next(input)?;
+            if let NodeKind::Text { ref content } = node.kind {
+                text_child = Some(node.id);
+                text_child_content = Some((node.id, content.clone()));
+            }
         } else {
             let prop = parse_identifier.parse_next(input)?;
             skip_space(input);
@@ -1063,11 +1086,13 @@ fn parse_edge_block(input: &mut &str) -> ModalResult<Edge> {
                     to = Some(parse_edge_anchor(input)?);
                 }
                 "label" => {
-                    // Backward compat: label: "string" stored for rendering
+                    // Backward compat: label: "string" → auto-create text child
                     let s = parse_quoted_string
                         .map(|s| s.to_string())
                         .parse_next(input)?;
-                    label = Some(s);
+                    let label_id = NodeId::intern(&format!("_{}_label", id.as_str()));
+                    text_child = Some(label_id);
+                    text_child_content = Some((label_id, s));
                 }
                 "stroke" => {
                     let color = parse_hex_color.parse_next(input)?;
@@ -1151,21 +1176,23 @@ fn parse_edge_block(input: &mut &str) -> ModalResult<Edge> {
         });
     }
 
-    Ok(Edge {
-        id,
-        from: from.unwrap_or(EdgeAnchor::Point(0.0, 0.0)),
-        to: to.unwrap_or(EdgeAnchor::Point(0.0, 0.0)),
-        text_child,
-        label,
-        style,
-        use_styles: use_styles.into(),
-        arrow,
-        curve,
-        annotations,
-        animations: animations.into(),
-        flow,
-        label_offset,
-    })
+    Ok((
+        Edge {
+            id,
+            from: from.unwrap_or(EdgeAnchor::Point(0.0, 0.0)),
+            to: to.unwrap_or(EdgeAnchor::Point(0.0, 0.0)),
+            text_child,
+            style,
+            use_styles: use_styles.into(),
+            arrow,
+            curve,
+            annotations,
+            animations: animations.into(),
+            flow,
+            label_offset,
+        },
+        text_child_content,
+    ))
 }
 
 // ─── Constraint line parser ──────────────────────────────────────────────

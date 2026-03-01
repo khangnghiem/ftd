@@ -77,7 +77,7 @@ pub fn emit_document(graph: &SceneGraph) -> String {
         out.push_str("# ─── Flows ───\n\n");
     }
     for edge in &graph.edges {
-        emit_edge(&mut out, edge);
+        emit_edge(&mut out, edge, graph);
     }
 
     out
@@ -556,11 +556,19 @@ fn emit_constraint(out: &mut String, node_id: &NodeId, constraint: &Constraint) 
     }
 }
 
-fn emit_edge(out: &mut String, edge: &Edge) {
+fn emit_edge(out: &mut String, edge: &Edge, graph: &SceneGraph) {
     writeln!(out, "edge @{} {{", edge.id.as_str()).unwrap();
 
     // Annotations
     emit_annotations(out, &edge.annotations, 1);
+
+    // Nested text child
+    if let Some(text_id) = edge.text_child
+        && let Some(node) = graph.get_by_id(text_id)
+        && let NodeKind::Text { content } = &node.kind
+    {
+        writeln!(out, "  text @{} \"{}\" {{}}", text_id.as_str(), content).unwrap();
+    }
 
     // from / to
     match &edge.from {
@@ -574,13 +582,6 @@ fn emit_edge(out: &mut String, edge: &Edge) {
         EdgeAnchor::Point(x, y) => {
             writeln!(out, "  to: {} {}", format_num(*x), format_num(*y)).unwrap()
         }
-    }
-
-    // Label (backward compat — emitted when no text_child)
-    if edge.text_child.is_none()
-        && let Some(ref label) = edge.label
-    {
-        writeln!(out, "  label: \"{label}\"").unwrap();
     }
 
     // Style references
@@ -729,7 +730,7 @@ pub fn emit_filtered(graph: &SceneGraph, mode: ReadMode) -> String {
     // Edges (Edges and Visual modes)
     if include_edges {
         for edge in &graph.edges {
-            emit_edge(&mut out, edge);
+            emit_edge(&mut out, edge, graph);
             out.push('\n');
         }
     }
@@ -935,17 +936,11 @@ pub fn emit_spec_markdown(graph: &SceneGraph, title: &str) -> String {
                 EdgeAnchor::Point(x, y) => format!("({}, {})", x, y),
             };
             write!(out, "- **{}** → **{}**", from_str, to_str).unwrap();
-            // Try text_child first, then fall back to label
-            let mut has_label = false;
             if let Some(text_id) = edge.text_child
                 && let Some(node) = graph.get_by_id(text_id)
                 && let NodeKind::Text { content } = &node.kind
             {
                 write!(out, " — {content}").unwrap();
-                has_label = true;
-            }
-            if !has_label && let Some(ref label) = edge.label {
-                write!(out, " — {label}").unwrap();
             }
             out.push('\n');
             emit_spec_annotations(&mut out, &edge.annotations, "  ");
@@ -1330,18 +1325,27 @@ edge @a_to_b {
         assert_eq!(edge.id.as_str(), "a_to_b");
         assert_eq!(edge.from, EdgeAnchor::Node(NodeId::intern("box_a")));
         assert_eq!(edge.to, EdgeAnchor::Node(NodeId::intern("box_b")));
-        assert_eq!(edge.label.as_deref(), Some("next step"));
-        assert!(edge.text_child.is_none()); // label: -> stores in label field, not text_child
+        // label: "next step" auto-creates text child
+        let text_id = edge.text_child.expect("text_child should be set");
+        assert_eq!(text_id.as_str(), "_a_to_b_label");
+        let text_node = graph.get_by_id(text_id).expect("text node should exist");
+        if let NodeKind::Text { content } = &text_node.kind {
+            assert_eq!(content, "next step");
+        } else {
+            panic!("expected Text node");
+        }
         assert_eq!(edge.arrow, ArrowKind::End);
 
-        // Re-parse roundtrip
+        // Re-parse roundtrip — emitter writes nested text block
         let output = emit_document(&graph);
+        assert!(output.contains("text @_a_to_b_label \"next step\" {}"));
+
         let graph2 = parse_document(&output).expect("roundtrip failed");
         assert_eq!(graph2.edges.len(), 1);
         let edge2 = &graph2.edges[0];
         assert_eq!(edge2.from, EdgeAnchor::Node(NodeId::intern("box_a")));
         assert_eq!(edge2.to, EdgeAnchor::Node(NodeId::intern("box_b")));
-        assert_eq!(edge2.label.as_deref(), Some("next step"));
+        assert!(edge2.text_child.is_some());
         assert_eq!(edge2.arrow, ArrowKind::End);
     }
 
@@ -2606,7 +2610,10 @@ edge @card_to_label {
         assert!(out.contains("edge @card_to_label"), "should include edge");
         assert!(out.contains("from: @card"), "should include from");
         assert!(out.contains("to: @label"), "should include to");
-        assert!(out.contains("label: \"displays\""), "should include label");
+        assert!(
+            out.contains("text @_card_to_label_label \"displays\" {}"),
+            "should include text child"
+        );
         // Should NOT have styles or anims
         assert!(!out.contains("fill:"), "no fill in edges mode");
         assert!(!out.contains("when"), "no when in edges mode");

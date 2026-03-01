@@ -5,12 +5,21 @@
 
 ## Completed Requirements
 
+### v0.8.94 — Label→Text Child Migration + Edge Text Detach
+
+- **BREAKING**: Removed `Edge.label: Option<String>` — `label: "text"` now auto-creates a text child node (`_edgeid_label`)
+- **FEATURE**: Nested `text @id "content" {}` blocks inside `edge {}` for styled edge labels
+- **FEATURE**: `find_edge_for_text(text_id)` WASM API — lookup which edge owns a text child
+- **FEATURE**: `detach_text_from_edge(text_id)` WASM API — detach text child from parent edge
+- **FEATURE**: Edge text drag-to-detach in canvas — text >40px from edge midpoint auto-detaches on drop
+- **MIGRATION**: 8 `.fd` files roundtrip-migrated from `label:` to nested `text` child blocks
+- **TESTING**: All 277 tests pass with label field removed; roundtrip tests updated
+
 ### v0.8.93 — EdgeAnchor + Text Child
 
 - **FEATURE**: `EdgeAnchor` enum — edge endpoints can now be `@node_id` (connected) or `x y` coordinates (standalone/dangling arrows)
 - **FEATURE**: `create_edge_at(x1, y1, x2, y2)` WASM API — create standalone edges with point anchors
 - **FEATURE**: `Edge.text_child: Option<NodeId>` — edges can reference a real text node in the scene graph for styled edge labels (rendered at midpoint with text node's font/fill)
-- **COMPAT**: `label: "string"` syntax preserved for backward compatibility (deprecated in favor of `text_child`)
 - **SAFETY**: Edge-to-edge connections rejected in `create_edge()` — validates that from/to are not edge IDs
 - **TESTING**: 3 new roundtrip tests: `roundtrip_edge_point_anchors`, `roundtrip_edge_mixed_anchors`, `parse_edge_omitted_anchors_default`
 

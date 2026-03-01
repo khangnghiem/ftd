@@ -1,65 +1,74 @@
-# FD v1
+# ─── Themes ───
 
-style box_green {
-  fill: #10B981
+theme box_green {
+  fill: #10B981  # teal
   corner: 16
 }
 
-style box_orange {
-  fill: #F59E0B
+theme box_orange {
+  fill: #F59E0B  # orange
   corner: 16
 }
 
-style box_primary {
-  fill: #6C5CE7
+theme box_primary {
+  fill: #6C5CE7  # blue
   corner: 16
 }
 
-style desc {
-  fill: #6B7280
-  font: "Inter" 400 12
+theme desc {
+  fill: #6B7280  # blue
+  font: "Inter" regular 12
 }
 
-style label {
-  fill: #1A1A2E
-  font: "Inter" 600 14
+theme label {
+  fill: #1A1A2E  # blue
+  font: "Inter" semibold 14
 }
+
+# ─── Layout ───
 
 rect @_anon_30 {
   w: 100 h: 80
-  fill: #CCCCD9
+  fill: #CCCCD9  # white
+  x: 694.77
+  y: 460.38
 }
 
 group @perf_badges {
   spec "Non-functional requirements for sync latency"
-  layout: row gap=16 pad=0
   rect @badge_roundtrip {
-    w: 200 h: 48
-    fill: #FEF3C7
-    corner: 24
     text @_anon_29 "Round-trip: <16ms" {
-      fill: #D97706
-      font: "Inter" 600 13
+      fill: #D97706  # orange
+      font: "Inter" semibold 13
+      x: 694.32
+      y: 234.5
     }
+    w: 200 h: 48
+    fill: #FEF3C7  # yellow
+    corner: 24
+    x: 623.94
+    y: 719.44
   }
   rect @badge_render {
-    w: 160 h: 48
-    fill: #D1FAE5
-    corner: 24
     text @_anon_28 "Render: <16ms" {
-      fill: #059669
-      font: "Inter" 600 13
+      fill: #059669  # teal
+      font: "Inter" semibold 13
     }
+    w: 160 h: 48
+    fill: #D1FAE5  # green
+    corner: 24
   }
   rect @badge_parse {
-    w: 160 h: 48
-    fill: #F0EDFC
-    corner: 24
     text @_anon_27 "Parse: <16ms" {
-      fill: #6C5CE7
-      font: "Inter" 600 13
+      fill: #6C5CE7  # blue
+      font: "Inter" semibold 13
     }
+    w: 160 h: 48
+    fill: #F0EDFC  # blue
+    corner: 24
   }
+  x: 548.03
+  y: 445.69
 }
 
 rect @canvas {
@@ -68,26 +77,27 @@ rect @canvas {
     accept: "R5.1: Vello + wgpu, 60 FPS"
     status: done
   }
-  w: 260 h: 140
-  use: box_orange
-  fill: #F59E0B
-  corner: 16
   group @_anon_23 {
-    layout: column gap=8 pad=24
     text @_anon_26 "Visual drag/draw tools" {
-      fill: #FEF3C7
-      font: "Inter" 400 13
+      fill: #FEF3C7  # yellow
+      font: "Inter" regular 13
     }
     text @_anon_25 "Vello + wgpu GPU render" {
-      fill: #FEF3C7
-      font: "Inter" 400 13
+      fill: #FEF3C7  # yellow
+      font: "Inter" regular 13
     }
     text @_anon_24 "🎨 Canvas" {
-      fill: #FFFFFF
-      font: "Inter" 700 18
+      fill: #FFFFFF  # white
+      font: "Inter" bold 18
     }
   }
-  anim :hover {
+  w: 260 h: 140
+  use: box_orange
+  fill: #F59E0B  # orange
+  corner: 16
+  x: 533.3
+  y: 300.9
+  when :hover {
     scale: 1.04
     ease: spring 300ms
   }
@@ -100,26 +110,27 @@ rect @scene_graph {
     status: done
     priority: high
   }
-  w: 260 h: 140
-  use: box_green
-  fill: #10B981
-  corner: 16
   group @_anon_19 {
-    layout: column gap=8 pad=24
     text @_anon_22 "Single source of truth" {
-      fill: #D1FAE5
-      font: "Inter" 400 13
+      fill: #D1FAE5  # green
+      font: "Inter" regular 13
     }
     text @_anon_21 "DAG (petgraph)" {
-      fill: #D1FAE5
-      font: "Inter" 400 13
+      fill: #D1FAE5  # green
+      font: "Inter" regular 13
     }
     text @_anon_20 "🌐 SceneGraph" {
-      fill: #FFFFFF
-      font: "Inter" 700 18
+      fill: #FFFFFF  # white
+      font: "Inter" bold 18
     }
   }
-  anim :hover {
+  w: 260 h: 140
+  use: box_green
+  fill: #10B981  # teal
+  corner: 16
+  x: 71.55
+  y: 287.87
+  when :hover {
     scale: 1.04
     ease: spring 300ms
   }
@@ -132,91 +143,104 @@ rect @fd_text {
     status: done
     tag: core
   }
-  w: 260 h: 140
-  use: box_primary
-  fill: #6C5CE7
-  corner: 16
   group @_anon_15 {
-    layout: column gap=8 pad=24
     text @_anon_18 "Parser → SceneGraph" {
-      fill: #E0DDFF
-      font: "Inter" 400 13
+      fill: #E0DDFF  # blue
+      font: "Inter" regular 13
     }
     text @_anon_17 "Human + AI editable" {
-      fill: #E0DDFF
-      font: "Inter" 400 13
+      fill: #E0DDFF  # blue
+      font: "Inter" regular 13
     }
     text @_anon_16 "📝 .fd Text" {
-      fill: #FFFFFF
-      font: "Inter" 700 18
+      fill: #FFFFFF  # white
+      font: "Inter" bold 18
     }
+    x: 302.76
+    y: -89.96
   }
-  anim :hover {
+  w: 260 h: 140
+  use: box_primary
+  fill: #6C5CE7  # blue
+  corner: 16
+  x: 186.03
+  y: 505.11
+  when :hover {
     scale: 1.04
     ease: spring 300ms
   }
 }
 
 text @subtitle "R2: Text ↔ SceneGraph ↔ Canvas — all edits funnel through one graph" {
-  fill: #6B7280
-  font: "Inter" 400 16
+  fill: #6B7280  # blue
+  font: "Inter" regular 16
 }
 
 text @title "Bidirectional Sync Architecture" {
-  fill: #1A1A2E
-  font: "Inter" 800 32
+  fill: #1A1A2E  # blue
+  font: "Inter" extrabold 32
+  x: 423.87
+  y: 649.43
 }
 
-@title -> center_in: canvas
-@title -> absolute: 423.87, 649.43
-@subtitle -> offset: @title 0, 50
-@fd_text -> offset: @subtitle 0, 80
-@fd_text -> absolute: 186.03, 505.11
-@_anon_15 -> absolute: 302.76, -89.96
-@scene_graph -> offset: @fd_text 320, 0
-@scene_graph -> absolute: 71.55, 287.87
-@canvas -> offset: @scene_graph 320, 0
-@canvas -> absolute: 533.3, 300.9
+text @_text_to_graph_label "parse()" {
+}
+
+text @_graph_to_text_label "emit()" {
+}
+
+text @_graph_to_canvas_label "layout() + paint()" {
+}
+
+text @_canvas_to_graph_label "tool events" {
+}
+
+# ─── Constraints ───
+
 @perf_badges -> offset: @fd_text 160, 220
-@perf_badges -> absolute: 548.03, 445.69
-@badge_roundtrip -> absolute: 623.94, 719.44
-@_anon_29 -> absolute: 694.32, 234.5
-@_anon_30 -> absolute: 694.77, 460.38
+@canvas -> offset: @scene_graph 320, 0
+@scene_graph -> offset: @fd_text 320, 0
+@fd_text -> offset: @subtitle 0, 80
+@subtitle -> offset: @title 0, 50
+@title -> center_in: canvas
+
+# ─── Flows ───
+
 edge @text_to_graph {
   spec {
     "R2.2: Text → Canvas: source edits re-render in <16ms"
     accept: "incremental re-parse, not full document"
   }
+  text @_text_to_graph_label "parse()" {}
   from: @fd_text
   to: @scene_graph
-  label: "parse()"
   stroke: #6C5CE7 2
   arrow: end
   curve: smooth
 }
 edge @graph_to_text {
   spec "R2.1: Canvas → Text: visual edits update source in <16ms"
+  text @_graph_to_text_label "emit()" {}
   from: @scene_graph
   to: @fd_text
-  label: "emit()"
   stroke: #8B5CF6 2
   arrow: end
   curve: smooth
 }
 edge @graph_to_canvas {
   spec "Layout solver resolves constraints → absolute coords"
+  text @_graph_to_canvas_label "layout() + paint()" {}
   from: @scene_graph
   to: @canvas
-  label: "layout() + paint()"
   stroke: #10B981 2
   arrow: end
   curve: smooth
 }
 edge @canvas_to_graph {
   spec "User interactions (drag, resize) mutate graph directly"
+  text @_canvas_to_graph_label "tool events" {}
   from: @canvas
   to: @scene_graph
-  label: "tool events"
   stroke: #F59E0B 2
   arrow: end
   curve: smooth

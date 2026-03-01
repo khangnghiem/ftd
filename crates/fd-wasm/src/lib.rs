@@ -888,6 +888,37 @@ impl FdCanvas {
         }
     }
 
+    /// Find the edge whose text_child matches the given text node ID.
+    /// Returns the edge ID string, or empty if no edge owns this text.
+    pub fn find_edge_for_text(&self, text_id: &str) -> String {
+        let id = NodeId::intern(text_id);
+        for edge in &self.engine.graph.edges {
+            if edge.text_child == Some(id) {
+                return edge.id.as_str().to_string();
+            }
+        }
+        String::new()
+    }
+
+    /// Detach a text child from its parent edge.
+    /// Clears the edge's text_child field and flushes text.
+    /// Returns the edge ID that was modified, or empty if not found.
+    pub fn detach_text_from_edge(&mut self, text_id: &str) -> String {
+        let id = NodeId::intern(text_id);
+        let mut edge_id_str = String::new();
+        for edge in &mut self.engine.graph.edges {
+            if edge.text_child == Some(id) {
+                edge_id_str = edge.id.as_str().to_string();
+                edge.text_child = None;
+                break;
+            }
+        }
+        if !edge_id_str.is_empty() {
+            self.engine.flush_to_text();
+        }
+        edge_id_str
+    }
+
     /// Post-release: expand parent groups to contain overflowing children.
     /// Called once on pointer release (never per-frame).
     /// Returns `true` if any parent was expanded.
@@ -1655,7 +1686,6 @@ impl FdCanvas {
             from: EdgeAnchor::Node(from),
             to: EdgeAnchor::Node(to),
             text_child: None,
-            label: None,
             style: fd_core::model::Style::default(),
             use_styles: Default::default(),
             arrow: ArrowKind::End,
@@ -1686,7 +1716,6 @@ impl FdCanvas {
             from: EdgeAnchor::Point(x1, y1),
             to: EdgeAnchor::Point(x2, y2),
             text_child: None,
-            label: None,
             style: fd_core::model::Style::default(),
             use_styles: Default::default(),
             arrow: ArrowKind::End,

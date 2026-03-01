@@ -848,6 +848,39 @@ function setupPointerEvents() {
           }
         } catch (_) { /* ignore parse errors */ }
       }
+
+      // ── Edge text child detach: >40px from edge midpoint ──
+      try {
+        const edgeId = fdCanvas.find_edge_for_text(draggedNodeId);
+        if (edgeId) {
+          const edgeBounds = JSON.parse(fdCanvas.get_node_bounds(draggedNodeId));
+          const textCx = edgeBounds.x + edgeBounds.width / 2;
+          const textCy = edgeBounds.y + edgeBounds.height / 2;
+          // Compute edge midpoint from edge endpoints
+          const src = fdCanvas.get_text();
+          const edgeMatch = src.match(new RegExp(`edge\\s+@${edgeId}\\b[^}]*}`));
+          if (edgeMatch) {
+            // Simple heuristic: if text is far from its original position, detach
+            const EDGE_DETACH_THRESHOLD = 40;
+            const fromMatch = edgeMatch[0].match(/from:\s+@(\w+)/);
+            const toMatch = edgeMatch[0].match(/to:\s+@(\w+)/);
+            if (fromMatch && toMatch) {
+              try {
+                const fb = JSON.parse(fdCanvas.get_node_bounds(fromMatch[1]));
+                const tb = JSON.parse(fdCanvas.get_node_bounds(toMatch[1]));
+                const mx = (fb.x + fb.width / 2 + tb.x + tb.width / 2) / 2;
+                const my = (fb.y + fb.height / 2 + tb.y + tb.height / 2) / 2;
+                const dist = Math.hypot(textCx - mx, textCy - my);
+                if (dist > EDGE_DETACH_THRESHOLD) {
+                  fdCanvas.detach_text_from_edge(draggedNodeId);
+                  playDetachAnimation(draggedNodeId);
+                  syncTextToExtension();
+                }
+              } catch (_) { /* endpoint bounds not available */ }
+            }
+          }
+        }
+      } catch (_) { /* edge detach check failed */ }
     }
 
     // ── Post-release: expand parents to contain overflowing children ──

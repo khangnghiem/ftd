@@ -1,35 +1,34 @@
-# FD v1
-# Architecture — crate dependency diagram and module breakdown
+# ─── Themes ───
 
-style crate_box {
-  fill: #1A1A2E
+theme crate_box {
+  fill: #1A1A2E  # blue
   corner: 16
 }
 
-style module_chip {
-  fill: #2D2D4E
+theme module_chip {
+  fill: #2D2D4E  # blue
   corner: 8
 }
 
-style platform_box {
-  fill: #FFFFFF
+theme platform_box {
+  fill: #FFFFFF  # white
   corner: 12
 }
 
-# ─── Title ───────────────────────────────────────────────────────────────
+# ─── Layout ───
 
+# ─── Title ───────────────────────────────────────────────────────────────
 text @title "FD Architecture" {
-  font: "Inter" 800 32
-  fill: #1A1A2E
+  fill: #1A1A2E  # blue
+  font: "Inter" extrabold 32
 }
 
 text @subtitle "Layered crate architecture — Rust core, WASM bridge, platform shells" {
-  font: "Inter" 400 16
-  fill: #6B7280
+  fill: #6B7280  # blue
+  font: "Inter" regular 16
 }
 
 # ─── Layer 1: fd-core ────────────────────────────────────────────────────
-
 rect @core {
   spec {
     "fd-core — data model, parser, emitter, layout solver"
@@ -37,189 +36,326 @@ rect @core {
     priority: high
     tag: core
   }
-  w: 400 h: 180
-  use: crate_box
-  bg: #1A1A2E corner=16 shadow=(0,4,24,#00000040)
-
-  group { layout: column gap=12 pad=24
-    text "fd-core" { font: "Inter" 800 22; fill: #6C5CE7 }
-    group { layout: row gap=8 pad=0
-      rect { w: 80 h: 30; use: module_chip
-        text "model" { font: "Inter" 500 11; fill: #A29BFE }
+  group @_group_20 {
+    text @_text_21 "fd-core" {
+      fill: #6C5CE7  # blue
+      font: "Inter" extrabold 22
+    }
+    group @_group_22 {
+      rect @_rect_23 {
+        text @_text_24 "model" {
+          fill: #A29BFE  # blue
+          font: "Inter" medium 11
+        }
+        w: 80 h: 30
+        use: module_chip
       }
-      rect { w: 80 h: 30; use: module_chip
-        text "parser" { font: "Inter" 500 11; fill: #A29BFE }
+      rect @_rect_25 {
+        text @_text_26 "parser" {
+          fill: #A29BFE  # blue
+          font: "Inter" medium 11
+        }
+        w: 80 h: 30
+        use: module_chip
       }
-      rect { w: 80 h: 30; use: module_chip
-        text "emitter" { font: "Inter" 500 11; fill: #A29BFE }
+      rect @_rect_27 {
+        text @_text_28 "emitter" {
+          fill: #A29BFE  # blue
+          font: "Inter" medium 11
+        }
+        w: 80 h: 30
+        use: module_chip
       }
-      rect { w: 80 h: 30; use: module_chip
-        text "layout" { font: "Inter" 500 11; fill: #A29BFE }
+      rect @_rect_29 {
+        text @_text_30 "layout" {
+          fill: #A29BFE  # blue
+          font: "Inter" medium 11
+        }
+        w: 80 h: 30
+        use: module_chip
       }
     }
-    group { layout: row gap=8 pad=0
-      rect { w: 90 h: 30; use: module_chip
-        text "winnow" { font: "Inter" 400 11; fill: #6B7280 }
+    group @_group_31 {
+      rect @_rect_32 {
+        text @_text_33 "winnow" {
+          fill: #6B7280  # blue
+          font: "Inter" regular 11
+        }
+        w: 90 h: 30
+        use: module_chip
       }
-      rect { w: 90 h: 30; use: module_chip
-        text "petgraph" { font: "Inter" 400 11; fill: #6B7280 }
+      rect @_rect_34 {
+        text @_text_35 "petgraph" {
+          fill: #6B7280  # blue
+          font: "Inter" regular 11
+        }
+        w: 90 h: 30
+        use: module_chip
       }
-      rect { w: 70 h: 30; use: module_chip
-        text "lasso" { font: "Inter" 400 11; fill: #6B7280 }
+      rect @_rect_36 {
+        text @_text_37 "lasso" {
+          fill: #6B7280  # blue
+          font: "Inter" regular 11
+        }
+        w: 70 h: 30
+        use: module_chip
       }
     }
   }
+  w: 400 h: 180
+  use: crate_box
+  fill: #1A1A2E  # blue
+  corner: 16
+  shadow: (0,4,24,#00000040)
 }
 
 # ─── Layer 2: fd-render ──────────────────────────────────────────────────
-
 rect @render {
   spec {
     "fd-render — GPU 2D renderer + hit testing"
     accept: "R5.1: Vello + wgpu, 60 FPS target"
     status: done
   }
-  w: 400 h: 140
-  use: crate_box
-  bg: #1A1A2E corner=16 shadow=(0,4,24,#00000040)
-
-  group { layout: column gap=12 pad=24
-    text "fd-render" { font: "Inter" 800 22; fill: #00B894 }
-    group { layout: row gap=8 pad=0
-      rect { w: 80 h: 30; use: module_chip
-        text "canvas" { font: "Inter" 500 11; fill: #6EE7B7 }
+  group @_group_38 {
+    text @_text_39 "fd-render" {
+      fill: #00B894  # teal
+      font: "Inter" extrabold 22
+    }
+    group @_group_40 {
+      rect @_rect_41 {
+        text @_text_42 "canvas" {
+          fill: #6EE7B7  # green
+          font: "Inter" medium 11
+        }
+        w: 80 h: 30
+        use: module_chip
       }
-      rect { w: 70 h: 30; use: module_chip
-        text "paint" { font: "Inter" 500 11; fill: #6EE7B7 }
+      rect @_rect_43 {
+        text @_text_44 "paint" {
+          fill: #6EE7B7  # green
+          font: "Inter" medium 11
+        }
+        w: 70 h: 30
+        use: module_chip
       }
-      rect { w: 60 h: 30; use: module_chip
-        text "hit" { font: "Inter" 500 11; fill: #6EE7B7 }
+      rect @_rect_45 {
+        text @_text_46 "hit" {
+          fill: #6EE7B7  # green
+          font: "Inter" medium 11
+        }
+        w: 60 h: 30
+        use: module_chip
       }
     }
-    group { layout: row gap=8 pad=0
-      rect { w: 70 h: 30; use: module_chip
-        text "vello" { font: "Inter" 400 11; fill: #6B7280 }
+    group @_group_47 {
+      rect @_rect_48 {
+        text @_text_49 "vello" {
+          fill: #6B7280  # blue
+          font: "Inter" regular 11
+        }
+        w: 70 h: 30
+        use: module_chip
       }
-      rect { w: 70 h: 30; use: module_chip
-        text "wgpu" { font: "Inter" 400 11; fill: #6B7280 }
+      rect @_rect_50 {
+        text @_text_51 "wgpu" {
+          fill: #6B7280  # blue
+          font: "Inter" regular 11
+        }
+        w: 70 h: 30
+        use: module_chip
       }
     }
   }
+  w: 400 h: 140
+  use: crate_box
+  fill: #1A1A2E  # blue
+  corner: 16
+  shadow: (0,4,24,#00000040)
 }
 
 # ─── Layer 3: fd-editor ──────────────────────────────────────────────────
-
 rect @editor {
   spec {
     "fd-editor — bidi sync, tools, undo/redo"
     status: done
   }
-  w: 400 h: 140
-  use: crate_box
-  bg: #1A1A2E corner=16 shadow=(0,4,24,#00000040)
-
-  group { layout: column gap=12 pad=24
-    text "fd-editor" { font: "Inter" 800 22; fill: #F59E0B }
-    group { layout: row gap=8 pad=0
-      rect { w: 60 h: 30; use: module_chip
-        text "sync" { font: "Inter" 500 11; fill: #FCD34D }
+  group @_group_52 {
+    text @_text_53 "fd-editor" {
+      fill: #F59E0B  # orange
+      font: "Inter" extrabold 22
+    }
+    group @_group_54 {
+      rect @_rect_55 {
+        text @_text_56 "sync" {
+          fill: #FCD34D  # yellow
+          font: "Inter" medium 11
+        }
+        w: 60 h: 30
+        use: module_chip
       }
-      rect { w: 60 h: 30; use: module_chip
-        text "tools" { font: "Inter" 500 11; fill: #FCD34D }
+      rect @_rect_57 {
+        text @_text_58 "tools" {
+          fill: #FCD34D  # yellow
+          font: "Inter" medium 11
+        }
+        w: 60 h: 30
+        use: module_chip
       }
-      rect { w: 100 h: 30; use: module_chip
-        text "commands" { font: "Inter" 500 11; fill: #FCD34D }
+      rect @_rect_59 {
+        text @_text_60 "commands" {
+          fill: #FCD34D  # yellow
+          font: "Inter" medium 11
+        }
+        w: 100 h: 30
+        use: module_chip
       }
-      rect { w: 60 h: 30; use: module_chip
-        text "input" { font: "Inter" 500 11; fill: #FCD34D }
+      rect @_rect_61 {
+        text @_text_62 "input" {
+          fill: #FCD34D  # yellow
+          font: "Inter" medium 11
+        }
+        w: 60 h: 30
+        use: module_chip
       }
     }
   }
+  w: 400 h: 140
+  use: crate_box
+  fill: #1A1A2E  # blue
+  corner: 16
+  shadow: (0,4,24,#00000040)
 }
 
 # ─── Layer 4: Platform shells ────────────────────────────────────────────
-
 group @platforms {
   spec {
     "R6: Platform targets — VS Code now, desktop/mobile/web future"
     tag: platform
   }
-  layout: row gap=16 pad=0
-
   rect @vscode {
     spec {
       "R6.1: VS Code / Cursor IDE custom editor (this repo)"
       status: in_progress
     }
-    w: 160 h: 100
-    fill: #007ACC
-    corner: 12
-    bg: #007ACC corner=12 shadow=(0,4,16,#007ACC40)
-    group { layout: column gap=4 pad=16
-      text "fd-vscode" { font: "Inter" 700 15; fill: #FFF }
-      text "Custom Editor" { font: "Inter" 400 11; fill: #CCE5FF }
+    group @_group_63 {
+      text @_text_64 "fd-vscode" {
+        fill: #FFFFFF  # white
+        font: "Inter" bold 15
+      }
+      text @_text_65 "Custom Editor" {
+        fill: #CCE5FF  # blue
+        font: "Inter" regular 11
+      }
     }
-    anim :hover { scale: 1.04; ease: spring 300ms }
+    w: 160 h: 100
+    fill: #007ACC  # blue
+    corner: 12
+    shadow: (0,4,16,#007ACC40)
+    when :hover {
+      scale: 1.04
+      ease: spring 300ms
+    }
   }
-
   rect @desktop {
     spec {
       "R6.2: Desktop via Tauri (future)"
       status: draft
     }
+    group @_group_66 {
+      text @_text_67 "Desktop" {
+        fill: #1A1A2E  # blue
+        font: "Inter" bold 15
+      }
+      text @_text_68 "Tauri (future)" {
+        fill: #9CA3AF  # blue
+        font: "Inter" regular 11
+      }
+    }
     w: 140 h: 100
     use: platform_box
     stroke: #E8E8EC 1
-    group { layout: column gap=4 pad=16
-      text "Desktop" { font: "Inter" 700 15; fill: #1A1A2E }
-      text "Tauri (future)" { font: "Inter" 400 11; fill: #9CA3AF }
+    when :hover {
+      scale: 1.04
+      ease: spring 300ms
     }
-    anim :hover { scale: 1.04; ease: spring 300ms }
   }
-
   rect @mobile {
     spec {
       "R6.3: Mobile iOS/Android (future)"
       status: draft
     }
+    group @_group_69 {
+      text @_text_70 "Mobile" {
+        fill: #1A1A2E  # blue
+        font: "Inter" bold 15
+      }
+      text @_text_71 "Native (future)" {
+        fill: #9CA3AF  # blue
+        font: "Inter" regular 11
+      }
+    }
     w: 140 h: 100
     use: platform_box
     stroke: #E8E8EC 1
-    group { layout: column gap=4 pad=16
-      text "Mobile" { font: "Inter" 700 15; fill: #1A1A2E }
-      text "Native (future)" { font: "Inter" 400 11; fill: #9CA3AF }
+    when :hover {
+      scale: 1.04
+      ease: spring 300ms
     }
-    anim :hover { scale: 1.04; ease: spring 300ms }
   }
-
   rect @webapp {
     spec {
       "R6.4: Web app (future)"
       status: draft
     }
+    group @_group_72 {
+      text @_text_73 "Web App" {
+        fill: #1A1A2E  # blue
+        font: "Inter" bold 15
+      }
+      text @_text_74 "WASM (future)" {
+        fill: #9CA3AF  # blue
+        font: "Inter" regular 11
+      }
+    }
     w: 140 h: 100
     use: platform_box
     stroke: #E8E8EC 1
-    group { layout: column gap=4 pad=16
-      text "Web App" { font: "Inter" 700 15; fill: #1A1A2E }
-      text "WASM (future)" { font: "Inter" 400 11; fill: #9CA3AF }
+    when :hover {
+      scale: 1.04
+      ease: spring 300ms
     }
-    anim :hover { scale: 1.04; ease: spring 300ms }
   }
 }
 
-# ─── Dependency edges ────────────────────────────────────────────────────
+text @_core_to_render_label "depends" {
+}
+
+text @_render_to_editor_label "depends" {
+}
+
+text @_editor_to_vscode_label "WASM" {
+}
+
+# ─── Constraints ───
+
+@title -> center_in: canvas
+@subtitle -> offset: @title 0, 50
+@core -> offset: @subtitle 0, 80
+@render -> offset: @core 0, 200
+@editor -> offset: @render 0, 160
+@platforms -> offset: @editor 0, 180
+
+# ─── Flows ───
 
 edge @core_to_render {
   spec "fd-render depends on fd-core for SceneGraph + model types"
+  text @_core_to_render_label "depends" {}
   from: @core
   to: @render
-  label: "depends"
   stroke: #6C5CE7 2
   arrow: end
   curve: smooth
 }
-
 edge @core_to_editor {
   spec "fd-editor depends on fd-core for parse/emit"
   from: @core
@@ -228,32 +364,21 @@ edge @core_to_editor {
   arrow: end
   curve: smooth
 }
-
 edge @render_to_editor {
   spec "fd-editor depends on fd-render for canvas output"
+  text @_render_to_editor_label "depends" {}
   from: @render
   to: @editor
-  label: "depends"
   stroke: #00B894 2
   arrow: end
   curve: smooth
 }
-
 edge @editor_to_vscode {
   spec "fd-vscode wraps fd-editor via WASM bridge"
+  text @_editor_to_vscode_label "WASM" {}
   from: @editor
   to: @vscode
-  label: "WASM"
   stroke: #F59E0B 2
   arrow: end
   curve: smooth
 }
-
-# ─── Layout ─────────────────────────────────────────────────────────────
-
-@title -> center_in: canvas
-@subtitle -> offset: @title 0, 50
-@core -> offset: @subtitle 0, 80
-@render -> offset: @core 0, 200
-@editor -> offset: @render 0, 160
-@platforms -> offset: @editor 0, 180

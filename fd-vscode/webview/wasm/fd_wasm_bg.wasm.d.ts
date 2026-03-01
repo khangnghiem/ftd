@@ -8,12 +8,14 @@ export const fdcanvas_create_edge: (a: number, b: number, c: number, d: number, 
 export const fdcanvas_create_edge_at: (a: number, b: number, c: number, d: number, e: number) => [number, number];
 export const fdcanvas_create_node_at: (a: number, b: number, c: number, d: number, e: number) => number;
 export const fdcanvas_delete_selected: (a: number) => number;
+export const fdcanvas_detach_text_from_edge: (a: number, b: number, c: number) => [number, number];
 export const fdcanvas_duplicate_selected: (a: number) => number;
 export const fdcanvas_duplicate_selected_at: (a: number, b: number, c: number) => number;
 export const fdcanvas_evaluate_drop: (a: number, b: number, c: number) => [number, number];
 export const fdcanvas_evaluate_near_detach: (a: number, b: number, c: number) => [number, number];
 export const fdcanvas_export_svg: (a: number) => [number, number];
 export const fdcanvas_finalize_bounds: (a: number) => number;
+export const fdcanvas_find_edge_for_text: (a: number, b: number, c: number) => [number, number];
 export const fdcanvas_get_annotations_json: (a: number, b: number, c: number) => [number, number];
 export const fdcanvas_get_arrow_preview: (a: number) => [number, number];
 export const fdcanvas_get_node_animations_json: (a: number, b: number, c: number) => [number, number];

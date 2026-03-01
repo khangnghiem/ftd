@@ -45,6 +45,12 @@ export class FdCanvas {
      */
     delete_selected(): boolean;
     /**
+     * Detach a text child from its parent edge.
+     * Clears the edge's text_child field and flushes text.
+     * Returns the edge ID that was modified, or empty if not found.
+     */
+    detach_text_from_edge(text_id: string): string;
+    /**
      * Duplicate the currently selected node(s). Returns true if duplicated.
      */
     duplicate_selected(): boolean;
@@ -77,6 +83,11 @@ export class FdCanvas {
      * Returns `true` if any parent was expanded.
      */
     finalize_bounds(): boolean;
+    /**
+     * Find the edge whose text_child matches the given text node ID.
+     * Returns the edge ID string, or empty if no edge owns this text.
+     */
+    find_edge_for_text(text_id: string): string;
     /**
      * Get annotations for a node as JSON array.
      * Returns `[]` if node not found or has no annotations.
@@ -283,12 +294,14 @@ export interface InitOutput {
     readonly fdcanvas_create_edge_at: (a: number, b: number, c: number, d: number, e: number) => [number, number];
     readonly fdcanvas_create_node_at: (a: number, b: number, c: number, d: number, e: number) => number;
     readonly fdcanvas_delete_selected: (a: number) => number;
+    readonly fdcanvas_detach_text_from_edge: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_duplicate_selected: (a: number) => number;
     readonly fdcanvas_duplicate_selected_at: (a: number, b: number, c: number) => number;
     readonly fdcanvas_evaluate_drop: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_evaluate_near_detach: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_export_svg: (a: number) => [number, number];
     readonly fdcanvas_finalize_bounds: (a: number) => number;
+    readonly fdcanvas_find_edge_for_text: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_get_annotations_json: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_get_arrow_preview: (a: number) => [number, number];
     readonly fdcanvas_get_node_animations_json: (a: number, b: number, c: number) => [number, number];
