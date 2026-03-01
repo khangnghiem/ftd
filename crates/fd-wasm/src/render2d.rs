@@ -60,6 +60,7 @@ pub fn render_scene(
     pressed_id: Option<&str>,
     smart_guides: &[(f64, f64, f64, f64)],
     sketchy: bool,
+    hover_start_ms: f64,
 ) {
     // Clear canvas
     ctx.set_fill_style_str(theme.bg);
@@ -79,6 +80,8 @@ pub fn render_scene(
         hovered_id,
         pressed_id,
         sketchy,
+        time_ms,
+        hover_start_ms,
     );
 
     // Draw edges between nodes
@@ -140,6 +143,8 @@ pub fn render_export(
             None,
             None,
             sketchy,
+            0.0,
+            0.0,
         );
     }
 
@@ -157,6 +162,8 @@ fn render_node(
     hovered_id: Option<&str>,
     pressed_id: Option<&str>,
     sketchy: bool,
+    time_ms: f64,
+    hover_start_ms: f64,
 ) {
     let node = &graph.graph[idx];
     let node_bounds = match bounds.get(&idx) {
@@ -165,7 +172,8 @@ fn render_node(
     };
 
     let mut triggers = Vec::new();
-    if Some(node.id.as_str()) == hovered_id {
+    let is_hovered = Some(node.id.as_str()) == hovered_id;
+    if is_hovered {
         triggers.push(fd_core::model::AnimTrigger::Hover);
     }
     if Some(node.id.as_str()) == pressed_id {
@@ -175,11 +183,38 @@ fn render_node(
     let is_selected = selected_ids.iter().any(|sel| sel == node.id.as_str());
 
     // Apply scale transform from node center if animation set it
-    let has_scale = style.scale.is_some_and(|s| (s - 1.0).abs() > f32::EPSILON);
+    // For hover animations: limit to 500ms with ease-in/ease-out
+    let raw_scale = style.scale.unwrap_or(1.0);
+    let effective_scale = if is_hovered && (raw_scale - 1.0).abs() > f32::EPSILON {
+        let elapsed = time_ms - hover_start_ms;
+        let ease_in_ms = 200.0;
+        let hold_ms = 300.0;
+        let ease_out_ms = 200.0;
+        let total_ms = ease_in_ms + hold_ms + ease_out_ms; // 700ms total
+        if elapsed < 0.0 || elapsed > total_ms {
+            1.0 // Past animation duration, revert to normal
+        } else if elapsed < ease_in_ms {
+            // Ease in: 1.0 → target
+            let t = (elapsed / ease_in_ms) as f32;
+            let t_smooth = t * t * (3.0 - 2.0 * t); // smoothstep
+            1.0 + (raw_scale - 1.0) * t_smooth
+        } else if elapsed < ease_in_ms + hold_ms {
+            raw_scale // Hold at target
+        } else {
+            // Ease out: target → 1.0
+            let t = ((elapsed - ease_in_ms - hold_ms) / ease_out_ms) as f32;
+            let t_smooth = t * t * (3.0 - 2.0 * t);
+            raw_scale + (1.0 - raw_scale) * t_smooth
+        }
+    } else {
+        raw_scale
+    };
+
+    let has_scale = (effective_scale - 1.0).abs() > f32::EPSILON;
     if has_scale {
         let cx = node_bounds.x as f64 + node_bounds.width as f64 / 2.0;
         let cy = node_bounds.y as f64 + node_bounds.height as f64 / 2.0;
-        let s = style.scale.unwrap_or(1.0) as f64;
+        let s = effective_scale as f64;
         ctx.save();
         ctx.translate(cx, cy).unwrap_or(());
         ctx.scale(s, s).unwrap_or(());
@@ -291,6 +326,8 @@ fn render_node(
             hovered_id,
             pressed_id,
             sketchy,
+            time_ms,
+            hover_start_ms,
         );
     }
 

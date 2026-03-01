@@ -5,6 +5,13 @@
 
 ## Completed Requirements
 
+### v0.8.91 — Canvas Interaction Fixes
+
+- **FIX**: Resize handles now work in all 8 directions — `ResizeNode` handler in `sync.rs` now updates cached bounds so `resize_origin` stays accurate across frames
+- **FIX**: Hover scale animation capped at 700ms total (200ms ease-in, 300ms hold, 200ms ease-out) instead of persisting indefinitely — implemented time envelope in `render2d.rs` with smoothstep interpolation
+- **FIX**: New shapes (rect, ellipse) now created with white fill + bezeled stroke by default, matching ScreenBrush aesthetic
+- **FIX**: Annotation badge corner dots already removed — WASM rebuild propagates fix
+
 ### v0.8.90 — Scroll Toolbar Bug Fixes
 
 - **FIX**: Removed dead inline script in `webview-html.ts` that conflicted with `main.js` scroll toolbar logic — script referenced non-existent `#ft-drag-handle` and used wrong CSS class (`collapsed` vs `rolled-up`)
