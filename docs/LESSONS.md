@@ -118,3 +118,42 @@ Engineering lessons discovered through building FD.
 **Fix**: (1) Move `evaluateTextAdoption()` outside the `&& changed` gate — text adoption should evaluate on every pointer-move frame regardless of WASM position change. (2) In `pointerup`, skip the animation drop handler when `textDropTarget` is set (text reparent takes priority over animation binding).
 
 **Lesson**: When gating side-effect evaluations on a `changed` flag from a lower layer (WASM), distinguish between "model changed" (position moved) and "interaction continues" (still dragging). Adoption detection depends on _cursor position vs target bounds_, not on _model state change_. Similarly, when multiple drop-zone handlers compete in the same `pointerup`, priority must be explicit — the first `if` to fire wins and silently blocks everything below it.
+
+---
+
+## Renderer: Hit Radius Must Match Visual Handle Size
+
+**Date**: 2026-03-01
+**Context**: Users reported that 8-point resize handles on selected nodes were visible but couldn't be grabbed. Resize didn't work at all.
+
+**Root cause**: The hit test radius for resize handles was 5px in scene-space (`lib.rs:hit_test_resize_handle` and `main.js:getResizeHandleCursor`), while the visual handle size was 7px (`render2d.rs:draw_selection_handles`). At any zoom level below ~1.5×, the hit area was smaller than a finger/cursor — making handles practically unusable. The WASM hit test and JS cursor feedback both used the same tight radius, so neither layer compensated.
+
+**Fix**: Increased hit radius from 5px to 8px in both `lib.rs:hit_test_resize_handle` (Rust/WASM side) and `main.js:getResizeHandleCursor` (JS cursor feedback side). The hit area now exceeds the visual handle, matching Figma/Sketch behavior.
+
+**Lesson**: Hit test radii for interactive handles should be **at least 1.5× the visual radius** to account for cursor imprecision and zoom levels. When the same hit test exists in two layers (WASM + JS), update **both** — mismatched radii cause cursor feedback to not match actual interaction.
+
+---
+
+## WASM: Text Intrinsic Sizing Padding Accumulates Visually
+
+**Date**: 2026-03-01
+**Context**: Users reported text node boundaries extending well beyond the visible text content. The bounding box was noticeably larger than the text.
+
+**Root cause**: `update_text_metrics()` in `lib.rs` added 8px padding per side (16px total per axis). The JS `measureText()` already returns a width that includes some internal glyph spacing. Combined with the 16px padding, the resulting bounds exceeded the visual text by ~20px — visible as an oversized selection rectangle.
+
+**Fix**: Reduced padding from 8px to 4px per side. Total overhead is now 8px per axis, which tightly wraps the text without clipping.
+
+**Lesson**: When bridging text measurement across JS→WASM, account for the fact that `measureText().width` already includes glyph-level spacing. Additional padding should be minimal (2–4px per side) — it's a safety margin, not a design element. Test visual fit by selecting a text node and comparing the selection rectangle to the rendered text.
+
+---
+
+## Editor: Feature Removal Requires Full Call-Chain Cleanup
+
+**Date**: 2026-03-01
+**Context**: Removing the animation-picker-on-drag feature (bug #4). Initial attempt only removed the `openAnimPicker()` call in `pointerup`, but the glow ring kept rendering and the drop detection kept running.
+
+**Root cause**: The animation drop feature had 3 code sites: (1) drop-zone detection in `pointermove` (L724-738), (2) glow ring rendering in `render()` (L441-457), (3) picker trigger in `pointerup` (L855-863). Removing only the trigger left the detection and rendering running — wasting CPU cycles and causing a purple glow ring with no purpose.
+
+**Fix**: Removed all 3 code sites together: detection, rendering, and trigger. Also cleaned up the state variables (`animDropTargetId`, `animDropTargetBounds`) in the reset block at L901-904.
+
+**Lesson**: When removing a feature, trace its full call chain: **detect → render → trigger → cleanup**. Search for all variable names associated with the feature (e.g., `animDropTargetId`, `animDropTargetBounds`) and remove every read/write site. A partial removal leaves orphaned state and wasted computation.
