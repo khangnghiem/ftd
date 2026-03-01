@@ -2804,6 +2804,69 @@ function hexLuminance(hex) {
 }
 
 /**
+ * Measure a text node's content and update its bounds via WASM.
+ * Uses Canvas2D measureText() to get the tight bounding box,
+ * then sends dimensions back to the engine. After updating,
+ * calls finalize_bounds() so parent containers can expand.
+ * Returns true if bounds changed.
+ */
+function measureAndUpdateTextBounds(nodeId) {
+  if (!fdCanvas) return false;
+
+  // Get the text content from the node's properties
+  const propsJson = fdCanvas.get_node_props(nodeId);
+  if (!propsJson) return false;
+
+  let props;
+  try { props = JSON.parse(propsJson); } catch (_) { return false; }
+
+  const text = props.text || "";
+  if (!text) return false;
+
+  // Extract font properties
+  const fontSize = props.fontSize || 14;
+  const fontFamily = props.fontFamily || "Inter, system-ui, sans-serif";
+  const fontWeight = props.fontWeight || 400;
+
+  // Measure using the off-screen canvas
+  const measureCtx = canvas.getContext("2d");
+  measureCtx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+  const metrics = measureCtx.measureText(text);
+  const measuredWidth = metrics.width;
+  const measuredHeight = fontSize * 1.4; // approximate line height
+
+  // Send measured dimensions to WASM
+  const changed = fdCanvas.update_text_metrics(nodeId, measuredWidth, measuredHeight);
+  if (changed) {
+    // Cascade parent expansion
+    fdCanvas.finalize_bounds();
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Measure all text nodes in the document and update their bounds.
+ * Called after set_text() to ensure all text nodes have tight bounds.
+ */
+function measureAllTextNodes() {
+  if (!fdCanvas) return;
+  const text = fdCanvas.get_text();
+  // Find all text node IDs
+  const textIdRe = /text\s+@(\w+)\s+"/g;
+  let match;
+  let anyChanged = false;
+  while ((match = textIdRe.exec(text)) !== null) {
+    if (measureAndUpdateTextBounds(match[1])) {
+      anyChanged = true;
+    }
+  }
+  if (anyChanged) {
+    render();
+  }
+}
+
+/**
  * Show a floating textarea over the node for in-place text editing.
  */
 function openInlineEditor(nodeId, propKey, currentValue) {
@@ -2944,6 +3007,10 @@ function openInlineEditor(nodeId, propKey, currentValue) {
     fdCanvas.select_by_id(nodeId);
     const changed = fdCanvas.set_node_prop(propKey, newVal);
     if (changed) {
+      // Measure text content and update bounds for intrinsic sizing
+      if (propKey === "text") {
+        measureAndUpdateTextBounds(nodeId);
+      }
       render();
       syncTextToExtension();
       updatePropertiesPanel();

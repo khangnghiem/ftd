@@ -883,6 +883,50 @@ impl FdCanvas {
         changed
     }
 
+    /// Update a text node's resolved bounds using JS-measured dimensions.
+    /// Called from JS after `measureText()` to set the tight bounding box.
+    /// Returns `true` if bounds changed (and parent expansion may be needed).
+    pub fn update_text_metrics(
+        &mut self,
+        node_id: &str,
+        measured_width: f64,
+        measured_height: f64,
+    ) -> bool {
+        let id = NodeId::intern(node_id);
+        let Some(idx) = self.engine.graph.index_of(id) else {
+            return false;
+        };
+
+        // Only apply to text nodes
+        if !matches!(self.engine.graph.graph[idx].kind, NodeKind::Text { .. }) {
+            return false;
+        }
+
+        let padding = 8.0_f32;
+        let new_width = (measured_width as f32) + padding * 2.0;
+        let new_height = (measured_height as f32) + padding * 2.0;
+
+        // Enforce minimum bounds
+        let min_width = 20.0_f32;
+        let min_height = 14.0_f32;
+        let final_width = new_width.max(min_width);
+        let final_height = new_height.max(min_height);
+
+        let old_bounds = self.engine.bounds.get(&idx).copied();
+        if let Some(b) = self.engine.bounds.get_mut(&idx) {
+            if (b.width - final_width).abs() < 0.5 && (b.height - final_height).abs() < 0.5 {
+                return false; // No meaningful change
+            }
+            // Keep position, update size
+            b.width = final_width;
+            b.height = final_height;
+        } else {
+            return false;
+        }
+
+        old_bounds != self.engine.bounds.get(&idx).copied()
+    }
+
     /// Check if a node has any direct Text children.
     /// Used by the JS webview to decide whether to auto-center a dropped text.
     pub fn has_text_child(&self, node_id: &str) -> bool {
