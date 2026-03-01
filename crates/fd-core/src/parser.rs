@@ -999,6 +999,21 @@ fn parse_anim_block(input: &mut &str) -> ModalResult<AnimKeyframe> {
     })
 }
 
+// ─── Edge anchor parser ─────────────────────────────────────────────────
+
+/// Parse an edge endpoint: `@node_id` or `x y` coordinates.
+fn parse_edge_anchor(input: &mut &str) -> ModalResult<EdgeAnchor> {
+    skip_space(input);
+    if input.starts_with('@') {
+        Ok(EdgeAnchor::Node(parse_node_id.parse_next(input)?))
+    } else {
+        let x = parse_number.parse_next(input)?;
+        skip_space(input);
+        let y = parse_number.parse_next(input)?;
+        Ok(EdgeAnchor::Point(x, y))
+    }
+}
+
 // ─── Edge block parser ─────────────────────────────────────────────────
 
 fn parse_edge_block(input: &mut &str) -> ModalResult<Edge> {
@@ -1016,6 +1031,7 @@ fn parse_edge_block(input: &mut &str) -> ModalResult<Edge> {
 
     let mut from = None;
     let mut to = None;
+    let text_child = None;
     let mut label = None;
     let mut style = Style::default();
     let mut use_styles = Vec::new();
@@ -1041,17 +1057,17 @@ fn parse_edge_block(input: &mut &str) -> ModalResult<Edge> {
 
             match prop {
                 "from" => {
-                    from = Some(parse_node_id.parse_next(input)?);
+                    from = Some(parse_edge_anchor(input)?);
                 }
                 "to" => {
-                    to = Some(parse_node_id.parse_next(input)?);
+                    to = Some(parse_edge_anchor(input)?);
                 }
                 "label" => {
-                    label = Some(
-                        parse_quoted_string
-                            .map(|s| s.to_string())
-                            .parse_next(input)?,
-                    );
+                    // Backward compat: label: "string" stored for rendering
+                    let s = parse_quoted_string
+                        .map(|s| s.to_string())
+                        .parse_next(input)?;
+                    label = Some(s);
                 }
                 "stroke" => {
                     let color = parse_hex_color.parse_next(input)?;
@@ -1137,8 +1153,9 @@ fn parse_edge_block(input: &mut &str) -> ModalResult<Edge> {
 
     Ok(Edge {
         id,
-        from: from.unwrap_or_else(|| NodeId::intern("_missing")),
-        to: to.unwrap_or_else(|| NodeId::intern("_missing")),
+        from: from.unwrap_or(EdgeAnchor::Point(0.0, 0.0)),
+        to: to.unwrap_or(EdgeAnchor::Point(0.0, 0.0)),
+        text_child,
         label,
         style,
         use_styles: use_styles.into(),

@@ -8,8 +8,8 @@ mod svg;
 use fd_core::id::NodeId;
 use fd_core::layout::Viewport;
 use fd_core::model::{
-    Annotation, ArrowKind, Color, Constraint, CurveKind, Edge, LayoutMode, NodeKind, Paint,
-    SceneNode, Stroke, StrokeCap, StrokeJoin, TextAlign, TextVAlign,
+    Annotation, ArrowKind, Color, Constraint, CurveKind, Edge, EdgeAnchor, LayoutMode, NodeKind,
+    Paint, SceneNode, Stroke, StrokeCap, StrokeJoin, TextAlign, TextVAlign,
 };
 use fd_editor::commands::CommandStack;
 use fd_editor::input::{InputEvent, Modifiers};
@@ -1635,20 +1635,62 @@ impl FdCanvas {
         if from == to {
             return String::new();
         }
-        // Verify both nodes exist
+        // Verify both nodes exist (not edges)
         if self.engine.graph.index_of(from).is_none() || self.engine.graph.index_of(to).is_none() {
+            return String::new();
+        }
+        // Reject edge-to-edge connections
+        if self
+            .engine
+            .graph
+            .edges
+            .iter()
+            .any(|e| e.id == from || e.id == to)
+        {
             return String::new();
         }
         let edge_id = NodeId::with_prefix("edge");
         let edge = Edge {
             id: edge_id,
-            from,
-            to,
+            from: EdgeAnchor::Node(from),
+            to: EdgeAnchor::Node(to),
+            text_child: None,
             label: None,
             style: fd_core::model::Style::default(),
             use_styles: Default::default(),
             arrow: ArrowKind::End,
             curve: CurveKind::Smooth,
+            annotations: Vec::new(),
+            animations: Default::default(),
+            flow: None,
+            label_offset: None,
+        };
+        let mutation = GraphMutation::AddEdge {
+            edge: Box::new(edge),
+        };
+        let changed = self.apply_mutations(vec![mutation]);
+        if changed {
+            self.engine.flush_to_text();
+            edge_id.as_str().to_string()
+        } else {
+            String::new()
+        }
+    }
+
+    /// Create a standalone edge with point anchors (no connected nodes).
+    /// Returns the new edge ID, or empty string on failure.
+    pub fn create_edge_at(&mut self, x1: f32, y1: f32, x2: f32, y2: f32) -> String {
+        let edge_id = NodeId::with_prefix("edge");
+        let edge = Edge {
+            id: edge_id,
+            from: EdgeAnchor::Point(x1, y1),
+            to: EdgeAnchor::Point(x2, y2),
+            text_child: None,
+            label: None,
+            style: fd_core::model::Style::default(),
+            use_styles: Default::default(),
+            arrow: ArrowKind::End,
+            curve: CurveKind::Straight,
             annotations: Vec::new(),
             animations: Default::default(),
             flow: None,

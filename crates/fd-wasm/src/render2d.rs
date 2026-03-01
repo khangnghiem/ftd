@@ -799,28 +799,37 @@ fn draw_edges(
     pressed_id: Option<&str>,
     sketchy: bool,
 ) {
-    use fd_core::model::{ArrowKind, CurveKind};
+    use fd_core::model::{ArrowKind, CurveKind, EdgeAnchor};
 
     for edge in &graph.edges {
-        let from_idx = match graph.index_of(edge.from) {
-            Some(i) => i,
-            None => continue,
+        // Resolve from endpoint
+        let (x1, y1) = match &edge.from {
+            EdgeAnchor::Node(id) => {
+                let idx = match graph.index_of(*id) {
+                    Some(i) => i,
+                    None => continue,
+                };
+                match bounds.get(&idx) {
+                    Some(b) => b.center(),
+                    None => continue,
+                }
+            }
+            EdgeAnchor::Point(x, y) => (*x, *y),
         };
-        let to_idx = match graph.index_of(edge.to) {
-            Some(i) => i,
-            None => continue,
+        // Resolve to endpoint
+        let (x2, y2) = match &edge.to {
+            EdgeAnchor::Node(id) => {
+                let idx = match graph.index_of(*id) {
+                    Some(i) => i,
+                    None => continue,
+                };
+                match bounds.get(&idx) {
+                    Some(b) => b.center(),
+                    None => continue,
+                }
+            }
+            EdgeAnchor::Point(x, y) => (*x, *y),
         };
-        let from_b = match bounds.get(&from_idx) {
-            Some(b) => b,
-            None => continue,
-        };
-        let to_b = match bounds.get(&to_idx) {
-            Some(b) => b,
-            None => continue,
-        };
-
-        let (x1, y1) = from_b.center();
-        let (x2, y2) = to_b.center();
 
         // Resolve stroke
         let mut triggers = Vec::new();
@@ -916,15 +925,30 @@ fn draw_edges(
             draw_flow_animation(ctx, x1, y1, x2, y2, flow, &stroke_color, time_ms);
         }
 
-        // Label at midpoint
-        if let Some(ref label) = edge.label {
+        // Text child at midpoint (replaces old label: "string")
+        if let Some(text_id) = edge.text_child
+            && let Some(text_node) = graph.get_by_id(text_id)
+            && let fd_core::model::NodeKind::Text { content } = &text_node.kind
+        {
             let mx = ((x1 + x2) / 2.0) as f64;
             let my = ((y1 + y2) / 2.0) as f64;
-            ctx.set_font("11px Inter, system-ui, sans-serif");
-            ctx.set_fill_style_str(&stroke_color);
+            let (ox, oy) = edge.label_offset.unwrap_or((0.0, 0.0));
+            let text_style = graph.resolve_style(text_node, &triggers);
+            // Use text child's font if available
+            let font = text_style
+                .font
+                .as_ref()
+                .map(|f| format!("{}px {}", f.size, f.family))
+                .unwrap_or_else(|| "11px Inter, system-ui, sans-serif".to_string());
+            let fill = text_style
+                .fill
+                .as_ref()
+                .map_or_else(|| stroke_color.clone(), resolve_paint_color);
+            ctx.set_font(&font);
+            ctx.set_fill_style_str(&fill);
             ctx.set_text_align("center");
             ctx.set_text_baseline("bottom");
-            let _ = ctx.fill_text(label, mx, my - 6.0);
+            let _ = ctx.fill_text(content, mx + ox as f64, my + oy as f64 - 6.0);
         }
 
         ctx.restore();
