@@ -1634,6 +1634,7 @@ impl FdCanvas {
             annotations: Vec::new(),
             animations: Default::default(),
             flow: None,
+            label_offset: None,
         };
         let mutation = GraphMutation::AddEdge {
             edge: Box::new(edge),

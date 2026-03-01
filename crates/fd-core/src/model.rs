@@ -366,6 +366,8 @@ pub struct Edge {
     pub annotations: Vec<Annotation>,
     pub animations: SmallVec<[AnimKeyframe; 2]>,
     pub flow: Option<FlowAnim>,
+    /// Offset of the edge label from the midpoint, set when label is dragged.
+    pub label_offset: Option<(f32, f32)>,
 }
 
 /// Flow animation kind — continuous motion along the edge path.
