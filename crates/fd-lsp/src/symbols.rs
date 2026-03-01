@@ -39,16 +39,10 @@ pub fn compute_symbols(text: &str, graph: Option<&SceneGraph>) -> Vec<SymbolInfo
         let node_lines = find_node_lines(text);
         for (id_str, line_num) in &node_lines {
             if let Some(node) = graph.get_by_id(fd_core::NodeId::intern(id_str)) {
-                let kind_name = match &node.kind {
-                    fd_core::NodeKind::Root => continue,
-                    fd_core::NodeKind::Generic => "",
-                    fd_core::NodeKind::Group { .. } => "group",
-                    fd_core::NodeKind::Frame { .. } => "frame",
-                    fd_core::NodeKind::Rect { .. } => "rect",
-                    fd_core::NodeKind::Ellipse { .. } => "ellipse",
-                    fd_core::NodeKind::Path { .. } => "path",
-                    fd_core::NodeKind::Text { .. } => "text",
-                };
+                if matches!(node.kind, fd_core::NodeKind::Root) {
+                    continue;
+                }
+                let kind_name = node.kind.kind_name();
 
                 let line = text.lines().nth(*line_num).unwrap_or("");
 
@@ -81,6 +75,21 @@ pub fn compute_symbols(text: &str, graph: Option<&SceneGraph>) -> Vec<SymbolInfo
     symbols
 }
 
+/// Check if an ID matches the auto-generated `_kind_N` pattern.
+fn is_anonymous_id(id: &str) -> bool {
+    let prefixes = [
+        "_rect_",
+        "_ellipse_",
+        "_text_",
+        "_group_",
+        "_path_",
+        "_frame_",
+        "_generic_",
+        "_edge_",
+    ];
+    prefixes.iter().any(|p| id.starts_with(p))
+}
+
 /// Find all `@id` declarations and their line numbers.
 fn find_node_lines(text: &str) -> Vec<(String, usize)> {
     let mut results = Vec::new();
@@ -95,7 +104,7 @@ fn find_node_lines(text: &str) -> Vec<(String, usize)> {
                 .chars()
                 .take_while(|c| c.is_alphanumeric() || *c == '_')
                 .collect();
-            if !id.is_empty() && !id.starts_with("_anon_") {
+            if !id.is_empty() && !is_anonymous_id(&id) {
                 let rest = after_at[id.len()..].trim_start();
                 if rest.starts_with('{') {
                     results.push((id, i));
@@ -114,7 +123,7 @@ fn find_node_lines(text: &str) -> Vec<(String, usize)> {
                     .chars()
                     .take_while(|c| c.is_alphanumeric() || *c == '_')
                     .collect();
-                if !id.is_empty() && !id.starts_with("_anon_") {
+                if !id.is_empty() && !is_anonymous_id(&id) {
                     results.push((id, i));
                 }
             }

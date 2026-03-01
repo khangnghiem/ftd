@@ -5,6 +5,17 @@
 
 ## Completed Requirements
 
+### v0.8.85 — Type-Prefixed Anonymous IDs
+
+- **REFACTOR**: Replaced `_anon_N` anonymous IDs with type-prefixed `_kind_N` pattern (e.g. `_rect_0`, `_text_1`, `_group_2`) — clearer at a glance which component an auto-generated ID refers to
+- **CORE**: `NodeId::anonymous(kind)` now takes a `&str` kind parameter; added `NodeKind::kind_name()` returning the FD keyword; `is_anonymous_id()` helper checks against all known prefixes
+- **PARSER**: Both node blocks and edge blocks pass their kind string to `anonymous()`
+- **WASM**: All 4 call sites updated — `duplicate_selected_at`, `group_selected`, `create_node_at`, `set_text`
+- **LINT**: `lint_anonymous_ids` uses new `is_anonymous_id()` pattern matcher
+- **LSP**: `compute_symbols` uses `kind_name()` and `is_anonymous_id()` for symbol filtering
+- **TS**: Removed `findAnonNodeIds`, updated `ANONYMOUS_ID_REGEX` and AI refine prompt; 191 TS tests pass
+- **ZED**: All changes mirrored in zed-extensions copy
+
 ### v0.8.84 — Zoom Inside Minimap (Google Maps-style)
 
 - **UX**: Moved zoom controls `[− 100% +]` from defunct bottom-left widget into the minimap as a floating frosted-glass pill overlay — compact, always-visible zoom level with `stopPropagation()` to prevent minimap pan on button click

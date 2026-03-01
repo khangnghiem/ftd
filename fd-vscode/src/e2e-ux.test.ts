@@ -14,7 +14,7 @@ import {
     parseSpecNodes,
     computeSpecHideLines,
     computeSpecFoldRanges,
-    findAnonNodeIds,
+    findAnonymousNodeIds,
     stripMarkdownFences,
     escapeHtml,
     parseDocumentSymbols,
@@ -459,9 +459,9 @@ describe("Figma: Inline Text Editing — text node handling", () => {
         // When nothing is selected and you double-click, Figma creates a text node
         // This is handled by create_node_at("text", x, y) in the WASM API
         // We verify the parse side: a text node with empty content
-        const source = `${SHAPES.TEXT} @_anon_1 "" {\n  x: 100 y: 200\n}`;
-        const anons = findAnonNodeIds(source);
-        expect(anons).toContain("_anon_1");
+        const source = `${SHAPES.TEXT} @_text_1 "" {\n  x: 100 y: 200\n}`;
+        const anons = findAnonymousNodeIds(source);
+        expect(anons).toContain("_text_1");
     });
 
     it("hex luminance calculation for text contrast", () => {

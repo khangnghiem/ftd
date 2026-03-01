@@ -664,7 +664,7 @@ impl FdCanvas {
             None => return false,
         };
         let mut cloned = original;
-        let new_id = NodeId::anonymous();
+        let new_id = NodeId::anonymous(cloned.kind.kind_name());
         cloned.id = new_id;
         if dx != 0.0 || dy != 0.0 {
             cloned.constraints.push(fd_core::model::Constraint::Offset {
@@ -695,7 +695,7 @@ impl FdCanvas {
             return false;
         }
         let ids: Vec<NodeId> = self.select_tool.selected.clone();
-        let new_group_id = NodeId::anonymous();
+        let new_group_id = NodeId::anonymous("group");
         let mutation = GraphMutation::GroupNodes { ids, new_group_id };
         let changed = self.apply_mutations(vec![mutation]);
         if changed {
@@ -1443,7 +1443,7 @@ impl FdCanvas {
                         }
                     } else {
                         // Create new text child node
-                        let child_id = NodeId::anonymous();
+                        let child_id = NodeId::anonymous("text");
                         let node = SceneNode::new(
                             child_id,
                             NodeKind::Text {
@@ -1495,7 +1495,7 @@ impl FdCanvas {
     /// `kind` is "rect", "ellipse", "text", or "frame".
     /// Returns `true` if the node was created.
     pub fn create_node_at(&mut self, kind: &str, x: f32, y: f32) -> bool {
-        let id = NodeId::anonymous();
+        let id = NodeId::anonymous(kind);
         let node_kind = match kind {
             "rect" => NodeKind::Rect {
                 width: 100.0,

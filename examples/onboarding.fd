@@ -1,18 +1,18 @@
-# FD v1
-# Onboarding wizard — 4-step flow with animations
+# ─── Themes ───
 
 theme step_desc {
-  fill: #6B7280
-  font: "Inter" 400 16
+  fill: #6B7280  # blue
+  font: "Inter" regular 16
 }
 
 theme step_title {
-  fill: #1A1A2E
-  font: "Inter" 700 28
+  fill: #1A1A2E  # blue
+  font: "Inter" bold 28
 }
 
-# ─── Wizard container ───────────────────────────────────────────────────
+# ─── Layout ───
 
+# ─── Wizard container ───────────────────────────────────────────────────
 group @wizard {
   spec {
     "Onboarding wizard — 4-step flow"
@@ -23,93 +23,115 @@ group @wizard {
     priority: high
     tag: onboarding, ux, retention
   }
-  layout: column gap=0 pad=0
-
   rect @step_card {
-    w: 480 h: 520
-    fill: #FFFFFF
-    corner: 24
-    shadow: (0,8,40,#00000022)
-
     group @card_content {
-      layout: column gap=24 pad=40
-
-      # Illustration area
       rect @illustration {
         spec {
           "Step illustration — animated SVG"
           accept: "subtle loop animation"
         }
-        w: 400 h: 240
-        fill: #F0EDFC
-        corner: 16
-
         ellipse @shape_1 {
           w: 80 h: 80
-          fill: #6C5CE740
-          when :enter { opacity: 1; scale: 1; ease: spring 800ms }
+          fill: #6C5CE740  # blue
+          when :enter {
+            opacity: 1
+            scale: 1
+            ease: spring 800ms
+          }
         }
-
         rect @shape_2 {
           w: 100 h: 60
-          fill: #A29BFE40
+          fill: #A29BFE40  # blue
           corner: 12
-          when :enter { opacity: 1; ease: ease_out 600ms }
+          when :enter {
+            opacity: 1
+            ease: ease_out 600ms
+          }
         }
-
         ellipse @shape_3 {
           w: 60 h: 60
-          fill: #00B89440
-          when :enter { opacity: 1; scale: 1; ease: spring 1000ms }
+          fill: #00B89440  # teal
+          x: 9.04
+          y: -0.2
+          when :enter {
+            opacity: 1
+            scale: 1
+            ease: spring 1000ms
+          }
         }
+        w: 400 h: 240
+        fill: #F0EDFC  # blue
+        corner: 16
       }
-
       text @step_heading "Create your first draft" {
         use: step_title
       }
-
       text @step_body "Start with a blank canvas or choose from our templates to kickstart your design." {
         use: step_desc
       }
-
-      # Progress dots
       group @dots {
+        ellipse @dot_1 {
+          w: 10 h: 10
+          fill: #6C5CE7  # blue
+        }
+        ellipse @dot_2 {
+          w: 10 h: 10
+          fill: #E8E8EC  # white
+        }
+        ellipse @dot_3 {
+          w: 10 h: 10
+          fill: #E8E8EC  # white
+        }
+        ellipse @dot_4 {
+          w: 10 h: 10
+          fill: #E8E8EC  # white
+        }
         layout: row gap=8 pad=0
-        ellipse @dot_1 { w: 10 h: 10; fill: #6C5CE7 }
-        ellipse @dot_2 { w: 10 h: 10; fill: #E8E8EC }
-        ellipse @dot_3 { w: 10 h: 10; fill: #E8E8EC }
-        ellipse @dot_4 { w: 10 h: 10; fill: #E8E8EC }
       }
-
-      # Action buttons
       group @buttons {
-        layout: row gap=12 pad=0
-
         rect @btn_skip {
+          text @skip_label "Skip" {
+            fill: #999999  # gray
+            font: "Inter" medium 15
+          }
           w: 100 h: 48
           corner: 10
-          text @skip_label "Skip" {
-            fill: #999999
-            font: "Inter" 500 15
+          when :hover {
+            fill: #F5F5F7  # white
+            ease: ease_out 150ms
           }
-          when :hover { fill: #F5F5F7; ease: ease_out 150ms }
         }
-
         rect @btn_next {
+          text @next_label "Next" {
+            fill: #FFFFFF  # white
+            font: "Inter" semibold 15
+          }
           w: 280 h: 48
-          fill: #6C5CE7
+          fill: #6C5CE7  # blue
           corner: 10
           shadow: (0,4,16,#6C5CE740)
-          text @next_label "Next" {
-            fill: #FFFFFF
-            font: "Inter" 600 15
+          when :hover {
+            fill: #5A4BD1  # blue
+            scale: 1.03
+            ease: spring 200ms
           }
-          when :hover { fill: #5A4BD1; scale: 1.03; ease: spring 200ms }
-          when :press { scale: 0.96; ease: ease_out 100ms }
+          when :press {
+            scale: 0.96
+            ease: ease_out 100ms
+          }
         }
+        layout: row gap=12 pad=0
       }
+      layout: column gap=24 pad=40
     }
+    w: 480 h: 520
+    fill: #FFFFFF  # white
+    corner: 24
+    shadow: (0,8,40,#00000022)
   }
+  layout: column gap=0 pad=0
 }
+
+# ─── Constraints ───
 
 @wizard -> center_in: canvas
