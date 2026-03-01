@@ -2561,16 +2561,16 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
         </div>
         <div class="props-section" id="props-align-section" style="display:none">
           <div class="props-section-label">Alignment</div>
-          <div class="align-grid" id="align-grid">
-            <button class="align-cell" data-h="left"   data-v="top"><span class="align-dot"></span></button>
-            <button class="align-cell" data-h="center" data-v="top"><span class="align-dot"></span></button>
-            <button class="align-cell" data-h="right"  data-v="top"><span class="align-dot"></span></button>
-            <button class="align-cell" data-h="left"   data-v="middle"><span class="align-dot"></span></button>
-            <button class="align-cell" data-h="center" data-v="middle"><span class="align-dot"></span></button>
-            <button class="align-cell" data-h="right"  data-v="middle"><span class="align-dot"></span></button>
-            <button class="align-cell" data-h="left"   data-v="bottom"><span class="align-dot"></span></button>
-            <button class="align-cell" data-h="center" data-v="bottom"><span class="align-dot"></span></button>
-            <button class="align-cell" data-h="right"  data-v="bottom"><span class="align-dot"></span></button>
+          <div class="align-grid" id="align-grid" role="group" aria-label="Text Alignment">
+            <button class="align-cell" data-h="left"   data-v="top"    aria-label="Align top left"       title="Align top left"><span class="align-dot"></span></button>
+            <button class="align-cell" data-h="center" data-v="top"    aria-label="Align top center"     title="Align top center"><span class="align-dot"></span></button>
+            <button class="align-cell" data-h="right"  data-v="top"    aria-label="Align top right"      title="Align top right"><span class="align-dot"></span></button>
+            <button class="align-cell" data-h="left"   data-v="middle" aria-label="Align middle left"    title="Align middle left"><span class="align-dot"></span></button>
+            <button class="align-cell" data-h="center" data-v="middle" aria-label="Align middle center"  title="Align middle center"><span class="align-dot"></span></button>
+            <button class="align-cell" data-h="right"  data-v="middle" aria-label="Align middle right"   title="Align middle right"><span class="align-dot"></span></button>
+            <button class="align-cell" data-h="left"   data-v="bottom" aria-label="Align bottom left"    title="Align bottom left"><span class="align-dot"></span></button>
+            <button class="align-cell" data-h="center" data-v="bottom" aria-label="Align bottom center"  title="Align bottom center"><span class="align-dot"></span></button>
+            <button class="align-cell" data-h="right"  data-v="bottom" aria-label="Align bottom right"   title="Align bottom right"><span class="align-dot"></span></button>
           </div>
         </div>
     </div>
@@ -2578,7 +2578,7 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
   <div id="annotation-card">
     <div class="card-header">
       <span id="card-title">Spec</span>
-      <button class="card-close" id="card-close-btn">×</button>
+      <button class="card-close" id="card-close-btn" aria-label="Close" title="Close">×</button>
     </div>
     <div class="field-group">
       <label class="field-label" for="ann-description">Description</label>
@@ -2641,7 +2641,7 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
   <div id="renamify-panel">
     <div class="renamify-header">
       <span class="renamify-title">✦ Renamify</span>
-      <button class="renamify-close" id="renamify-close">×</button>
+      <button class="renamify-close" id="renamify-close" aria-label="Close" title="Close">×</button>
     </div>
     <div class="renamify-body" id="renamify-body"></div>
     <div class="renamify-footer" id="renamify-footer" style="display:none">
@@ -2651,7 +2651,7 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
     </div>
   </div>
   <div id="anim-picker">
-    <div class="picker-header"><span class="picker-icon">⚡</span> Add Animation <button class="picker-close" id="anim-picker-close">×</button></div>
+    <div class="picker-header"><span class="picker-icon">⚡</span> Add Animation <button class="picker-close" id="anim-picker-close" aria-label="Close" title="Close">×</button></div>
     <div class="picker-body" id="anim-picker-body"></div>
   </div>
 
