@@ -861,7 +861,7 @@ fn merge_style(dst: &mut Style, src: &Style) {
 // ─── Resolved positions (output of layout solver) ────────────────────────
 
 /// Resolved absolute bounding box after constraint solving.
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct ResolvedBounds {
     pub x: f32,
     pub y: f32,

@@ -872,6 +872,17 @@ impl FdCanvas {
         }
     }
 
+    /// Post-release: expand parent groups to contain overflowing children.
+    /// Called once on pointer release (never per-frame).
+    /// Returns `true` if any parent was expanded.
+    pub fn finalize_bounds(&mut self) -> bool {
+        let changed = self.engine.finalize_child_bounds();
+        if changed {
+            self.engine.flush_to_text();
+        }
+        changed
+    }
+
     /// Check if a node has any direct Text children.
     /// Used by the JS webview to decide whether to auto-center a dropped text.
     pub fn has_text_child(&self, node_id: &str) -> bool {
