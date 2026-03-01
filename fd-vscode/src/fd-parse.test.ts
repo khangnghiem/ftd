@@ -4,7 +4,6 @@ import {
   parseSpecNodes,
   computeSpecHideLines,
   computeSpecFoldRanges,
-  findAnonNodeIds,
   findAnonymousNodeIds,
   findAllNodeIds,
   sanitizeToFdId,
@@ -350,37 +349,37 @@ describe("computeSpecFoldRanges", () => {
   });
 });
 
-// ─── findAnonNodeIds ─────────────────────────────────────────────────────
+// ─── findAnonymousNodeIds (type-prefixed) ────────────────────────────────
 
-describe("findAnonNodeIds", () => {
-  it("returns empty for no anon IDs", () => {
-    expect(findAnonNodeIds("rect @hero {\n  fill: #FFF\n}")).toEqual([]);
+describe("findAnonymousNodeIds (type-prefixed)", () => {
+  it("returns empty for no anonymous IDs", () => {
+    expect(findAnonymousNodeIds("rect @hero {\n  fill: #FFF\n}")).toEqual([]);
   });
 
-  it("finds a single anon ID", () => {
-    const result = findAnonNodeIds('text @_anon_1 "Hello" {\n}');
-    expect(result).toEqual(["_anon_1"]);
+  it("finds a single type-prefixed ID", () => {
+    const result = findAnonymousNodeIds('text @_text_1 "Hello" {\n}');
+    expect(result).toEqual(["_text_1"]);
   });
 
-  it("finds multiple unique anon IDs", () => {
-    const source = "rect @_anon_1 {\n}\ntext @_anon_2 {\n}\nellipse @_anon_3 {\n}";
-    const result = findAnonNodeIds(source);
+  it("finds multiple type-prefixed IDs", () => {
+    const source = "rect @_rect_1 {\n}\ntext @_text_2 {\n}\nellipse @_ellipse_3 {\n}";
+    const result = findAnonymousNodeIds(source);
     expect(result).toHaveLength(3);
-    expect(result).toContain("_anon_1");
-    expect(result).toContain("_anon_2");
-    expect(result).toContain("_anon_3");
+    expect(result).toContain("_rect_1");
+    expect(result).toContain("_text_2");
+    expect(result).toContain("_ellipse_3");
   });
 
   it("deduplicates repeated IDs", () => {
-    const source = "rect @_anon_1 {\n}\n@_anon_1 -> center_in: canvas";
-    const result = findAnonNodeIds(source);
-    expect(result).toEqual(["_anon_1"]);
+    const source = "rect @_rect_1 {\n}\n@_rect_1 -> center_in: canvas";
+    const result = findAnonymousNodeIds(source);
+    expect(result).toEqual(["_rect_1"]);
   });
 
-  it("ignores non-anon IDs", () => {
-    const source = "rect @hero {\n}\ntext @_anon_5 {\n}\ngroup @cards {\n}";
-    const result = findAnonNodeIds(source);
-    expect(result).toEqual(["_anon_5"]);
+  it("ignores non-anonymous IDs", () => {
+    const source = "rect @hero {\n}\ntext @_text_5 {\n}\ngroup @cards {\n}";
+    const result = findAnonymousNodeIds(source);
+    expect(result).toEqual(["_text_5"]);
   });
 });
 
@@ -753,9 +752,9 @@ describe("findAnonymousNodeIds", () => {
     expect(result).toContain("text_7");
   });
 
-  it("finds @_anon_0 (backward compat)", () => {
-    const result = findAnonymousNodeIds("rect @_anon_0 {\n}");
-    expect(result).toContain("_anon_0");
+  it("finds @_rect_0 underscored pattern", () => {
+    const result = findAnonymousNodeIds("rect @_rect_0 {\n}");
+    expect(result).toContain("_rect_0");
   });
 
   it("finds @group_2 and @frame_4", () => {

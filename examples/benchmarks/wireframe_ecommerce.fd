@@ -113,11 +113,4 @@ group @ecommerce_page {
   fill: #FAFAFA  # white
 }
 
-ellipse @_anon_14 {
-  w: 50 h: 40
-  stroke: #333333 2.5
-  x: 364.58
-  y: 931.79
-}
-
 @ecommerce_page -> center_in: canvas

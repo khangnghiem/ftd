@@ -23,8 +23,9 @@ impl NodeId {
     }
 
     /// Generate a unique anonymous ID (for nodes without explicit @id).
-    pub fn anonymous() -> Self {
-        Self::with_prefix("_anon")
+    /// Uses the node kind as prefix: `_rect_0`, `_text_1`, `_group_2`, etc.
+    pub fn anonymous(kind: &str) -> Self {
+        Self::with_prefix(&format!("_{kind}"))
     }
 
     /// Generate a unique ID with a type prefix (e.g. `rect_1`, `ellipse_2`).
@@ -75,8 +76,8 @@ mod tests {
 
     #[test]
     fn anonymous_ids_are_unique() {
-        let a = NodeId::anonymous();
-        let b = NodeId::anonymous();
+        let a = NodeId::anonymous("rect");
+        let b = NodeId::anonymous("rect");
         assert_ne!(a, b);
     }
 }

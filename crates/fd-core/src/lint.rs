@@ -45,11 +45,11 @@ pub fn lint_document(graph: &SceneGraph) -> Vec<LintDiagnostic> {
 
 // ─── Rules ────────────────────────────────────────────────────────────────
 
-/// Warn on any node whose ID starts with `_anon_`.
+/// Warn on any node whose ID matches auto-generated `_kind_N` pattern.
 fn lint_anonymous_ids(graph: &SceneGraph, diags: &mut Vec<LintDiagnostic>) {
     for idx in graph.graph.node_indices() {
         let node = &graph.graph[idx];
-        if node.id.as_str().starts_with("_anon_") {
+        if is_anonymous_id(node.id.as_str()) {
             diags.push(LintDiagnostic {
                 node_id: node.id,
                 message: format!(
@@ -61,6 +61,21 @@ fn lint_anonymous_ids(graph: &SceneGraph, diags: &mut Vec<LintDiagnostic>) {
             });
         }
     }
+}
+
+/// Check if an ID matches the auto-generated `_kind_N` pattern.
+fn is_anonymous_id(id: &str) -> bool {
+    let prefixes = [
+        "_rect_",
+        "_ellipse_",
+        "_text_",
+        "_group_",
+        "_path_",
+        "_frame_",
+        "_generic_",
+        "_edge_",
+    ];
+    prefixes.iter().any(|p| id.starts_with(p))
 }
 
 /// Warn when the same style name appears more than once in a node's `use:` list.
@@ -123,7 +138,7 @@ mod tests {
 
     #[test]
     fn lint_anonymous_ids() {
-        // _anon_ IDs come from nodes without an explicit @id
+        // Auto-generated IDs come from nodes without an explicit @id (e.g. _rect_0)
         let input = "rect { w: 100 h: 50 }\n";
         let graph = parse_document(input).unwrap();
         let diags = lint_document(&graph);

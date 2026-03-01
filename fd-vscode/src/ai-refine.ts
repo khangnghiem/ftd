@@ -1,14 +1,14 @@
 /**
  * AI Refine service for FD nodes.
  *
- * Calls an LLM to rename _anon_ IDs with semantic names and
+ * Calls an LLM to rename auto-generated IDs with semantic names and
  * improve visual styling. Supports multiple providers with
  * per-provider API keys and custom model selection.
  */
 
 import * as vscode from "vscode";
 import {
-  findAnonNodeIds as _findAnonNodeIds,
+  findAnonymousNodeIds as _findAnonymousNodeIds,
   stripMarkdownFences as _stripMarkdownFences,
 } from "./fd-parse";
 
@@ -82,7 +82,7 @@ Given the .fd document below, improve the following nodes: ${targetList}
 
 ## Rules
 
-1. **Rename _anon_ IDs**: Replace any \`@_anon_N\` with a short, semantic snake_case name that describes the node's purpose (e.g., \`@hero_card\`, \`@nav_btn\`). Max 15 characters. If a name would collide with an existing ID, append a number suffix (e.g., \`@card_1\`).
+1. **Rename auto-generated IDs**: Replace any \`@_kind_N\` (like \`@_rect_0\`, \`@_text_3\`) with a short, semantic snake_case name that describes the node's purpose (e.g., \`@hero_card\`, \`@nav_btn\`). Max 15 characters. If a name would collide with an existing ID, append a number suffix (e.g., \`@card_1\`).
 
 2. **Restyle for visual polish**: Improve colors (use harmonious hex palettes, not generic red/blue), add rounded corners where missing, adjust spacing/sizing for better proportions. Follow modern design best practices.
 
@@ -258,7 +258,7 @@ async function callOpenRouter(
  * Refine selected nodes using AI.
  *
  * @param fdText  Full .fd document text
- * @param nodeIds Node IDs to refine (e.g., ["_anon_0", "_anon_3"])
+ * @param nodeIds Node IDs to refine (e.g., ["_rect_0", "_text_3"])
  * @returns The complete refined .fd text
  */
 export async function refineSelectedNodes(
@@ -354,11 +354,11 @@ export async function refineSelectedNodes(
 }
 
 /**
- * Find all _anon_ node IDs in an FD document.
+ * Find all auto-generated node IDs in an FD document.
  * Delegates to fd-parse; re-exported for backward-compatible imports.
  */
 export function findAnonNodeIds(fdText: string): string[] {
-  return _findAnonNodeIds(fdText);
+  return _findAnonymousNodeIds(fdText);
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────

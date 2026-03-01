@@ -1216,7 +1216,7 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  // Register AI Assist All command (all _anon_ nodes)
+  // Register AI Assist All command (all auto-generated nodes)
   context.subscriptions.push(
     vscode.commands.registerCommand(COMMAND_AI_REFINE_ALL, async () => {
       const editor = vscode.window.activeTextEditor;

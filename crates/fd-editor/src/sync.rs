@@ -221,7 +221,7 @@ impl SyncEngine {
             }
             GraphMutation::DuplicateNode { id } => {
                 if let Some(original) = self.graph.get_by_id(id).cloned() {
-                    let new_id = NodeId::anonymous();
+                    let new_id = NodeId::anonymous(original.kind.kind_name());
                     let mut cloned = original;
                     cloned.id = new_id;
                     // Offset via constraint

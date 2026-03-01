@@ -488,7 +488,7 @@ fn parse_node(input: &mut &str) -> ModalResult<ParsedNode> {
     let id = if input.starts_with('@') {
         parse_node_id.parse_next(input)?
     } else {
-        NodeId::anonymous()
+        NodeId::anonymous(kind_str)
     };
 
     skip_space(input);
@@ -1008,7 +1008,7 @@ fn parse_edge_block(input: &mut &str) -> ModalResult<Edge> {
     let id = if input.starts_with('@') {
         parse_node_id.parse_next(input)?
     } else {
-        NodeId::anonymous()
+        NodeId::anonymous("edge")
     };
 
     skip_space(input);

@@ -461,26 +461,14 @@ export function computeSpecFoldRanges(
   return ranges;
 }
 
-// ─── Anon Node IDs ───────────────────────────────────────────────────────
+// ─── Anonymous Node Detection ────────────────────────────────────────────
 
-/** Find all `@_anon_N` node IDs in an FD document. */
-export function findAnonNodeIds(fdText: string): string[] {
-  const matches = fdText.matchAll(/@(_anon_\d+)/g);
-  const ids = new Set<string>();
-  for (const m of matches) {
-    ids.add(m[1]);
-  }
-  return [...ids];
-}
-
-// ─── Anonymous Node Detection (Renamify) ─────────────────────────────────
-
-/** Pattern for auto-generated anonymous node IDs: @kind_N or @_anon_N */
-const ANONYMOUS_ID_REGEX = /^(?:rect|ellipse|text|group|path|frame|generic|_anon)_\d+$/;
+/** Pattern for auto-generated anonymous node IDs: @_kind_N (e.g. _rect_0, _text_3) */
+const ANONYMOUS_ID_REGEX = /^(?:_?(?:rect|ellipse|text|group|path|frame|generic|edge))_\d+$/;
 
 /**
  * Find all anonymous node IDs in an FD document.
- * Matches patterns like @rect_1, @ellipse_3, @group_2, @_anon_0, etc.
+ * Matches patterns like @_rect_1, @_text_3, @rect_1, @ellipse_3, etc.
  */
 export function findAnonymousNodeIds(fdText: string): string[] {
   const allIds = findAllNodeIds(fdText);

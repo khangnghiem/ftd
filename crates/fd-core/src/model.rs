@@ -435,6 +435,22 @@ pub enum NodeKind {
     Text { content: String },
 }
 
+impl NodeKind {
+    /// Return the FD format keyword for this node kind.
+    pub fn kind_name(&self) -> &'static str {
+        match self {
+            Self::Root => "root",
+            Self::Generic => "generic",
+            Self::Group { .. } => "group",
+            Self::Frame { .. } => "frame",
+            Self::Rect { .. } => "rect",
+            Self::Ellipse { .. } => "ellipse",
+            Self::Path { .. } => "path",
+            Self::Text { .. } => "text",
+        }
+    }
+}
+
 /// A single node in the scene graph.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SceneNode {
