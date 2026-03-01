@@ -793,11 +793,34 @@ impl SceneGraph {
         resolved
     }
 
-    /// Return the leaf node directly — children are always selectable first.
-    /// Groups can still be selected by clicking their own area (not covered by children)
-    /// or via marquee selection.
-    pub fn effective_target(&self, leaf_id: NodeId, _selected: &[NodeId]) -> NodeId {
-        leaf_id
+    /// Figma-style target bubbling: if the leaf is inside a Group that isn't
+    /// already selected, return the outermost unselected Group. Otherwise
+    /// return the leaf directly.
+    ///
+    /// This gives "first click selects group, second click drills in" behavior.
+    pub fn effective_target(&self, leaf_id: NodeId, selected: &[NodeId]) -> NodeId {
+        let mut current_idx = match self.index_of(leaf_id) {
+            Some(idx) => idx,
+            None => return leaf_id,
+        };
+        let mut group_target = leaf_id;
+
+        while let Some(parent_idx) = self.parent(current_idx) {
+            let parent = &self.graph[parent_idx];
+            if matches!(parent.kind, NodeKind::Root) {
+                break;
+            }
+            if matches!(parent.kind, NodeKind::Group { .. }) {
+                // If this group is already selected, stop bubbling — let inner target through
+                if selected.contains(&parent.id) {
+                    break;
+                }
+                group_target = parent.id;
+            }
+            current_idx = parent_idx;
+        }
+
+        group_target
     }
 
     /// Check if `ancestor_id` is a parent/grandparent/etc. of `descendant_id`.
@@ -988,7 +1011,7 @@ mod tests {
     }
 
     #[test]
-    fn test_effective_target_returns_leaf() {
+    fn test_effective_target_bubbles_to_group() {
         let mut sg = SceneGraph::new();
 
         // Root -> Group -> Rect
@@ -1012,14 +1035,19 @@ mod tests {
         let group_idx = sg.add_node(sg.root, group);
         sg.add_node(group_idx, rect);
 
-        // Always returns leaf directly, regardless of selection state
-        assert_eq!(sg.effective_target(rect_id, &[]), rect_id);
+        // No selection → bubbles up to group
+        assert_eq!(sg.effective_target(rect_id, &[]), group_id);
+        // Group already selected → drills into leaf
         assert_eq!(sg.effective_target(rect_id, &[group_id]), rect_id);
-        assert_eq!(sg.effective_target(rect_id, &[rect_id]), rect_id);
+        // Rect itself selected → returns rect (no group above is selected)
+        // but group is NOT selected, so it bubbles to group
+        assert_eq!(sg.effective_target(rect_id, &[rect_id]), group_id);
+        // Group itself (no parent group) → returns group directly
+        assert_eq!(sg.effective_target(group_id, &[]), group_id);
     }
 
     #[test]
-    fn test_effective_target_nested_returns_leaf() {
+    fn test_effective_target_nested_groups() {
         let mut sg = SceneGraph::new();
 
         // Root -> group_outer -> group_inner -> rect_leaf
@@ -1051,10 +1079,34 @@ mod tests {
         let inner_idx = sg.add_node(outer_idx, inner);
         sg.add_node(inner_idx, leaf);
 
-        // Always returns leaf directly, regardless of selection state
-        assert_eq!(sg.effective_target(leaf_id, &[]), leaf_id);
-        assert_eq!(sg.effective_target(leaf_id, &[outer_id]), leaf_id);
+        // No selection → bubbles to outermost group
+        assert_eq!(sg.effective_target(leaf_id, &[]), outer_id);
+        // Outer selected → drill to inner group (next unselected group)
+        assert_eq!(sg.effective_target(leaf_id, &[outer_id]), inner_id);
+        // Both groups selected → drill to leaf
         assert_eq!(sg.effective_target(leaf_id, &[outer_id, inner_id]), leaf_id);
+        // Only inner selected, outer NOT → inner is selected so we drill into child (leaf)
+        // The walk-up hits inner first, sees it's selected, breaks — returns leaf
+        assert_eq!(sg.effective_target(leaf_id, &[inner_id]), leaf_id);
+    }
+
+    #[test]
+    fn test_effective_target_no_group() {
+        let mut sg = SceneGraph::new();
+
+        // Root -> Rect (no group)
+        let rect_id = NodeId::intern("standalone_rect");
+        let rect = SceneNode::new(
+            rect_id,
+            NodeKind::Rect {
+                width: 10.0,
+                height: 10.0,
+            },
+        );
+        sg.add_node(sg.root, rect);
+
+        // No group parent → returns leaf directly
+        assert_eq!(sg.effective_target(rect_id, &[]), rect_id);
     }
 
     #[test]

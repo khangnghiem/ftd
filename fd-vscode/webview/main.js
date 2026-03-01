@@ -720,7 +720,7 @@ function setupPointerEvents() {
       }
     }
 
-    // ── Animation drop-zone detection ──
+    // ── Animation drop-zone detection (only when model changed) ──
     if (isDraggingNode && draggedNodeId && changed) {
       // Hit-test for a node under pointer that isn't the dragged node
       const selIds = JSON.parse(fdCanvas.get_selected_ids());
@@ -736,11 +736,18 @@ function setupPointerEvents() {
         animDropTargetId = null;
         animDropTargetBounds = null;
       }
+    }
 
-      // ── Unified text adoption detection (replaces dual center-snap + text-drop-target) ──
+    // ── Text adoption + near-detach (evaluate EVERY frame, not gated on changed) ──
+    if (isDraggingNode && draggedNodeId) {
+    // Unified text adoption detection
       const adoption = evaluateTextAdoption(draggedNodeId, x, y);
       if (adoption) {
         textDropTarget = adoption;
+        // When text adoption is active, clear animation drop target
+        // so adoption feedback takes priority over animation glow
+        animDropTargetId = null;
+        animDropTargetBounds = null;
         if (adoption.willCenter) {
           centerSnapTarget = adoption;
           showCenterSnapGuides(adoption.cx, adoption.cy);
@@ -754,7 +761,7 @@ function setupPointerEvents() {
         hideCenterSnapGuides();
       }
 
-      // ── Near-Detach detection ──
+      // Near-Detach detection
       const ndJson = fdCanvas.evaluate_near_detach(draggedNodeId);
       if (ndJson) {
         try {
@@ -846,7 +853,8 @@ function setupPointerEvents() {
     hideDimensionTooltip();
 
     // ── Animation drop: open picker if dropped on a target ──
-    if (isDraggingNode && animDropTargetId && draggedNodeId !== animDropTargetId) {
+    // Skip when textDropTarget is set — text reparent takes priority over animation binding
+    if (isDraggingNode && animDropTargetId && draggedNodeId !== animDropTargetId && !textDropTarget) {
       const targetId = animDropTargetId;
       animDropTargetId = null;
       animDropTargetBounds = null;

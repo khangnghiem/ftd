@@ -5,6 +5,14 @@
 
 ## Completed Requirements
 
+### v0.8.88 — Text Reparent Fix + Figma-Style Group Selection
+
+- **BUG FIX (R3.38)**: Fixed text reparent silently failing — `evaluateTextAdoption()` was gated on `&& changed` from WASM, causing `textDropTarget` to null out on frames where the pointer didn't move enough to trigger a model change; moved text adoption evaluation outside the `changed` gate so it runs on every pointermove frame
+- **BUG FIX (R3.38)**: Fixed animation picker intercepting text drops — added `&& !textDropTarget` guard to the animation drop handler in `pointerup`, so text reparent takes priority over animation binding when both targets are set
+- **BUG FIX**: Groups no longer jump to front on click-select — `bring_forward` now skips `NodeKind::Group` nodes, keeping groups behind their children in z-order
+- **UX (R3.24)**: Re-implemented Figma-style group selection — `effective_target` now bubbles hits up to the outermost unselected Group ancestor; first click selects the group, second click (group already selected) drills into the child; existing `pending_drill_target` logic handles the drill-down
+- **TESTING**: 5 new tests — `test_effective_target_bubbles_to_group`, `test_effective_target_nested_groups`, `test_effective_target_no_group`, `sync_move_group_propagates_to_children`, `sync_move_nested_group_propagates`
+
 ### v0.8.87 — Three-Zone Toolbar + Inline Zen Toggle (Option C)
 
 - **UX**: Restructured top toolbar into three zones — LEFT (✦ AI Touch, ✦ Renamify), CENTER (All|Design|Spec view toggle), RIGHT (status, Zen toggle, ☰ settings) — balanced layout replacing the old flat left-aligned arrangement
