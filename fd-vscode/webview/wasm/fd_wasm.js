@@ -114,6 +114,27 @@ export class FdCanvas {
         return ret !== 0;
     }
     /**
+     * Detach a text child from its parent edge.
+     * Clears the edge's text_child field and flushes text.
+     * Returns the edge ID that was modified, or empty if not found.
+     * @param {string} text_id
+     * @returns {string}
+     */
+    detach_text_from_edge(text_id) {
+        let deferred2_0;
+        let deferred2_1;
+        try {
+            const ptr0 = passStringToWasm0(text_id, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+            const len0 = WASM_VECTOR_LEN;
+            const ret = wasm.fdcanvas_detach_text_from_edge(this.__wbg_ptr, ptr0, len0);
+            deferred2_0 = ret[0];
+            deferred2_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+        }
+    }
+    /**
      * Duplicate the currently selected node(s). Returns true if duplicated.
      * @returns {boolean}
      */
@@ -201,6 +222,26 @@ export class FdCanvas {
     finalize_bounds() {
         const ret = wasm.fdcanvas_finalize_bounds(this.__wbg_ptr);
         return ret !== 0;
+    }
+    /**
+     * Find the edge whose text_child matches the given text node ID.
+     * Returns the edge ID string, or empty if no edge owns this text.
+     * @param {string} text_id
+     * @returns {string}
+     */
+    find_edge_for_text(text_id) {
+        let deferred2_0;
+        let deferred2_1;
+        try {
+            const ptr0 = passStringToWasm0(text_id, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+            const len0 = WASM_VECTOR_LEN;
+            const ret = wasm.fdcanvas_find_edge_for_text(this.__wbg_ptr, ptr0, len0);
+            deferred2_0 = ret[0];
+            deferred2_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+        }
     }
     /**
      * Get annotations for a node as JSON array.

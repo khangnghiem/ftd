@@ -860,7 +860,6 @@ impl Tool for ArrowTool {
                             from: EdgeAnchor::Node(from),
                             to: EdgeAnchor::Node(to),
                             text_child: None,
-                            label: None,
                             style: Style::default(),
                             use_styles: Default::default(),
                             arrow: ArrowKind::End,

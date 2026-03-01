@@ -1,84 +1,78 @@
-# FD v1
-# Login Page Wireframe — with edge connections
+# ─── Themes ───
 
 theme bg_surface {
-  fill: #FFFFFF
+  fill: #FFFFFF  # white
   corner: 12
 }
 
 theme input_style {
-  fill: #F8F9FA
+  fill: #F8F9FA  # white
   corner: 8
 }
 
 theme label_style {
-  fill: #1A1A2E
-  font: "Inter" 500 14
+  fill: #1A1A2E  # blue
+  font: "Inter" medium 14
 }
 
-# ─── Wireframe screens ────────────────────────────────────────
+# ─── Layout ───
 
+# ─── Wireframe screens ────────────────────────────────────────
 group @login_page {
   spec {
     "Login page — main entry point"
     status: done
   }
-  layout: column gap=16 pad=32
-
   text @title "Welcome Back" {
-    fill: #1A1A2E
-    font: "Inter" 700 28
+    fill: #1A1A2E  # blue
+    font: "Inter" bold 28
   }
-
   rect @email_field {
     spec {
       "Email input field"
       accept: "validates email format on blur"
     }
+    text @email_placeholder "Email address" {
+      fill: #9CA3AF  # blue
+      font: "Inter" regular 14
+    }
     w: 320 h: 48
     use: input_style
-    text @email_placeholder "Email address" {
-      fill: #9CA3AF
-      font: "Inter" 400 14
-    }
   }
-
   rect @password_field {
     spec {
       "Password input field"
       accept: "minimum 8 characters"
     }
+    text @pw_placeholder "Password" {
+      fill: #9CA3AF  # blue
+      font: "Inter" regular 14
+    }
     w: 320 h: 48
     use: input_style
-    text @pw_placeholder "Password" {
-      fill: #9CA3AF
-      font: "Inter" 400 14
-    }
   }
-
   rect @login_btn {
     spec {
       "Primary login CTA"
       accept: "disabled when fields empty"
       accept: "shows loading spinner during auth"
     }
-    w: 320 h: 48
-    fill: #6C5CE7
-    corner: 10
     text @login_label "Sign In" {
-      fill: #FFFFFF
-      font: "Inter" 600 16
+      fill: #FFFFFF  # white
+      font: "Inter" semibold 16
     }
+    w: 320 h: 48
+    fill: #6C5CE7  # blue
+    corner: 10
     when :hover {
-      fill: #5A4BD1
+      fill: #5A4BD1  # blue
       scale: 1.02
       ease: spring 200ms
     }
   }
-
   text @forgot "Forgot password?" {
-    fill: #6C5CE7
-    font: "Inter" 400 13
+    fill: #6C5CE7  # blue
+    font: "Inter" regular 13
   }
 }
 
@@ -88,14 +82,16 @@ rect @error_toast {
     accept: "shows within 200ms of failed auth"
     accept: "auto-dismiss after 5s"
   }
+  text @error_msg "Invalid credentials" {
+    fill: #B91C1C  # red
+    font: "Inter" medium 14
+  }
   w: 320 h: 56
-  fill: #FEF2F2
+  fill: #FEF2F2  # white
   stroke: #EF4444 1
   corner: 8
-  text @error_msg "Invalid credentials" {
-    fill: #B91C1C
-    font: "Inter" 500 14
-  }
+  x: 500
+  y: 80
 }
 
 rect @dashboard {
@@ -103,12 +99,14 @@ rect @dashboard {
     "Main dashboard — post-login"
     status: doing
   }
+  text @dash_title "Dashboard" {
+    fill: #1A1A2E  # blue
+    font: "Inter" bold 24
+  }
   w: 400 h: 300
   use: bg_surface
-  text @dash_title "Dashboard" {
-    fill: #1A1A2E
-    font: "Inter" 700 24
-  }
+  x: 500
+  y: 200
 }
 
 rect @reset_page {
@@ -116,50 +114,56 @@ rect @reset_page {
     "Password reset flow"
     status: todo
   }
+  text @reset_title "Reset Password" {
+    fill: #1A1A2E  # blue
+    font: "Inter" bold 20
+  }
   w: 320 h: 200
   use: bg_surface
-  text @reset_title "Reset Password" {
-    fill: #1A1A2E
-    font: "Inter" 700 20
-  }
+  x: 500
+  y: 540
 }
 
-# ─── Edges (data flow) ─────────────────────────────────────────
+text @_submit_flow_label "on success" {
+}
+
+text @_error_flow_label "on failure" {
+}
+
+text @_forgot_flow_label "click" {
+}
+
+# ─── Constraints ───
+
+@login_page -> center_in: canvas
+
+# ─── Flows ───
 
 edge @submit_flow {
   spec {
     "Form submission → API validation"
     accept: "must complete within 3s"
   }
+  text @_submit_flow_label "on success" {}
   from: @login_btn
   to: @dashboard
-  label: "on success"
   stroke: #10B981 2
   arrow: end
   curve: smooth
 }
-
 edge @error_flow {
   spec "Failed authentication path"
+  text @_error_flow_label "on failure" {}
   from: @login_btn
   to: @error_toast
-  label: "on failure"
   stroke: #EF4444 2
   arrow: end
   curve: step
 }
-
 edge @forgot_flow {
+  text @_forgot_flow_label "click" {}
   from: @forgot
   to: @reset_page
-  label: "click"
   stroke: #6C5CE7 1
   arrow: end
 }
-
-# ─── Layout ───────────────────────────────────────────────────
-
-@login_page -> center_in: canvas
-@error_toast -> absolute: 500, 80
-@dashboard -> absolute: 500, 200
-@reset_page -> absolute: 500, 540

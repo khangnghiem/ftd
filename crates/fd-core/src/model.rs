@@ -378,11 +378,7 @@ pub struct Edge {
     pub from: EdgeAnchor,
     pub to: EdgeAnchor,
     /// Optional text child node (max 1). The node lives in the SceneGraph.
-    /// Preferred over `label` — when both are set, `text_child` takes precedence.
     pub text_child: Option<NodeId>,
-    /// Deprecated inline label string. Use `text_child` for new edges.
-    /// Kept for backward compatibility with `label: "string"` syntax.
-    pub label: Option<String>,
     pub style: Style,
     pub use_styles: SmallVec<[NodeId; 2]>,
     pub arrow: ArrowKind,

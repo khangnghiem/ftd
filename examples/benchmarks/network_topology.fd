@@ -1,25 +1,26 @@
-# Network Topology — Systems Architect use case
-# Demonstrates: 12 edges with labels, multiple curve types, spec blocks, named colors
+# ─── Themes ───
 
-theme server_box {
-  fill: #EFF6FF
+theme cache_box {
+  fill: #D1FAE5  # green
   corner: 8
 }
 
 theme db_box {
-  fill: #FEF3C7
-  corner: 8
-}
-
-theme cache_box {
-  fill: #D1FAE5
+  fill: #FEF3C7  # yellow
   corner: 8
 }
 
 theme ext_box {
-  fill: #F3E8FF
+  fill: #F3E8FF  # purple
   corner: 8
 }
+
+theme server_box {
+  fill: #EFF6FF  # blue
+  corner: 8
+}
+
+# ─── Layout ───
 
 # Load Balancer
 rect @load_balancer {
@@ -28,48 +29,52 @@ rect @load_balancer {
     accept: "health check every 10s"
     status: done
   }
-  w: 200 h: 56
-  fill: purple
-  corner: 10
-  x: 320 y: 20
-  text "Load Balancer" {
+  text @_text_9 "Load Balancer" {
+    fill: #FFFFFF  # white
     font: "Inter" semibold 15
-    fill: white
   }
+  w: 200 h: 56
+  fill: #8B5CF6  # blue
+  corner: 10
+  x: 320
+  y: 20
 }
 
 # API servers
 rect @api_server_1 {
   spec "Node.js v20 — handles /api/v2/*"
+  text @_text_10 "API Server 1" {
+    fill: #3B82F6  # blue
+    font: "Inter" medium 14
+  }
   w: 180 h: 48
   use: server_box
-  x: 100 y: 140
-  text "API Server 1" {
-    font: "Inter" medium 14
-    fill: blue
-  }
+  x: 100
+  y: 140
 }
 
 rect @api_server_2 {
   spec "Node.js v20 — handles /api/v2/*"
+  text @_text_11 "API Server 2" {
+    fill: #3B82F6  # blue
+    font: "Inter" medium 14
+  }
   w: 180 h: 48
   use: server_box
-  x: 340 y: 140
-  text "API Server 2" {
-    font: "Inter" medium 14
-    fill: blue
-  }
+  x: 340
+  y: 140
 }
 
 rect @api_server_3 {
   spec "Node.js v20 — handles /api/v2/*"
+  text @_text_12 "API Server 3" {
+    fill: #3B82F6  # blue
+    font: "Inter" medium 14
+  }
   w: 180 h: 48
   use: server_box
-  x: 580 y: 140
-  text "API Server 3" {
-    font: "Inter" medium 14
-    fill: blue
-  }
+  x: 580
+  y: 140
 }
 
 # Cache layer
@@ -79,24 +84,26 @@ rect @redis_primary {
     accept: "< 1ms p99 latency"
     status: done
   }
+  text @_text_13 "Redis Primary" {
+    fill: #22C55E  # green
+    font: "Inter" medium 14
+  }
   w: 180 h: 48
   use: cache_box
-  x: 100 y: 280
-  text "Redis Primary" {
-    font: "Inter" medium 14
-    fill: green
-  }
+  x: 100
+  y: 280
 }
 
 rect @redis_replica {
   spec "Read replica — async replication lag < 50ms"
+  text @_text_14 "Redis Replica" {
+    fill: #22C55E  # green
+    font: "Inter" medium 14
+  }
   w: 180 h: 48
   use: cache_box
-  x: 340 y: 280
-  text "Redis Replica" {
-    font: "Inter" medium 14
-    fill: green
-  }
+  x: 340
+  y: 280
 }
 
 # Databases
@@ -106,36 +113,39 @@ rect @postgres_primary {
     accept: "queries < 100ms p95"
     status: done
   }
+  text @_text_15 "Postgres Primary" {
+    fill: #F59E0B  # orange
+    font: "Inter" medium 14
+  }
   w: 180 h: 48
   use: db_box
-  x: 100 y: 420
-  text "Postgres Primary" {
-    font: "Inter" medium 14
-    fill: yellow
-  }
+  x: 100
+  y: 420
 }
 
 rect @postgres_replica {
   spec "Streaming replica — async, 2s lag budget"
+  text @_text_16 "Postgres Replica" {
+    fill: #F59E0B  # orange
+    font: "Inter" medium 14
+  }
   w: 180 h: 48
   use: db_box
-  x: 340 y: 420
-  text "Postgres Replica" {
-    font: "Inter" medium 14
-    fill: yellow
-  }
+  x: 340
+  y: 420
 }
 
 # External services
 rect @s3_storage {
   spec "AWS S3 — file uploads + static assets"
+  text @_text_17 "S3 Storage" {
+    fill: #8B5CF6  # blue
+    font: "Inter" medium 14
+  }
   w: 180 h: 48
   use: ext_box
-  x: 580 y: 280
-  text "S3 Storage" {
-    font: "Inter" medium 14
-    fill: purple
-  }
+  x: 580
+  y: 280
 }
 
 rect @queue {
@@ -144,138 +154,151 @@ rect @queue {
     accept: "message TTL 24h"
     status: doing
   }
+  text @_text_18 "Message Queue" {
+    fill: #8B5CF6  # blue
+    font: "Inter" medium 14
+  }
   w: 180 h: 48
   use: ext_box
-  x: 580 y: 420
-  text "Message Queue" {
-    font: "Inter" medium 14
-    fill: purple
-  }
+  x: 580
+  y: 420
 }
 
 rect @cdn {
   spec "CloudFront CDN — edge caching for static"
-  w: 200 h: 56
-  fill: #0F172A
-  corner: 10
-  x: 320 y: 540
-  text "CDN Edge" {
+  text @_text_19 "CDN Edge" {
+    fill: #FFFFFF  # white
     font: "Inter" semibold 15
-    fill: white
   }
+  w: 200 h: 56
+  fill: #0F172A  # blue
+  corner: 10
+  x: 320
+  y: 540
 }
 
-# ─── Connections ───
+text @_lb_to_api1_label "round-robin" {
+}
 
-# Load balancer to API servers
+text @_lb_to_api3_label "round-robin" {
+}
+
+text @_api1_to_cache_label "session lookup" {
+}
+
+text @_api2_to_cache_label "read-through" {
+}
+
+text @_cache_replication_label "async repl" {
+}
+
+text @_api1_to_db_label "read/write" {
+}
+
+text @_api2_to_db_read_label "read-only" {
+}
+
+text @_db_replication_label "streaming repl" {
+}
+
+text @_api3_to_s3_label "file upload" {
+}
+
+text @_api3_to_queue_label "enqueue job" {
+}
+
+text @_cdn_to_s3_label "origin pull" {
+}
+
+# ─── Flows ───
+
 edge @lb_to_api1 {
+  text @_lb_to_api1_label "round-robin" {}
   from: @load_balancer
   to: @api_server_1
-  label: "round-robin"
   stroke: #3B82F6 2
   arrow: end
   curve: smooth
 }
-
 edge @lb_to_api2 {
   from: @load_balancer
   to: @api_server_2
   stroke: #3B82F6 2
   arrow: end
-  curve: straight
 }
-
 edge @lb_to_api3 {
+  text @_lb_to_api3_label "round-robin" {}
   from: @load_balancer
   to: @api_server_3
-  label: "round-robin"
   stroke: #3B82F6 2
   arrow: end
   curve: smooth
 }
-
-# API to cache
 edge @api1_to_cache {
+  text @_api1_to_cache_label "session lookup" {}
   from: @api_server_1
   to: @redis_primary
-  label: "session lookup"
   stroke: #10B981 2
   arrow: end
-  curve: straight
 }
-
 edge @api2_to_cache {
+  text @_api2_to_cache_label "read-through" {}
   from: @api_server_2
   to: @redis_replica
-  label: "read-through"
   stroke: #10B981 2
   arrow: end
-  curve: straight
 }
-
-# Cache replication
 edge @cache_replication {
+  text @_cache_replication_label "async repl" {}
   from: @redis_primary
   to: @redis_replica
-  label: "async repl"
   stroke: #10B981 1
   arrow: end
   curve: step
 }
-
-# API to database
 edge @api1_to_db {
+  text @_api1_to_db_label "read/write" {}
   from: @api_server_1
   to: @postgres_primary
-  label: "read/write"
   stroke: #F59E0B 2
   arrow: end
   curve: smooth
 }
-
 edge @api2_to_db_read {
+  text @_api2_to_db_read_label "read-only" {}
   from: @api_server_2
   to: @postgres_replica
-  label: "read-only"
   stroke: #F59E0B 1
   arrow: end
   curve: smooth
 }
-
-# DB replication
 edge @db_replication {
+  text @_db_replication_label "streaming repl" {}
   from: @postgres_primary
   to: @postgres_replica
-  label: "streaming repl"
   stroke: #F59E0B 1
   arrow: end
   curve: step
 }
-
-# API to external services
 edge @api3_to_s3 {
+  text @_api3_to_s3_label "file upload" {}
   from: @api_server_3
   to: @s3_storage
-  label: "file upload"
   stroke: #8B5CF6 2
   arrow: end
-  curve: straight
 }
-
 edge @api3_to_queue {
+  text @_api3_to_queue_label "enqueue job" {}
   from: @api_server_3
   to: @queue
-  label: "enqueue job"
   stroke: #8B5CF6 2
   arrow: end
   curve: smooth
 }
-
-# CDN connection
 edge @cdn_to_s3 {
+  text @_cdn_to_s3_label "origin pull" {}
   from: @cdn
   to: @s3_storage
-  label: "origin pull"
   stroke: #64748B 1
   arrow: both
   curve: smooth
