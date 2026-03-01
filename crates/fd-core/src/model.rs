@@ -352,12 +352,36 @@ pub enum CurveKind {
     Step,
 }
 
-/// A visual connection between two nodes.
+/// An edge endpoint — either connected to a node or a free point in scene-space.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum EdgeAnchor {
+    /// Connected to a node center.
+    Node(NodeId),
+    /// Fixed position in scene-space (standalone arrow).
+    Point(f32, f32),
+}
+
+impl EdgeAnchor {
+    /// Return the NodeId if this is a Node anchor.
+    pub fn node_id(&self) -> Option<NodeId> {
+        match self {
+            Self::Node(id) => Some(*id),
+            Self::Point(_, _) => None,
+        }
+    }
+}
+
+/// A visual connection between two endpoints.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Edge {
     pub id: NodeId,
-    pub from: NodeId,
-    pub to: NodeId,
+    pub from: EdgeAnchor,
+    pub to: EdgeAnchor,
+    /// Optional text child node (max 1). The node lives in the SceneGraph.
+    /// Preferred over `label` — when both are set, `text_child` takes precedence.
+    pub text_child: Option<NodeId>,
+    /// Deprecated inline label string. Use `text_child` for new edges.
+    /// Kept for backward compatibility with `label: "string"` syntax.
     pub label: Option<String>,
     pub style: Style,
     pub use_styles: SmallVec<[NodeId; 2]>,
@@ -366,7 +390,7 @@ pub struct Edge {
     pub annotations: Vec<Annotation>,
     pub animations: SmallVec<[AnimKeyframe; 2]>,
     pub flow: Option<FlowAnim>,
-    /// Offset of the edge label from the midpoint, set when label is dragged.
+    /// Offset of the edge text from the midpoint, set when label is dragged.
     pub label_offset: Option<(f32, f32)>,
 }
 

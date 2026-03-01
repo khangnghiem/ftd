@@ -30,6 +30,11 @@ export class FdCanvas {
      */
     create_edge(from_id: string, to_id: string): string;
     /**
+     * Create a standalone edge with point anchors (no connected nodes).
+     * Returns the new edge ID, or empty string on failure.
+     */
+    create_edge_at(x1: number, y1: number, x2: number, y2: number): string;
+    /**
      * Create a node at a specific position (for drag-and-drop).
      * `kind` is "rect", "ellipse", "text", or "frame".
      * Returns `true` if the node was created.
@@ -275,6 +280,7 @@ export interface InitOutput {
     readonly fdcanvas_add_animation_to_node: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => number;
     readonly fdcanvas_clear_pressed: (a: number) => void;
     readonly fdcanvas_create_edge: (a: number, b: number, c: number, d: number, e: number) => [number, number];
+    readonly fdcanvas_create_edge_at: (a: number, b: number, c: number, d: number, e: number) => [number, number];
     readonly fdcanvas_create_node_at: (a: number, b: number, c: number, d: number, e: number) => number;
     readonly fdcanvas_delete_selected: (a: number) => number;
     readonly fdcanvas_duplicate_selected: (a: number) => number;

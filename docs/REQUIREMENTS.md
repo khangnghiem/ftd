@@ -27,6 +27,7 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R1.17** _(done)_: Text alignment — `align: left|center|right [top|middle|bottom]` property; defaults to `center middle`; reusable via `theme` blocks and `use:` inheritance
 - **R1.18** _(planned)_: Mermaid import — parse Mermaid diagram syntax (`flowchart`, `sequenceDiagram`, `stateDiagram`) into equivalent FD nodes + edges
 - **R1.19** _(done)_: Edge label offset — `label_offset: <x> <y>` property on edges for draggable text labels; parse/emit roundtrip support
+- **R1.20** _(done)_: Edge anchors — `EdgeAnchor` enum (`@node_id` or `x y` coords) for flexible edge endpoints; `text_child: Option<NodeId>` for styled text labels; `create_edge_at()` WASM API; edge-to-edge validation
 
 ### R2: Bidirectional Sync
 
@@ -212,6 +213,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for full crate map, dependency graph, dat
 | R3.45       | `sync_resize_child_expands_parent_on_finalize`, `sync_resize_child_within_bounds_no_expand`, `sync_cascade_expand_two_levels`, `sync_cascade_stops_at_clip_frame` | ✅ 4 tests                     |
 | R3.46       | _(JS-side measurement; WASM API `update_text_metrics` untested directly)_                                                                                         | ⚠️ WASM-side only              |
 | R1.19       | `roundtrip_edge_label_offset`                                                                                                                                     | ✅ 1 test                      |
+| R1.20       | `roundtrip_edge_point_anchors`, `roundtrip_edge_mixed_anchors`, `parse_edge_omitted_anchors_default`                                                              | ✅ 3 tests                     |
 | R5.1–R5.8   | `hit::tests::*`, `resolve::tests::*`, `render2d::tests::*`                                                                                                        | ✅ 3 hit + 6 layout + 3 render |
 
 **Total**: 174 Rust tests + 188 TypeScript tests = **362 tests**
@@ -270,4 +272,5 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for full crate map, dependency graph, dat
 | default styles | R3.42 |
 | auto-expand | R3.45 |
 | text sizing | R3.46, R3.36, R3.37 |
-| edge label | R1.10, R1.19 |
+| edge label | R1.10, R1.19, R1.20 |
+| edge anchor | R1.20 |

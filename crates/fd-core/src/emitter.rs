@@ -563,11 +563,23 @@ fn emit_edge(out: &mut String, edge: &Edge) {
     emit_annotations(out, &edge.annotations, 1);
 
     // from / to
-    writeln!(out, "  from: @{}", edge.from.as_str()).unwrap();
-    writeln!(out, "  to: @{}", edge.to.as_str()).unwrap();
+    match &edge.from {
+        EdgeAnchor::Node(id) => writeln!(out, "  from: @{}", id.as_str()).unwrap(),
+        EdgeAnchor::Point(x, y) => {
+            writeln!(out, "  from: {} {}", format_num(*x), format_num(*y)).unwrap()
+        }
+    }
+    match &edge.to {
+        EdgeAnchor::Node(id) => writeln!(out, "  to: @{}", id.as_str()).unwrap(),
+        EdgeAnchor::Point(x, y) => {
+            writeln!(out, "  to: {} {}", format_num(*x), format_num(*y)).unwrap()
+        }
+    }
 
-    // Label
-    if let Some(ref label) = edge.label {
+    // Label (backward compat — emitted when no text_child)
+    if edge.text_child.is_none()
+        && let Some(ref label) = edge.label
+    {
         writeln!(out, "  label: \"{label}\"").unwrap();
     }
 
@@ -914,14 +926,25 @@ pub fn emit_spec_markdown(graph: &SceneGraph, title: &str) -> String {
     if !graph.edges.is_empty() {
         out.push_str("\n---\n\n## Flows\n\n");
         for edge in &graph.edges {
-            write!(
-                out,
-                "- **@{}** → **@{}**",
-                edge.from.as_str(),
-                edge.to.as_str()
-            )
-            .unwrap();
-            if let Some(ref label) = edge.label {
+            let from_str = match &edge.from {
+                EdgeAnchor::Node(id) => format!("@{}", id.as_str()),
+                EdgeAnchor::Point(x, y) => format!("({}, {})", x, y),
+            };
+            let to_str = match &edge.to {
+                EdgeAnchor::Node(id) => format!("@{}", id.as_str()),
+                EdgeAnchor::Point(x, y) => format!("({}, {})", x, y),
+            };
+            write!(out, "- **{}** → **{}**", from_str, to_str).unwrap();
+            // Try text_child first, then fall back to label
+            let mut has_label = false;
+            if let Some(text_id) = edge.text_child
+                && let Some(node) = graph.get_by_id(text_id)
+                && let NodeKind::Text { content } = &node.kind
+            {
+                write!(out, " — {content}").unwrap();
+                has_label = true;
+            }
+            if !has_label && let Some(ref label) = edge.label {
                 write!(out, " — {label}").unwrap();
             }
             out.push('\n');
@@ -1305,9 +1328,10 @@ edge @a_to_b {
         assert_eq!(graph.edges.len(), 1);
         let edge = &graph.edges[0];
         assert_eq!(edge.id.as_str(), "a_to_b");
-        assert_eq!(edge.from.as_str(), "box_a");
-        assert_eq!(edge.to.as_str(), "box_b");
+        assert_eq!(edge.from, EdgeAnchor::Node(NodeId::intern("box_a")));
+        assert_eq!(edge.to, EdgeAnchor::Node(NodeId::intern("box_b")));
         assert_eq!(edge.label.as_deref(), Some("next step"));
+        assert!(edge.text_child.is_none()); // label: -> stores in label field, not text_child
         assert_eq!(edge.arrow, ArrowKind::End);
 
         // Re-parse roundtrip
@@ -1315,8 +1339,8 @@ edge @a_to_b {
         let graph2 = parse_document(&output).expect("roundtrip failed");
         assert_eq!(graph2.edges.len(), 1);
         let edge2 = &graph2.edges[0];
-        assert_eq!(edge2.from.as_str(), "box_a");
-        assert_eq!(edge2.to.as_str(), "box_b");
+        assert_eq!(edge2.from, EdgeAnchor::Node(NodeId::intern("box_a")));
+        assert_eq!(edge2.to, EdgeAnchor::Node(NodeId::intern("box_b")));
         assert_eq!(edge2.label.as_deref(), Some("next step"));
         assert_eq!(edge2.arrow, ArrowKind::End);
     }
@@ -1552,6 +1576,73 @@ edge @dashed {
         let flow2 = edge2.flow.unwrap();
         assert_eq!(flow2.kind, FlowKind::Dash);
         assert_eq!(flow2.duration_ms, 400);
+    }
+
+    #[test]
+    fn roundtrip_edge_point_anchors() {
+        let input = r#"
+edge @standalone {
+  from: 100 200
+  to: 300 150
+  arrow: end
+}
+"#;
+        let graph = parse_document(input).unwrap();
+        assert_eq!(graph.edges.len(), 1);
+        let edge = &graph.edges[0];
+        assert_eq!(edge.from, EdgeAnchor::Point(100.0, 200.0));
+        assert_eq!(edge.to, EdgeAnchor::Point(300.0, 150.0));
+        assert_eq!(edge.arrow, ArrowKind::End);
+
+        let output = emit_document(&graph);
+        assert!(output.contains("from: 100 200"));
+        assert!(output.contains("to: 300 150"));
+
+        let graph2 = parse_document(&output).expect("point anchor roundtrip failed");
+        let edge2 = &graph2.edges[0];
+        assert_eq!(edge2.from, EdgeAnchor::Point(100.0, 200.0));
+        assert_eq!(edge2.to, EdgeAnchor::Point(300.0, 150.0));
+    }
+
+    #[test]
+    fn roundtrip_edge_mixed_anchors() {
+        let input = r#"
+rect @start { w: 50 h: 50 }
+
+edge @dangling {
+  from: @start
+  to: 400 300
+  arrow: end
+}
+"#;
+        let graph = parse_document(input).unwrap();
+        assert_eq!(graph.edges.len(), 1);
+        let edge = &graph.edges[0];
+        assert_eq!(edge.from, EdgeAnchor::Node(NodeId::intern("start")));
+        assert_eq!(edge.to, EdgeAnchor::Point(400.0, 300.0));
+
+        let output = emit_document(&graph);
+        assert!(output.contains("from: @start"));
+        assert!(output.contains("to: 400 300"));
+
+        let graph2 = parse_document(&output).expect("mixed anchor roundtrip failed");
+        let edge2 = &graph2.edges[0];
+        assert_eq!(edge2.from, EdgeAnchor::Node(NodeId::intern("start")));
+        assert_eq!(edge2.to, EdgeAnchor::Point(400.0, 300.0));
+    }
+
+    #[test]
+    fn parse_edge_omitted_anchors_default() {
+        let input = r#"
+edge @no_endpoints {
+  arrow: end
+}
+"#;
+        let graph = parse_document(input).unwrap();
+        assert_eq!(graph.edges.len(), 1);
+        let edge = &graph.edges[0];
+        assert_eq!(edge.from, EdgeAnchor::Point(0.0, 0.0));
+        assert_eq!(edge.to, EdgeAnchor::Point(0.0, 0.0));
     }
 
     #[test]

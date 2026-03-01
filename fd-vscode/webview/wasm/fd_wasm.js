@@ -70,6 +70,27 @@ export class FdCanvas {
         }
     }
     /**
+     * Create a standalone edge with point anchors (no connected nodes).
+     * Returns the new edge ID, or empty string on failure.
+     * @param {number} x1
+     * @param {number} y1
+     * @param {number} x2
+     * @param {number} y2
+     * @returns {string}
+     */
+    create_edge_at(x1, y1, x2, y2) {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.fdcanvas_create_edge_at(this.__wbg_ptr, x1, y1, x2, y2);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
      * Create a node at a specific position (for drag-and-drop).
      * `kind` is "rect", "ellipse", "text", or "frame".
      * Returns `true` if the node was created.
@@ -832,6 +853,10 @@ function __wbg_get_imports() {
         },
         __wbg_new_with_length_6523745c0bd32809: function(arg0) {
             const ret = new Float64Array(arg0 >>> 0);
+            return ret;
+        },
+        __wbg_now_a3af9a2f4bbaa4d1: function() {
+            const ret = Date.now();
             return ret;
         },
         __wbg_of_9ab14f9d4bfb5040: function(arg0, arg1) {

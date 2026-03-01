@@ -857,8 +857,9 @@ impl Tool for ArrowTool {
                         let edge_id = NodeId::with_prefix("edge");
                         let edge = Edge {
                             id: edge_id,
-                            from,
-                            to,
+                            from: EdgeAnchor::Node(from),
+                            to: EdgeAnchor::Node(to),
+                            text_child: None,
                             label: None,
                             style: Style::default(),
                             use_styles: Default::default(),
@@ -1446,8 +1447,8 @@ mod tests {
         assert_eq!(mutations.len(), 1, "should emit AddEdge");
         match &mutations[0] {
             GraphMutation::AddEdge { edge } => {
-                assert_eq!(edge.from, source);
-                assert_eq!(edge.to, target);
+                assert_eq!(edge.from, EdgeAnchor::Node(source));
+                assert_eq!(edge.to, EdgeAnchor::Node(target));
             }
             _ => panic!("expected AddEdge mutation"),
         }

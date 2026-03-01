@@ -151,8 +151,11 @@ fn merge_namespaced_edges(graph: &mut SceneGraph, imported: &SceneGraph, namespa
     for edge in &imported.edges {
         let mut cloned = edge.clone();
         cloned.id = prefix_node_id(&cloned.id, namespace);
-        cloned.from = prefix_node_id(&cloned.from, namespace);
-        cloned.to = prefix_node_id(&cloned.to, namespace);
+        cloned.from = prefix_edge_anchor(&cloned.from, namespace);
+        cloned.to = prefix_edge_anchor(&cloned.to, namespace);
+        if let Some(ref mut tc) = cloned.text_child {
+            *tc = prefix_node_id(tc, namespace);
+        }
         for use_ref in &mut cloned.use_styles {
             *use_ref = prefix_node_id(use_ref, namespace);
         }
@@ -164,6 +167,20 @@ fn merge_namespaced_edges(graph: &mut SceneGraph, imported: &SceneGraph, namespa
 /// Anonymous IDs (starting with `_anon_`) are still prefixed for uniqueness.
 fn prefix_node_id(id: &NodeId, namespace: &str) -> NodeId {
     NodeId::intern(&format!("{namespace}.{}", id.as_str()))
+}
+
+/// Prefix an `EdgeAnchor` with a namespace. Node anchors get prefixed;
+/// Point anchors pass through unchanged.
+fn prefix_edge_anchor(
+    anchor: &crate::model::EdgeAnchor,
+    namespace: &str,
+) -> crate::model::EdgeAnchor {
+    match anchor {
+        crate::model::EdgeAnchor::Node(id) => {
+            crate::model::EdgeAnchor::Node(prefix_node_id(id, namespace))
+        }
+        point @ crate::model::EdgeAnchor::Point(_, _) => point.clone(),
+    }
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────
@@ -289,7 +306,13 @@ edge @link { from: @a; to: @b; arrow: end }
         assert_eq!(graph.edges.len(), 1);
         let edge = &graph.edges[0];
         assert_eq!(edge.id.as_str(), "flow.link");
-        assert_eq!(edge.from.as_str(), "flow.a");
-        assert_eq!(edge.to.as_str(), "flow.b");
+        assert_eq!(
+            edge.from,
+            crate::model::EdgeAnchor::Node(NodeId::intern("flow.a"))
+        );
+        assert_eq!(
+            edge.to,
+            crate::model::EdgeAnchor::Node(NodeId::intern("flow.b"))
+        );
     }
 }

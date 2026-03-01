@@ -5,6 +5,15 @@
 
 ## Completed Requirements
 
+### v0.8.93 — EdgeAnchor + Text Child
+
+- **FEATURE**: `EdgeAnchor` enum — edge endpoints can now be `@node_id` (connected) or `x y` coordinates (standalone/dangling arrows)
+- **FEATURE**: `create_edge_at(x1, y1, x2, y2)` WASM API — create standalone edges with point anchors
+- **FEATURE**: `Edge.text_child: Option<NodeId>` — edges can reference a real text node in the scene graph for styled edge labels (rendered at midpoint with text node's font/fill)
+- **COMPAT**: `label: "string"` syntax preserved for backward compatibility (deprecated in favor of `text_child`)
+- **SAFETY**: Edge-to-edge connections rejected in `create_edge()` — validates that from/to are not edge IDs
+- **TESTING**: 3 new roundtrip tests: `roundtrip_edge_point_anchors`, `roundtrip_edge_mixed_anchors`, `parse_edge_omitted_anchors_default`
+
 ### v0.8.92 — Group vs Frame Refactoring (Figma Alignment)
 
 - **REFACTOR**: `NodeKind::Group` is now a unit variant — purely organizational container (like Figma Group); no own styles, layout modes, or visual rendering; auto-sizes to children bounding box
