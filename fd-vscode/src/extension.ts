@@ -82,6 +82,9 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
           // Skip if text is identical — avoids full document replacement that disrupts cursor
           if (incoming === document.getText()) break;
           suppressEchoBack = true;
+          // Suppress cursor sync — applyEdit fires onDidChangeTextEditorSelection
+          // which would send an empty selectNode back, clearing canvas selection
+          suppressCursorSync = true;
           const lastLine = document.lineCount - 1;
           const lastLineRange = document.lineAt(lastLine).range;
           const fullRange = new vscode.Range(0, 0, lastLine, lastLineRange.end.character);
@@ -94,6 +97,8 @@ class FdEditorProvider implements vscode.CustomTextEditorProvider {
           );
           await vscode.workspace.applyEdit(edit);
           suppressEchoBack = false;
+          // Delay re-enabling cursor sync — selection events fire asynchronously
+          setTimeout(() => { suppressCursorSync = false; }, 200);
           break;
         }
         case "nodeSelected": {
