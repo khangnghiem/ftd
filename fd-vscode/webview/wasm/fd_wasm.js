@@ -1,5 +1,3 @@
-/* @ts-self-types="./fd_wasm.d.ts" */
-
 /**
  * The main WASM-facing canvas controller.
  *
