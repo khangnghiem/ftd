@@ -16,6 +16,7 @@
 | `A`   | Arrow / Connector     | Click-drag between nodes              |
 | `T`   | Text                  | Click to create, double-click to edit |
 | `F`   | Frame                 | Container for grouping visually       |
+| `E`   | Eraser                | Swipe-to-delete; stays active         |
 | `Tab` | Toggle last two tools | Screenbrush-style                     |
 
 ### Tool Locking (Sticky Mode)

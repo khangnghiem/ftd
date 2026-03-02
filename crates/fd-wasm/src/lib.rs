@@ -435,7 +435,8 @@ impl FdCanvas {
             || zorder_changed;
 
         // Auto-switch back to Select after drawing gesture completes
-        let tool_switched = self.active_tool != ToolKind::Select;
+        let tool_switched =
+            self.active_tool != ToolKind::Select && self.active_tool != ToolKind::Eraser;
         if tool_switched {
             self.set_tool("select");
         }
@@ -1930,6 +1931,10 @@ impl FdCanvas {
                 self.set_tool("frame");
                 (false, true)
             }
+            ShortcutAction::ToolEraser => {
+                self.set_tool("eraser");
+                (false, true)
+            }
             // Screenbrush: Tab toggles between two most-used tools
             ShortcutAction::ToggleLastTool => {
                 std::mem::swap(&mut self.prev_tool, &mut self.active_tool);
@@ -2038,6 +2043,7 @@ fn action_to_name(action: ShortcutAction) -> &'static str {
         ShortcutAction::ToolText => "toolText",
         ShortcutAction::ToolArrow => "toolArrow",
         ShortcutAction::ToolFrame => "toolFrame",
+        ShortcutAction::ToolEraser => "toolEraser",
         ShortcutAction::ToggleLastTool => "toggleLastTool",
         ShortcutAction::Undo => "undo",
         ShortcutAction::Redo => "redo",

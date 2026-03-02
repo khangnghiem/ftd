@@ -27,6 +27,10 @@ theme dark_text {
 
 # ─── Layout ───
 # ─── Layout ───
+# ─── Layout ───
+# ─── Layout ───
+# ─── Layout ───
+# ─── Layout ───
 # ─── Settings panel ───────────────────────────────────────────────────────
 group @settings {
   group @header {
@@ -67,6 +71,8 @@ group @settings {
     }
     w: 344 h: 80
     use: dark_card
+    x: 259.37
+    y: 69.15
   }
   text @pref_label "Preferences" {
     fill: #6B7280  # blue
@@ -166,8 +172,8 @@ rect @toggle_sound {
   }
   w: 328.18 h: 95.49
   use: dark_card
-  x: 513.48
-  y: 121.38
+  x: 523.24
+  y: 120.95
   when :hover {
     fill: #353550  # blue
     ease: ease_out 150ms
@@ -311,12 +317,23 @@ rect @_rect_4 {
 rect @_rect_5 {
   w: 328.18 h: 95.49
   use: dark_card
-  x: 531.48
-  y: 146.46
+  x: 541.75
+  y: 145.96
   when :hover {
     fill: #353550  # blue
     ease: ease_out 150ms
   }
+}
+
+rect @_rect_6 {
+  w: 344 h: 80
+  use: dark_card
+}
+
+rect @rect_8 {
+  w: 118.43 h: 118.43
+  x: 890.71
+  y: 262.38
 }
 
 # ─── Constraints ───

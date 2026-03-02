@@ -9,7 +9,9 @@
 
 - **NEW (R3.48)**: Eraser tool — swipe-to-delete tool that tracks drag lifecycle and erased IDs for undo grouping; `EraserTool` struct with `clear()` method; `ToolKind::Eraser` variant; FdCanvas manages actual node removal (group-aware detach); `set_tool("eraser")` and keyboard/toolbar integration ready
 - **WASM**: `EraserTool` field added to `FdCanvas` with full match coverage across all pointer handlers
-- **TESTING**: 3 new tests — `eraser_tool_lifecycle`, `eraser_tool_clear_resets_state`, `eraser_tool_pointerdown_clears_previous_ids`
+- **SHORTCUT**: `E` key activates Eraser tool; `ShortcutAction::ToolEraser` enum, `dispatch_action` arm, and `action_to_name` mapping added
+- **FIX**: Eraser no longer auto-switches to Select on pointer-up — drawing tools (Rect, Ellipse, etc.) still auto-switch, but Eraser stays active for continuous use
+- **TESTING**: 3 new tests — `eraser_tool_lifecycle`, `eraser_tool_clear_resets_state`, `eraser_tool_pointerdown_clears_previous_ids`; test for `resolve_tool_shortcuts` updated for E key
 
 ### v0.9.1 — Revert Text-to-Child Drag
 
