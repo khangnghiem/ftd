@@ -4,6 +4,19 @@ Engineering lessons discovered through building FD.
 
 ---
 
+## Bidi-Sync: Cursor Echo-Back on Document Edit
+
+**Date**: 2026-03-02
+**Context**: Selection cleared after every drag-and-release on canvas.
+
+**Root cause**: When the canvas syncs text to the extension via `textChanged`, the extension calls `vscode.workspace.applyEdit()` to update the document. This fires `onDidChangeTextEditorSelection` (cursor position can shift). The cursor sync handler then sends `selectNode` with empty `nodeId` back to the canvas — clearing selection. The `suppressEchoBack` flag prevented text echo, but `suppressCursorSync` was only used in the `nodeSelected` flow, not in `textChanged`.
+
+**Fix**: Set `suppressCursorSync = true` before `applyEdit()` in the `textChanged` handler, with a 200ms delayed re-enable (`setTimeout`) to cover asynchronous selection events.
+
+**Lesson**: Any document edit in VS Code can trigger side effects beyond `onDidChangeTextDocument` — cursor/selection events also fire and can create echo-back loops. Always suppress ALL bidirectional sync channels (text sync + cursor sync) around programmatic edits.
+
+---
+
 ## Layout Solver: Bounds ≠ Visual Position
 
 **Date**: 2026-02-27
