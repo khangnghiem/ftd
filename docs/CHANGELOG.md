@@ -5,6 +5,13 @@
 
 ## Completed Requirements
 
+### v0.8.98 — Transparent Group Drag (Figma Behavior)
+
+- **FIX (R3.24)**: Groups are now fully transparent for selection — clicking a child inside a group always selects the child directly (no more "click group first, click again to drill in"); matches Figma behavior where groups are purely organizational
+- **REMOVED**: Drill-down deferral logic (`pending_drill_target`) — no longer needed since groups don't capture clicks; simplified `handle_pointer_down` and `handle_pointer_up` in WASM layer
+- **CORE**: `effective_target()` in `model.rs` now returns the clicked leaf directly, ignoring Group ancestors
+- **TESTING**: Updated `test_effective_target_group_transparent` and `test_effective_target_nested_groups_transparent`
+
 ### v0.8.97 — Context Menu Reparent + Child Containment
 
 - **BREAKING (R3.37, R3.38)**: Replaced auto text-adoption-on-drag system with explicit context menu — dropping a node onto a container shows "Make child of @target" popup; auto-reparent + center-snap guides removed (~150 lines of fragile JS deleted)

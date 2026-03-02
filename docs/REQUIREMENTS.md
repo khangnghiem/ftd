@@ -44,7 +44,7 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R3.1** _(done)_: Click to select, Shift+click multi-select, marquee drag-to-select with Shift+marquee additive mode → [spec](specs/selection.md)
 - **R3.2** _(done)_: Drag, resize, rotate; Shift-constrain to axis → [spec](specs/selection.md)
 - **R3.16** _(done)_: 8-point resize grips (4 corners + 4 midpoints); directional cursors on hover → [spec](specs/selection.md)
-- **R3.24** _(done)_: Group drill-down — click child of unselected group → selects parent; click again → drills to child (Figma/Sketch) → [spec](specs/selection.md)
+- **R3.24** _(done)_: Group transparency — groups are purely organizational; clicking a child inside a group always selects the child directly (Figma behavior) → [spec](specs/selection.md)
 - **R3.26** _(done)_: Arrow-key nudge — 1px (Shift = 10px); matches Figma/Sketch standard
 - **R3.34** _(done)_: Group reparent on drag-out — child fully outside group bounds detaches to nearest containing ancestor; partial overlap expands group → [spec](specs/group-reparent.md)
 - **R3.35** _(planned)_: Detach snap animation — purple glow on near-detach, rubber-band line, scale pop + glow on detach; all animations <200ms → [spec](specs/group-reparent.md)

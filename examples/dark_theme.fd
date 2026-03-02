@@ -134,12 +134,15 @@ group @settings {
     fill: #6B7280  # blue
     font: "Inter" semibold 13
   }
-  text @danger_label "Danger Zone" {
-    fill: #E17055  # red
-    font: "Inter" semibold 13
-  }
-  x: 329.81
-  y: 369.36
+  x: 281.88
+  y: 350.68
+}
+
+text @danger_label "Danger Zone" {
+  fill: #E17055  # red
+  font: "Inter" semibold 13
+  x: 416.37
+  y: 280.57
 }
 
 rect @toggle_sound {
@@ -152,13 +155,13 @@ rect @toggle_sound {
         use: dark_muted
       }
     }
-    x: 10.97
-    y: -73.02
+    x: 12.4
+    y: -91.55
   }
   w: 344 h: 56
   use: dark_card
-  x: 398.68
-  y: 240.61
+  x: 429.14
+  y: 171.64
   when :hover {
     fill: #353550  # blue
     ease: ease_out 150ms
