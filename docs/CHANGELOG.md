@@ -5,6 +5,13 @@
 
 ## Completed Requirements
 
+### v0.9.0 — Text Boundary + Inline Editor Fix
+
+- **BUG FIX**: Text node boundaries now tightly wrap content — `measureAndUpdateTextBounds` was calling non-existent `get_node_props(nodeId)` WASM API, silently failing. Added `get_node_props(node_id)` to the WASM API and fixed the function
+- **BUG FIX**: Inline editor commit now properly re-measures text bounds — `propKey === "text"` was wrong (dblclick handler passes `"content"`), so text bounds never updated after editing
+- **UX**: Text bounds are now measured on initial canvas load and after every external text sync, ensuring tight bounding boxes from the start
+- **WASM**: New `get_node_props(node_id)` API — query text/font properties for any node by ID without selecting it
+
 ### v0.8.99 — Inline Editor Alignment Fix
 
 - **BUG FIX**: Inline text editor no longer forces `center`/`middle` alignment when double-clicking standalone text nodes — `get_selected_node_props` WASM API now always returns the effective alignment with parent-context-aware defaults (standalone = left/top, inside shape = center/middle), matching the WASM renderer exactly

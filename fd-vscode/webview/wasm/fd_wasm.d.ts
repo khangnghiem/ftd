@@ -109,6 +109,12 @@ export class FdCanvas {
      */
     get_node_bounds(node_id: string): string;
     /**
+     * Get basic properties of a node by its ID (without selecting it).
+     * Returns JSON with `text`, `fontSize`, `fontFamily`, `fontWeight`.
+     * Returns `{}` if the node is not found.
+     */
+    get_node_props(node_id: string): string;
+    /**
      * Get the currently selected node ID, or empty string if none.
      * Returns the first selected node for backward compatibility.
      */
@@ -301,6 +307,7 @@ export interface InitOutput {
     readonly fdcanvas_get_arrow_preview: (a: number) => [number, number];
     readonly fdcanvas_get_node_animations_json: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_get_node_bounds: (a: number, b: number, c: number) => [number, number];
+    readonly fdcanvas_get_node_props: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_get_selected_id: (a: number) => [number, number];
     readonly fdcanvas_get_selected_ids: (a: number) => [number, number];
     readonly fdcanvas_get_selected_node_props: (a: number) => [number, number];
