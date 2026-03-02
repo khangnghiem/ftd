@@ -1,3 +1,5 @@
+# ─── Themes ───
+
 theme dark_accent {
   fill: #A29BFE  # blue
 }
@@ -20,6 +22,8 @@ theme dark_text {
   fill: #E0E0E0  # white
   font: "Inter" regular 14
 }
+
+# ─── Layout ───
 
 # ─── Layout ───
 # ─── Layout ───
@@ -132,8 +136,8 @@ rect @toggle_notif {
   }
   w: 344 h: 56
   use: dark_card
-  x: 335.1
-  y: -13.28
+  x: 358.85
+  y: 28.77
   when :hover {
     fill: #353550  # blue
     ease: ease_out 150ms
@@ -249,3 +253,73 @@ text @delete_label "Delete Account" {
   y: 300.99
 }
 
+rect @_rect_0 {
+  w: 344 h: 56
+  use: dark_card
+  x: 257.61
+  y: -65.07
+  when :hover {
+    fill: #353550  # blue
+    ease: ease_out 150ms
+  }
+}
+
+rect @_rect_1 {
+  w: 344 h: 56
+  use: dark_card
+  x: 358.85
+  y: 28.77
+  when :hover {
+    fill: #353550  # blue
+    ease: ease_out 150ms
+  }
+}
+
+rect @_rect_2 {
+  w: 344 h: 56
+  use: dark_card
+  x: 582.41
+  y: -122.29
+  when :hover {
+    fill: #353550  # blue
+    ease: ease_out 150ms
+  }
+}
+
+rect @_rect_3 {
+  w: 344 h: 56
+  use: dark_card
+  x: 257.61
+  y: -65.07
+  when :hover {
+    fill: #353550  # blue
+    ease: ease_out 150ms
+  }
+}
+
+rect @_rect_4 {
+  w: 328.18 h: 95.49
+  use: dark_card
+  x: 234.11
+  y: 101.1
+  when :hover {
+    fill: #353550  # blue
+    ease: ease_out 150ms
+  }
+}
+
+rect @_rect_5 {
+  w: 328.18 h: 95.49
+  use: dark_card
+  x: 531.48
+  y: 146.46
+  when :hover {
+    fill: #353550  # blue
+    ease: ease_out 150ms
+  }
+}
+
+# ─── Constraints ───
+
+@_rect_1 -> offset: @_rect_0 20, 20
+@_rect_3 -> offset: @_rect_2 20, 20
