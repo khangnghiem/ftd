@@ -5,6 +5,10 @@
 
 ## Completed Requirements
 
+### v0.8.96 — Fix Selection Lost After Drag
+
+- **BUG FIX (R2.5)**: Fixed selection clearing after drag-and-release — `textChanged` handler in `extension.ts` now suppresses `onDidChangeTextEditorSelection` during `applyEdit` via `suppressCursorSync` flag; previously the cursor sync round-trip sent an empty `selectNode` back to the canvas, clearing the selection after every drag gesture
+
 ### v0.8.95 — Text Hug-Contents + Detach Fix
 
 - **FIX (R3.36)**: Text nodes now use "hug-contents" sizing — standalone and in-shape text nodes use their intrinsic size (tight bounding box) instead of expanding to fill their parent shape; selection rectangles accurately wrap the text content
