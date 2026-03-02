@@ -5,6 +5,12 @@
 
 ## Completed Requirements
 
+### v0.9.2 — Eraser Tool
+
+- **NEW (R3.48)**: Eraser tool — swipe-to-delete tool that tracks drag lifecycle and erased IDs for undo grouping; `EraserTool` struct with `clear()` method; `ToolKind::Eraser` variant; FdCanvas manages actual node removal (group-aware detach); `set_tool("eraser")` and keyboard/toolbar integration ready
+- **WASM**: `EraserTool` field added to `FdCanvas` with full match coverage across all pointer handlers
+- **TESTING**: 3 new tests — `eraser_tool_lifecycle`, `eraser_tool_clear_resets_state`, `eraser_tool_pointerdown_clears_previous_ids`
+
 ### v0.9.1 — Revert Text-to-Child Drag
 
 - **REMOVED (R3.38)**: Reverted drop context menu reparent system — dragging a node onto a container no longer shows "Make child of @target" popup; ~160 lines of JS removed (`detectDropTarget`, `showDropContextMenu`, `closeDropContextMenu`, `reparentNodeIntoContainer`)

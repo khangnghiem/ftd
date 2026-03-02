@@ -27,6 +27,7 @@ pub enum ToolKind {
     Text,
     Arrow,
     Frame,
+    Eraser,
 }
 
 /// Trait for tools that handle input and produce mutations.
@@ -881,6 +882,66 @@ impl Tool for ArrowTool {
     }
 }
 
+// ─── Eraser Tool ─────────────────────────────────────────────────────────
+
+/// Eraser tool — swipe to delete nodes on touch.
+///
+/// Nodes are removed from the graph IMMEDIATELY during pointermove
+/// (instant visual feedback). The tool tracks erased IDs so the
+/// WASM layer can group them into a single undo entry on pointerup.
+pub struct EraserTool {
+    /// IDs erased during the current gesture (for undo grouping).
+    pub erased_ids: Vec<NodeId>,
+    /// Whether a drag gesture is active.
+    pub dragging: bool,
+}
+
+impl Default for EraserTool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl EraserTool {
+    pub fn new() -> Self {
+        Self {
+            erased_ids: Vec::new(),
+            dragging: false,
+        }
+    }
+
+    /// Reset all eraser state (called between gestures or on tool switch).
+    pub fn clear(&mut self) {
+        self.erased_ids.clear();
+        self.dragging = false;
+    }
+}
+
+impl Tool for EraserTool {
+    fn kind(&self) -> ToolKind {
+        ToolKind::Eraser
+    }
+
+    /// Returns empty mutations — FdCanvas manages the delete flow directly
+    /// (needs access to the graph for group-aware detach).
+    /// The tool is a thin state tracker for drag lifecycle.
+    fn handle(&mut self, event: &InputEvent, _hit_node: Option<NodeId>) -> Vec<GraphMutation> {
+        match event {
+            InputEvent::PointerDown { .. } => {
+                self.erased_ids.clear();
+                self.dragging = true;
+                vec![]
+            }
+            InputEvent::PointerMove { .. } => vec![],
+            InputEvent::PointerUp { .. } => {
+                self.dragging = false;
+                vec![]
+            }
+            _ => vec![],
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1555,5 +1616,80 @@ mod tests {
             None,
         );
         assert!(tool.preview_line().is_none(), "no preview after up");
+    }
+
+    #[test]
+    fn eraser_tool_lifecycle() {
+        let mut tool = EraserTool::new();
+        assert!(!tool.dragging);
+        assert!(tool.erased_ids.is_empty());
+        assert_eq!(tool.kind(), ToolKind::Eraser);
+
+        // PointerDown starts drag, returns empty mutations
+        let muts = tool.handle(
+            &InputEvent::PointerDown {
+                x: 50.0,
+                y: 50.0,
+                pressure: 1.0,
+                modifiers: Modifiers::NONE,
+            },
+            None,
+        );
+        assert!(muts.is_empty());
+        assert!(tool.dragging);
+
+        // PointerMove returns empty mutations
+        let muts = tool.handle(
+            &InputEvent::PointerMove {
+                x: 60.0,
+                y: 60.0,
+                pressure: 1.0,
+                modifiers: Modifiers::NONE,
+            },
+            Some(NodeId::intern("rect_1")),
+        );
+        assert!(muts.is_empty());
+
+        // PointerUp ends drag, returns empty mutations
+        let muts = tool.handle(
+            &InputEvent::PointerUp {
+                x: 60.0,
+                y: 60.0,
+                modifiers: Modifiers::NONE,
+            },
+            None,
+        );
+        assert!(muts.is_empty());
+        assert!(!tool.dragging);
+    }
+
+    #[test]
+    fn eraser_tool_clear_resets_state() {
+        let mut tool = EraserTool::new();
+        tool.dragging = true;
+        tool.erased_ids.push(NodeId::intern("node_a"));
+        tool.erased_ids.push(NodeId::intern("node_b"));
+
+        tool.clear();
+        assert!(!tool.dragging);
+        assert!(tool.erased_ids.is_empty());
+    }
+
+    #[test]
+    fn eraser_tool_pointerdown_clears_previous_ids() {
+        let mut tool = EraserTool::new();
+        tool.erased_ids.push(NodeId::intern("old_node"));
+
+        tool.handle(
+            &InputEvent::PointerDown {
+                x: 10.0,
+                y: 10.0,
+                pressure: 1.0,
+                modifiers: Modifiers::NONE,
+            },
+            None,
+        );
+        assert!(tool.erased_ids.is_empty());
+        assert!(tool.dragging);
     }
 }

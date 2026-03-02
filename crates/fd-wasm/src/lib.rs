@@ -16,7 +16,8 @@ use fd_editor::input::{InputEvent, Modifiers};
 use fd_editor::shortcuts::{ShortcutAction, ShortcutMap};
 use fd_editor::sync::{GraphMutation, SyncEngine};
 use fd_editor::tools::{
-    ArrowTool, EllipseTool, PenTool, RectTool, ResizeHandle, SelectTool, TextTool, Tool, ToolKind,
+    ArrowTool, EllipseTool, EraserTool, PenTool, RectTool, ResizeHandle, SelectTool, TextTool,
+    Tool, ToolKind,
 };
 use fd_render::hit::hit_test_rect;
 use wasm_bindgen::prelude::*;
@@ -39,6 +40,7 @@ pub struct FdCanvas {
     pen_tool: PenTool,
     text_tool: TextTool,
     arrow_tool: ArrowTool,
+    eraser_tool: EraserTool,
     width: f64,
     height: f64,
     /// Suppress text-changed messages during programmatic updates.
@@ -80,6 +82,7 @@ impl FdCanvas {
             pen_tool: PenTool::new(),
             text_tool: TextTool::new(),
             arrow_tool: ArrowTool::new(),
+            eraser_tool: EraserTool::new(),
             width,
             height,
             suppress_sync: false,
@@ -236,6 +239,7 @@ impl FdCanvas {
             ToolKind::Pen => self.pen_tool.handle(&event, hit),
             ToolKind::Text => self.text_tool.handle(&event, hit),
             ToolKind::Arrow => self.arrow_tool.handle(&event, hit),
+            ToolKind::Eraser => self.eraser_tool.handle(&event, hit),
         };
         let changed = self.apply_mutations(mutations);
         // Marquee start also counts as a visual change (need re-render)
@@ -282,6 +286,7 @@ impl FdCanvas {
             ToolKind::Pen => self.pen_tool.handle(&event, hit),
             ToolKind::Text => self.text_tool.handle(&event, hit),
             ToolKind::Arrow => self.arrow_tool.handle(&event, hit),
+            ToolKind::Eraser => self.eraser_tool.handle(&event, hit),
         };
         let changed = self.apply_mutations(mutations);
         // Marquee drag also counts as visual change
@@ -379,6 +384,7 @@ impl FdCanvas {
             ToolKind::Pen => self.pen_tool.handle(&event, hit),
             ToolKind::Text => self.text_tool.handle(&event, hit),
             ToolKind::Arrow => self.arrow_tool.handle(&event, hit),
+            ToolKind::Eraser => self.eraser_tool.handle(&event, hit),
         };
         let changed = self.apply_mutations(mutations);
         // Flush text after gesture ends
@@ -449,6 +455,7 @@ impl FdCanvas {
             "text" => ToolKind::Text,
             "arrow" => ToolKind::Arrow,
             "frame" => ToolKind::Frame,
+            "eraser" => ToolKind::Eraser,
             _ => ToolKind::Select,
         };
         if new_tool != self.active_tool {
@@ -2018,6 +2025,7 @@ fn tool_kind_to_name(kind: ToolKind) -> &'static str {
         ToolKind::Text => "text",
         ToolKind::Arrow => "arrow",
         ToolKind::Frame => "frame",
+        ToolKind::Eraser => "eraser",
     }
 }
 
