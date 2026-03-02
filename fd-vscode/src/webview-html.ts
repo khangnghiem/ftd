@@ -1807,6 +1807,58 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
       margin: 4px 8px;
     }
 
+    /* ── Drop Context Menu (reparent on drop) ── */
+    .drop-ctx-menu {
+      position: absolute;
+      z-index: 210;
+      background: var(--fd-surface);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 0.5px solid var(--fd-border);
+      border-radius: 8px;
+      padding: 4px;
+      box-shadow: 0 10px 38px rgba(0,0,0,0.14), 0 4px 12px rgba(0,0,0,0.06);
+      font-size: 13px;
+      min-width: 180px;
+      animation: drop-ctx-fade-in 0.12s ease-out;
+    }
+    .dark-theme .drop-ctx-menu {
+      box-shadow: 0 10px 38px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.2);
+    }
+    @keyframes drop-ctx-fade-in {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .drop-ctx-item {
+      padding: 5px 10px;
+      cursor: default;
+      color: var(--fd-text);
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 28px;
+      font-size: 13px;
+      letter-spacing: -0.01em;
+      transition: none;
+    }
+    .drop-ctx-item:hover {
+      background: var(--fd-accent);
+      color: var(--fd-accent-fg);
+    }
+    .drop-ctx-item.drop-ctx-cancel {
+      opacity: 0.7;
+    }
+    .drop-ctx-item.drop-ctx-cancel:hover {
+      opacity: 1;
+    }
+    .drop-ctx-icon {
+      width: 16px;
+      text-align: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
     /* ── Animation Picker (glassmorphism popover) ── */
     #anim-picker {
       display: none;

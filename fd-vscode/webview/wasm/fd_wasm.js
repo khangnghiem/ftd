@@ -575,25 +575,6 @@ export class FdCanvas {
         }
     }
     /**
-     * Hit-test for annotation badge dots.
-     * Returns the node ID if the point hits a badge, or empty string.
-     * @param {number} x
-     * @param {number} y
-     * @returns {string}
-     */
-    hit_test_badge(x, y) {
-        let deferred1_0;
-        let deferred1_1;
-        try {
-            const ret = wasm.fdcanvas_hit_test_badge(this.__wbg_ptr, x, y);
-            deferred1_0 = ret[0];
-            deferred1_1 = ret[1];
-            return getStringFromWasm0(ret[0], ret[1]);
-        } finally {
-            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-        }
-    }
-    /**
      * Create a new canvas controller with the given dimensions.
      * @param {number} width
      * @param {number} height

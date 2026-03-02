@@ -161,6 +161,20 @@ For any failures:
 
 ---
 
+## Phase 9: Context Menu Reparent + Child Containment (5 checks)
+
+| #   | Action                                             | Expected Result                                                  |
+| --- | -------------------------------------------------- | ---------------------------------------------------------------- |
+| 9.1 | Draw a rect → draw a text → drag text onto rect    | Context menu appears with "Make child of @rectId"                |
+| 9.2 | Click "Make child" in the drop context menu        | Text becomes child of rect, auto-centered; code updates          |
+| 9.3 | Drag text onto rect → press Escape or click away   | Context menu dismissed; text stays where it was (not reparented) |
+| 9.4 | Create text child inside rect → drag fully outside | Text detaches from rect, becomes root-level; detach glow plays   |
+| 9.5 | Drag child text partially overlapping rect edge    | Text stays as child (partial overlap is fine, no detach)         |
+
+> Context menu must use glassmorphism styling. Verify code updates after reparent/detach.
+
+---
+
 ## Cleanup
 
 After all phases complete and results are reported:
