@@ -191,11 +191,6 @@ export class FdCanvas {
      */
     hit_test_at(x: number, y: number): string;
     /**
-     * Hit-test for annotation badge dots.
-     * Returns the node ID if the point hits a badge, or empty string.
-     */
-    hit_test_badge(x: number, y: number): string;
-    /**
      * Create a new canvas controller with the given dimensions.
      */
     constructor(width: number, height: number);
@@ -322,7 +317,6 @@ export interface InitOutput {
     readonly fdcanvas_has_pending_text_change: (a: number) => number;
     readonly fdcanvas_has_text_child: (a: number, b: number, c: number) => number;
     readonly fdcanvas_hit_test_at: (a: number, b: number, c: number) => [number, number];
-    readonly fdcanvas_hit_test_badge: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_new: (a: number, b: number) => number;
     readonly fdcanvas_parent_of: (a: number, b: number, c: number) => [number, number];
     readonly fdcanvas_redo: (a: number) => number;

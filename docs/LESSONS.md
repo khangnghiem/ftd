@@ -4,6 +4,26 @@ Engineering lessons discovered through building FD.
 
 ---
 
+## Auto-Reparent on Drag Is Fragile — Use Explicit Context Menus
+
+**Date**: 2026-03-02
+**Context**: Text nodes dragged onto shapes auto-reparented + centered. This caused multiple bugs.
+**Root Cause**: The auto-adopt system (`evaluateTextAdoption` + `reparentTextIntoShape`) had ~150 lines that raced with: the `&& changed` gate from WASM (→ textDropTarget nullified), the animation picker (→ wrong handler fires first), and `evaluate_drop` (→ detach right after adopt). Center-snap guides added visual noise during positioning-only drags.
+**Fix**: Replace auto-reparent with an explicit context menu shown on drop. User clicks "Make child" → reparent + center. This eliminates all race conditions, is discoverable, and works for any node type (not just text).
+**Rule**: Never auto-reparent on drag. Structural changes to the document tree must be explicit user actions.
+
+---
+
+## Child Containment — Children Must Never Be Fully Outside Parent
+
+**Date**: 2026-03-02
+**Context**: Group/frame reparenting logic.
+**Root Cause**: Without this constraint, the parent-child relationship becomes invisible — a child fully outside its parent looks identical to a sibling.
+**Fix**: `handle_child_group_relationship` in `sync.rs` enforces this: if a child's bounds have zero overlap with the parent's bounds, the child auto-detaches and reparents to the nearest ancestor. Partial overlap is fine (the parent doesn't expand during drag — that caused the "chasing envelope" bug).
+**Rule**: Always enforce `bboxes_overlap(child, parent)`. Zero overlap = detach. Partial overlap = stay.
+
+---
+
 ## Bidi-Sync: Cursor Echo-Back on Document Edit
 
 **Date**: 2026-03-02

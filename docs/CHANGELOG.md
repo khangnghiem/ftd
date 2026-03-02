@@ -5,6 +5,13 @@
 
 ## Completed Requirements
 
+### v0.8.97 — Context Menu Reparent + Child Containment
+
+- **BREAKING (R3.37, R3.38)**: Replaced auto text-adoption-on-drag system with explicit context menu — dropping a node onto a container shows "Make child of @target" popup; auto-reparent + center-snap guides removed (~150 lines of fragile JS deleted)
+- **FIX**: Floating toolbar no longer moves when clicking/dragging tool buttons — added `stopPropagation()` on tool button `pointerdown` to prevent scroll-handle drag activation
+- **UX (R3.47)**: Child containment constraint documented — children fully outside parent bounds auto-detach (already enforced by `handle_child_group_relationship` in Rust)
+- **UX**: Drop context menu uses glassmorphism design matching existing context menu — fade-in animation, click-outside/Escape dismiss, styled with design tokens
+
 ### v0.8.96 — Fix Selection Lost After Drag
 
 - **BUG FIX (R2.5)**: Fixed selection clearing after drag-and-release — `textChanged` handler in `extension.ts` now suppresses `onDidChangeTextEditorSelection` during `applyEdit` via `suppressCursorSync` flag; previously the cursor sync round-trip sent an empty `selectNode` back to the canvas, clearing the selection after every drag gesture

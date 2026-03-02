@@ -700,30 +700,8 @@ function setupPointerEvents() {
 
     // Animation drop-zone detection removed (bug #4)
 
-    // ── Text adoption + near-detach (evaluate EVERY frame, not gated on changed) ──
+    // ── Near-detach detection (evaluate EVERY frame, not gated on changed) ──
     if (isDraggingNode && draggedNodeId) {
-    // Unified text adoption detection
-      const adoption = evaluateTextAdoption(draggedNodeId, x, y);
-      if (adoption) {
-        textDropTarget = adoption;
-        // When text adoption is active, clear animation drop target
-        // so adoption feedback takes priority over animation glow
-        animDropTargetId = null;
-        animDropTargetBounds = null;
-        if (adoption.willCenter) {
-          centerSnapTarget = adoption;
-          showCenterSnapGuides(adoption.cx, adoption.cy);
-        } else {
-          hideCenterSnapGuides();
-          centerSnapTarget = null;
-        }
-      } else {
-        textDropTarget = null;
-        centerSnapTarget = null;
-        hideCenterSnapGuides();
-      }
-
-      // Near-Detach detection
       const ndJson = fdCanvas.evaluate_near_detach(draggedNodeId);
       if (ndJson) {
         try {
@@ -733,8 +711,6 @@ function setupPointerEvents() {
         nearDetachState = null;
       }
     } else if (!isDraggingNode) {
-      hideCenterSnapGuides();
-      textDropTarget = null;
       nearDetachState = null;
     }
   });
@@ -816,21 +792,17 @@ function setupPointerEvents() {
 
     // Animation drop on release removed (bug #4)
 
-    // ── Unified text reparent on release ──
-    // When textDropTarget is set, reparent text into target. Skip evaluate_drop
-    // afterwards to avoid the detach-after-reparent race condition.
-    let didReparent = false;
-    if (isDraggingNode && textDropTarget && draggedNodeId) {
-      const willCenter = textDropTarget.willCenter;
-      didReparent = reparentTextIntoShape(draggedNodeId, textDropTarget.targetId, willCenter);
-      textDropTarget = null;
+    // ── Drop context menu: offer reparent when node dropped on a container ──
+    if (isDraggingNode && fdCanvas && draggedNodeId) {
+      const dropTarget = detectDropTarget(draggedNodeId, x, y);
+      if (dropTarget) {
+        // Show context menu to let user explicitly reparent
+        showDropContextMenu(draggedNodeId, dropTarget.targetId, e.clientX, e.clientY);
+      }
     }
-    hideCenterSnapGuides();
-    centerSnapTarget = null;
 
     // ── Detach snap feedback: scale pop + glow on group detach ──
-    // Skip if we already reparented (would race: detach the just-adopted node)
-    if (isDraggingNode && fdCanvas && draggedNodeId && !didReparent) {
+    if (isDraggingNode && fdCanvas && draggedNodeId) {
       const detachJson = fdCanvas.evaluate_drop(draggedNodeId);
       if (detachJson) {
         try {
@@ -889,7 +861,6 @@ function setupPointerEvents() {
     draggedNodeId = null;
     animDropTargetId = null;
     animDropTargetBounds = null;
-    textDropTarget = null;
     nearDetachState = null;
 
     // ── Restore tool after ⌘+drag temp Select or Alt+drag clone ──
@@ -4220,38 +4191,20 @@ function hideDimensionTooltip() {
   if (el) el.style.display = "none";
 }
 
-// ─── Unified Text Adoption System ─────────────────────────────────────────────
+// ─── Drop Context Menu (Reparent on Drop) ────────────────────────────────────
 //
-// Replaces two independent systems (center-snap + text-drop-target) with a
-// single evaluateTextAdoption() function. This ensures:
-// 1. No race between centering and reparenting
-// 2. One decision point for visual feedback
-// 3. Conditional centering: only when target has no text child
-
-const CENTER_SNAP_THRESHOLD = 30; // px in scene-space
-
-/** State for center-snap guides. */
-let centerSnapTarget = null;
-
-/** State for text drag-to-consume. */
-let textDropTarget = null;
+// When a node is dropped onto a container, show a context menu offering
+// "Make child of @target". Replaces the old auto-reparent system that was
+// fragile and confusing (raced with detach, gated on `changed` flag).
 
 /**
- * Unified text adoption detection. Checks if a dragged text node should
- * be adopted by a shape/group under the cursor.
- *
- * Returns { targetId, cx, cy, bounds, willCenter } or null.
- * - willCenter: true if the target has no existing text child (text will auto-center)
+ * Detect if a dropped node landed on a valid container target.
+ * Returns { targetId } or null.
  */
-function evaluateTextAdoption(draggedId, sceneX, sceneY) {
+function detectDropTarget(draggedId, sceneX, sceneY) {
   if (!fdCanvas) return null;
 
-  // Check if dragged node is a text node
-  const source = fdCanvas.get_text();
-  const textMatch = source.match(new RegExp(`text\\s+@${draggedId}\\b`));
-  if (!textMatch) return null;
-
-  // Get current parent of the dragged text
+  // Get current parent of the dragged node
   const currentParent = fdCanvas.parent_of(draggedId);
 
   // Hit-test to find a shape/group under the cursor
@@ -4262,84 +4215,112 @@ function evaluateTextAdoption(draggedId, sceneX, sceneY) {
   if (hitId === currentParent) return null;
 
   // Check if the hit target is a container (rect, ellipse, frame, or group)
+  const source = fdCanvas.get_text();
   const containerMatch = source.match(new RegExp(`(?:rect|ellipse|frame|group)\\s+@${hitId}\\b`));
   if (!containerMatch) return null;
 
-  try {
-    const bounds = JSON.parse(fdCanvas.get_node_bounds(hitId));
-    if (!bounds.width || bounds.width <= 0) return null;
-
-    const cx = bounds.x + bounds.width / 2;
-    const cy = bounds.y + bounds.height / 2;
-
-    // Check if cursor is near enough to the center for snap guides
-    const dx = Math.abs(sceneX - cx);
-    const dy = Math.abs(sceneY - cy);
-    const nearCenter = dx < CENTER_SNAP_THRESHOLD && dy < CENTER_SNAP_THRESHOLD;
-
-    // Determine if text will be centered (target has no existing text child)
-    const hasText = fdCanvas.has_text_child(hitId);
-    const willCenter = !hasText && nearCenter;
-
-    return { targetId: hitId, cx, cy, bounds, willCenter };
-  } catch (_) {
-    return null;
-  }
-}
-
-/** Show center-snap crosshair guide lines. */
-function showCenterSnapGuides(cx, cy) {
-  const container = document.getElementById("center-snap-guides");
-  if (!container) return;
-  const screenX = cx * zoomLevel + panX;
-  const screenY = cy * zoomLevel + panY;
-  container.innerHTML = `
-    <div class="center-snap-guide vertical" style="left:${screenX}px"></div>
-    <div class="center-snap-guide horizontal" style="top:${screenY}px"></div>
-  `;
-}
-
-/** Hide center-snap guide lines. */
-function hideCenterSnapGuides() {
-  const container = document.getElementById("center-snap-guides");
-  if (container) container.innerHTML = "";
+  return { targetId: hitId };
 }
 
 /**
- * Reparent a text node inside a target shape/group by rewriting FD source.
- * If willCenter is true, strips position constraints (layout auto-centers).
- * If willCenter is false, keeps position relative to new parent.
+ * Show a drop context menu offering "Make child of @target".
+ * Positioned at the cursor location inside the canvas container.
  */
-function reparentTextIntoShape(textId, targetShapeId, willCenter) {
+function showDropContextMenu(draggedId, targetId, clientX, clientY) {
+  // Remove any existing drop menu
+  closeDropContextMenu();
+
+  const container = document.getElementById("canvas-container");
+  if (!container) return;
+  const containerRect = container.getBoundingClientRect();
+
+  const menu = document.createElement("div");
+  menu.id = "drop-context-menu";
+  menu.className = "drop-ctx-menu";
+  menu.style.left = (clientX - containerRect.left) + "px";
+  menu.style.top = (clientY - containerRect.top) + "px";
+
+  // "Make child" option
+  const makeChildBtn = document.createElement("div");
+  makeChildBtn.className = "drop-ctx-item";
+  makeChildBtn.innerHTML = `<span class="drop-ctx-icon">📦</span> Make child of <strong>@${targetId}</strong>`;
+  makeChildBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    reparentNodeIntoContainer(draggedId, targetId);
+    closeDropContextMenu();
+  });
+
+  // "Cancel" option
+  const cancelBtn = document.createElement("div");
+  cancelBtn.className = "drop-ctx-item drop-ctx-cancel";
+  cancelBtn.innerHTML = `<span class="drop-ctx-icon">✕</span> Cancel`;
+  cancelBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    closeDropContextMenu();
+  });
+
+  menu.appendChild(makeChildBtn);
+  menu.appendChild(cancelBtn);
+  container.appendChild(menu);
+
+  // Close on click-outside or Escape
+  const onClickOutside = (e) => {
+    if (!menu.contains(e.target)) {
+      closeDropContextMenu();
+      document.removeEventListener("pointerdown", onClickOutside);
+    }
+  };
+  const onEscape = (e) => {
+    if (e.key === "Escape") {
+      closeDropContextMenu();
+      document.removeEventListener("keydown", onEscape);
+    }
+  };
+  // Delay listener attachment to avoid immediate self-dismiss
+  requestAnimationFrame(() => {
+    document.addEventListener("pointerdown", onClickOutside);
+    document.addEventListener("keydown", onEscape);
+  });
+}
+
+/** Close and remove the drop context menu. */
+function closeDropContextMenu() {
+  const existing = document.getElementById("drop-context-menu");
+  if (existing) existing.remove();
+}
+
+/**
+ * Reparent a node inside a target container by rewriting FD source.
+ * Strips position constraints and centers the node inside the target.
+ */
+function reparentNodeIntoContainer(nodeId, targetId) {
   if (!fdCanvas) return false;
   let source = fdCanvas.get_text();
 
-  // Extract text node block from source
-  const textBlockRe = new RegExp(`(^|\\n)(\\s*text\\s+@${textId}\\s+"[^"]*"\\s*\\{[^}]*\\}|\\s*text\\s+@${textId}\\s+"[^"]*")`, 'm');
-  const textLineRe = new RegExp(`(^|\\n)(\\s*text\\s+@${textId}\\b[^\\n]*)`, 'm');
+  // Extract the node block from source (handles both block and inline nodes)
+  const blockRe = new RegExp(`(^|\\n)(\\s*(?:text|rect|ellipse|frame|group|pen|arrow)\\s+@${nodeId}\\b[^}]*\\})`, 'm');
+  const lineRe = new RegExp(`(^|\\n)(\\s*(?:text|rect|ellipse|frame|group|pen|arrow)\\s+@${nodeId}\\b[^\\n]*)`, 'm');
 
-  let textBlock = "";
-  let textMatch = source.match(textBlockRe) || source.match(textLineRe);
-  if (!textMatch) return false;
+  let nodeBlock = "";
+  let nodeMatch = source.match(blockRe) || source.match(lineRe);
+  if (!nodeMatch) return false;
 
-  textBlock = textMatch[2].trim();
-  // Remove the text block from its current position
-  source = source.replace(textMatch[2], "");
+  nodeBlock = nodeMatch[2].trim();
+  // Remove the node block from its current position
+  source = source.replace(nodeMatch[2], "");
 
-  // Only strip position constraints if the text will be auto-centered
-  if (willCenter) {
-    textBlock = textBlock.replace(/\s*x:\s*-?\d+(\.\d+)?/g, "");
-    textBlock = textBlock.replace(/\s*y:\s*-?\d+(\.\d+)?/g, "");
-  }
+  // Strip position constraints so node auto-centers in parent
+  nodeBlock = nodeBlock.replace(/\s*x:\s*-?\d+(\.\d+)?/g, "");
+  nodeBlock = nodeBlock.replace(/\s*y:\s*-?\d+(\.\d+)?/g, "");
 
-  // Find the target shape's opening brace and insert text after it
-  const shapeBlockRe = new RegExp(`(@${targetShapeId}\\s*\\{)`);
-  const shapeMatch = source.match(shapeBlockRe);
-  if (!shapeMatch) return false;
+  // Find the target container's opening brace and insert node after it
+  const containerBlockRe = new RegExp(`(@${targetId}\\s*\\{)`);
+  const containerMatch = source.match(containerBlockRe);
+  if (!containerMatch) return false;
 
-  // Insert the text node right after the opening brace of the shape
-  const insertPos = source.indexOf(shapeMatch[0]) + shapeMatch[0].length;
-  source = source.slice(0, insertPos) + "\n  " + textBlock + source.slice(insertPos);
+  // Insert the node right after the opening brace of the container
+  const insertPos = source.indexOf(containerMatch[0]) + containerMatch[0].length;
+  source = source.slice(0, insertPos) + "\n  " + nodeBlock + source.slice(insertPos);
 
   // Clean up double newlines
   source = source.replace(/\n{3,}/g, "\n\n");
@@ -4906,6 +4887,7 @@ function setupFloatingToolbar() {
     if (tool === "select") return;
 
     btn.addEventListener("pointerdown", (e) => {
+      e.stopPropagation(); // Prevent scroll-handle drag from activating
       dtcTool = tool;
       dtcStartX = e.clientX;
       dtcStartY = e.clientY;
