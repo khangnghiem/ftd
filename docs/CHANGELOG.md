@@ -5,6 +5,12 @@
 
 ## Completed Requirements
 
+### v0.9.1 — Revert Text-to-Child Drag
+
+- **REMOVED (R3.38)**: Reverted drop context menu reparent system — dragging a node onto a container no longer shows "Make child of @target" popup; ~160 lines of JS removed (`detectDropTarget`, `showDropContextMenu`, `closeDropContextMenu`, `reparentNodeIntoContainer`)
+- **REMOVED (R3.44)**: Text tool's shape-reparent on drop removed — dragging Text tool onto a shape now creates a standalone text node at the drop position instead of reparenting inside the shape
+- **KEPT**: Layout solver text-centering for manually-authored text children inside shapes remains functional
+
 ### v0.9.0 — Text Boundary + Inline Editor Fix
 
 - **BUG FIX**: Text node boundaries now tightly wrap content — `measureAndUpdateTextBounds` was calling non-existent `get_node_props(nodeId)` WASM API, silently failing. Added `get_node_props(node_id)` to the WASM API and fixed the function

@@ -795,15 +795,6 @@ function setupPointerEvents() {
 
     // Animation drop on release removed (bug #4)
 
-    // ── Drop context menu: offer reparent when node dropped on a container ──
-    if (isDraggingNode && fdCanvas && draggedNodeId) {
-      const dropTarget = detectDropTarget(draggedNodeId, x, y);
-      if (dropTarget) {
-        // Show context menu to let user explicitly reparent
-        showDropContextMenu(draggedNodeId, dropTarget.targetId, e.clientX, e.clientY);
-      }
-    }
-
     // ── Detach snap feedback: scale pop + glow on group detach ──
     if (isDraggingNode && fdCanvas && draggedNodeId) {
       const detachJson = fdCanvas.evaluate_drop(draggedNodeId);
@@ -4196,147 +4187,7 @@ function hideDimensionTooltip() {
   if (el) el.style.display = "none";
 }
 
-// ─── Drop Context Menu (Reparent on Drop) ────────────────────────────────────
-//
-// When a node is dropped onto a container, show a context menu offering
-// "Make child of @target". Replaces the old auto-reparent system that was
-// fragile and confusing (raced with detach, gated on `changed` flag).
 
-/**
- * Detect if a dropped node landed on a valid container target.
- * Returns { targetId } or null.
- */
-function detectDropTarget(draggedId, sceneX, sceneY) {
-  if (!fdCanvas) return null;
-
-  // Get current parent of the dragged node
-  const currentParent = fdCanvas.parent_of(draggedId);
-
-  // Hit-test to find a shape/group under the cursor
-  const hitId = fdCanvas.hit_test_at(sceneX, sceneY);
-  if (!hitId || hitId === draggedId) return null;
-
-  // Skip if target is already the current parent
-  if (hitId === currentParent) return null;
-
-  // Check if the hit target is a container (rect, ellipse, frame, or group)
-  const source = fdCanvas.get_text();
-  const containerMatch = source.match(new RegExp(`(?:rect|ellipse|frame|group)\\s+@${hitId}\\b`));
-  if (!containerMatch) return null;
-
-  return { targetId: hitId };
-}
-
-/**
- * Show a drop context menu offering "Make child of @target".
- * Positioned at the cursor location inside the canvas container.
- */
-function showDropContextMenu(draggedId, targetId, clientX, clientY) {
-  // Remove any existing drop menu
-  closeDropContextMenu();
-
-  const container = document.getElementById("canvas-container");
-  if (!container) return;
-  const containerRect = container.getBoundingClientRect();
-
-  const menu = document.createElement("div");
-  menu.id = "drop-context-menu";
-  menu.className = "drop-ctx-menu";
-  menu.style.left = (clientX - containerRect.left) + "px";
-  menu.style.top = (clientY - containerRect.top) + "px";
-
-  // "Make child" option
-  const makeChildBtn = document.createElement("div");
-  makeChildBtn.className = "drop-ctx-item";
-  makeChildBtn.innerHTML = `<span class="drop-ctx-icon">📦</span> Make child of <strong>@${targetId}</strong>`;
-  makeChildBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    reparentNodeIntoContainer(draggedId, targetId);
-    closeDropContextMenu();
-  });
-
-  // "Cancel" option
-  const cancelBtn = document.createElement("div");
-  cancelBtn.className = "drop-ctx-item drop-ctx-cancel";
-  cancelBtn.innerHTML = `<span class="drop-ctx-icon">✕</span> Cancel`;
-  cancelBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    closeDropContextMenu();
-  });
-
-  menu.appendChild(makeChildBtn);
-  menu.appendChild(cancelBtn);
-  container.appendChild(menu);
-
-  // Close on click-outside or Escape
-  const onClickOutside = (e) => {
-    if (!menu.contains(e.target)) {
-      closeDropContextMenu();
-      document.removeEventListener("pointerdown", onClickOutside);
-    }
-  };
-  const onEscape = (e) => {
-    if (e.key === "Escape") {
-      closeDropContextMenu();
-      document.removeEventListener("keydown", onEscape);
-    }
-  };
-  // Delay listener attachment to avoid immediate self-dismiss
-  requestAnimationFrame(() => {
-    document.addEventListener("pointerdown", onClickOutside);
-    document.addEventListener("keydown", onEscape);
-  });
-}
-
-/** Close and remove the drop context menu. */
-function closeDropContextMenu() {
-  const existing = document.getElementById("drop-context-menu");
-  if (existing) existing.remove();
-}
-
-/**
- * Reparent a node inside a target container by rewriting FD source.
- * Strips position constraints and centers the node inside the target.
- */
-function reparentNodeIntoContainer(nodeId, targetId) {
-  if (!fdCanvas) return false;
-  let source = fdCanvas.get_text();
-
-  // Extract the node block from source (handles both block and inline nodes)
-  const blockRe = new RegExp(`(^|\\n)(\\s*(?:text|rect|ellipse|frame|group|pen|arrow)\\s+@${nodeId}\\b[^}]*\\})`, 'm');
-  const lineRe = new RegExp(`(^|\\n)(\\s*(?:text|rect|ellipse|frame|group|pen|arrow)\\s+@${nodeId}\\b[^\\n]*)`, 'm');
-
-  let nodeBlock = "";
-  let nodeMatch = source.match(blockRe) || source.match(lineRe);
-  if (!nodeMatch) return false;
-
-  nodeBlock = nodeMatch[2].trim();
-  // Remove the node block from its current position
-  source = source.replace(nodeMatch[2], "");
-
-  // Strip position constraints so node auto-centers in parent
-  nodeBlock = nodeBlock.replace(/\s*x:\s*-?\d+(\.\d+)?/g, "");
-  nodeBlock = nodeBlock.replace(/\s*y:\s*-?\d+(\.\d+)?/g, "");
-
-  // Find the target container's opening brace and insert node after it
-  const containerBlockRe = new RegExp(`(@${targetId}\\s*\\{)`);
-  const containerMatch = source.match(containerBlockRe);
-  if (!containerMatch) return false;
-
-  // Insert the node right after the opening brace of the container
-  const insertPos = source.indexOf(containerMatch[0]) + containerMatch[0].length;
-  source = source.slice(0, insertPos) + "\n  " + nodeBlock + source.slice(insertPos);
-
-  // Clean up double newlines
-  source = source.replace(/\n{3,}/g, "\n\n");
-
-  const ok = fdCanvas.set_text(source);
-  if (ok) {
-    render();
-    syncTextToExtension();
-  }
-  return ok;
-}
 
 // ─── Zoom Helpers ─────────────────────────────────────────────────────────────
 
@@ -5000,26 +4851,7 @@ function setupFloatingToolbar() {
     if (!fdCanvas) return false;
     const source = fdCanvas.get_text();
 
-    // PRIORITY 1: Drop on a shape → create text then reparent inside
-    const hitId = fdCanvas.hit_test_at(sceneX, sceneY);
-    if (hitId) {
-      const shapeMatch = source.match(new RegExp(`(?:rect|ellipse|frame)\\s+@${hitId}\\b`));
-      if (shapeMatch) {
-        // Create text node at drop position
-        const created = fdCanvas.create_node_at("text", sceneX, sceneY);
-        if (created) {
-          const textId = fdCanvas.get_selected_id();
-          if (textId) {
-            reparentTextIntoShape(textId, hitId);
-            bumpGeneration();
-            render();
-            syncTextToExtension();
-            updatePropertiesPanel();
-            return true;
-          }
-        }
-      }
-    }
+    // (Text-to-shape reparent removed — text tool creates at drop position only)
 
     // PRIORITY 2: Drop near an edge → add text as child inside edge block
     const edgeTarget = dtcFindNearestEdge(sceneX, sceneY);
