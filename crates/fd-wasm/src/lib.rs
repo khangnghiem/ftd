@@ -1297,29 +1297,49 @@ impl FdCanvas {
             props.insert("fontWeight".into(), serde_json::json!(font.weight));
         }
 
-        // Text alignment
-        if let Some(ref ta) = style.text_align {
-            let ta_str = match ta {
-                TextAlign::Left => "left",
-                TextAlign::Center => "center",
-                TextAlign::Right => "right",
-            };
-            props.insert(
-                "textAlign".into(),
-                serde_json::Value::String(ta_str.to_string()),
-            );
-        }
-        if let Some(ref tv) = style.text_valign {
-            let tv_str = match tv {
-                TextVAlign::Top => "top",
-                TextVAlign::Middle => "middle",
-                TextVAlign::Bottom => "bottom",
-            };
-            props.insert(
-                "textVAlign".into(),
-                serde_json::Value::String(tv_str.to_string()),
-            );
-        }
+        // Text alignment — always include effective alignment with context-aware
+        // defaults matching render2d::draw_text (standalone text = left/top,
+        // text inside shape = center/middle)
+        let in_shape = matches!(&node.kind, NodeKind::Text { .. })
+            && self
+                .engine
+                .graph
+                .index_of(id)
+                .and_then(|idx| self.engine.graph.parent(idx))
+                .is_some_and(|pid| {
+                    matches!(
+                        &self.engine.graph.graph[pid].kind,
+                        NodeKind::Rect { .. } | NodeKind::Ellipse { .. } | NodeKind::Frame { .. }
+                    )
+                });
+        let default_halign = if in_shape {
+            TextAlign::Center
+        } else {
+            TextAlign::Left
+        };
+        let default_valign = if in_shape {
+            TextVAlign::Middle
+        } else {
+            TextVAlign::Top
+        };
+        let ta_str = match style.text_align.unwrap_or(default_halign) {
+            TextAlign::Left => "left",
+            TextAlign::Center => "center",
+            TextAlign::Right => "right",
+        };
+        props.insert(
+            "textAlign".into(),
+            serde_json::Value::String(ta_str.to_string()),
+        );
+        let tv_str = match style.text_valign.unwrap_or(default_valign) {
+            TextVAlign::Top => "top",
+            TextVAlign::Middle => "middle",
+            TextVAlign::Bottom => "bottom",
+        };
+        props.insert(
+            "textVAlign".into(),
+            serde_json::Value::String(tv_str.to_string()),
+        );
 
         serde_json::Value::Object(props).to_string()
     }

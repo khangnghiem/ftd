@@ -5,6 +5,11 @@
 
 ## Completed Requirements
 
+### v0.8.99 — Inline Editor Alignment Fix
+
+- **BUG FIX**: Inline text editor no longer forces `center`/`middle` alignment when double-clicking standalone text nodes — `get_selected_node_props` WASM API now always returns the effective alignment with parent-context-aware defaults (standalone = left/top, inside shape = center/middle), matching the WASM renderer exactly
+- **UX**: The textarea overlay now perfectly preserves the original text position and alignment during editing, preventing visual jumps on commit
+
 ### v0.8.98 — Transparent Group Drag (Figma Behavior)
 
 - **FIX (R3.24)**: Groups are now fully transparent for selection — clicking a child inside a group always selects the child directly (no more "click group first, click again to drill in"); matches Figma behavior where groups are purely organizational
