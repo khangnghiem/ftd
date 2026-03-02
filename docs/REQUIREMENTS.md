@@ -60,6 +60,7 @@ FD (Fast Draft) is a file format and interactive canvas for drawing, design, and
 - **R3.45** _(done)_: Auto-expand parent on release — `finalize_child_bounds()` expands parent groups/frames to contain overflowing children after resize or text growth; processes bottom-up for recursive cascade; skips `clip: true` frames; only on pointer-up (avoids chasing-envelope bug)
 - **R3.46** _(done)_: Text intrinsic sizing — text node bounds auto-fit to content via Canvas2D `measureText()` bridge; JS measures → WASM `update_text_metrics()` → parent expansion via `finalize_bounds()`; wired into inline editor commit flow
 - **R3.47** _(done)_: Child containment constraint — child nodes cannot be fully outside their parent; dragging a child completely outside detaches it and reparents to nearest ancestor (enforced by `handle_child_group_relationship` in Rust)
+- **R3.48** _(done)_: Eraser tool — swipe-to-delete tool with immediate visual feedback; `EraserTool` thin state tracker (drag lifecycle + erased IDs for undo grouping); FdCanvas manages actual node removal for group-aware detach
 
 #### R3b: Drawing Tools
 
@@ -215,6 +216,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for full crate map, dependency graph, dat
 | R3.46       | _(JS-side measurement; WASM API `update_text_metrics` untested directly)_                                                                                         | ⚠️ WASM-side only              |
 | R1.19       | `roundtrip_edge_label_offset`                                                                                                                                     | ✅ 1 test                      |
 | R1.20       | `roundtrip_edge_point_anchors`, `roundtrip_edge_mixed_anchors`, `parse_edge_omitted_anchors_default`                                                              | ✅ 3 tests                     |
+| R3.48       | `eraser_tool_lifecycle`, `eraser_tool_clear_resets_state`, `eraser_tool_pointerdown_clears_previous_ids`                                                          | ✅ 3 tests                     |
 | R5.1–R5.8   | `hit::tests::*`, `resolve::tests::*`, `render2d::tests::*`                                                                                                        | ✅ 3 hit + 6 layout + 3 render |
 
 **Total**: 174 Rust tests + 188 TypeScript tests = **362 tests**
@@ -276,3 +278,4 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for full crate map, dependency graph, dat
 | child containment | R3.47 |
 | edge label | R1.10, R1.19, R1.20 |
 | edge anchor | R1.20 |
+| eraser / delete | R3.48 |
