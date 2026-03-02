@@ -71,11 +71,13 @@ group @settings {
   rect @toggle_dark {
     group @dark_row {
       group @dark_info {
-        text @dark_label "Dark Mode" {
-          use: dark_text
-        }
         text @dark_desc "Reduce eye strain" {
           use: dark_muted
+        }
+        group @_group_0 {
+          text @dark_label "Dark Mode" {
+            use: dark_text
+          }
         }
       }
       rect @switch_on {
@@ -100,42 +102,48 @@ group @settings {
       ease: ease_out 150ms
     }
   }
-  rect @toggle_notif {
-    group @_group_0 {
-      group @notif_row {
-        group @notif_info {
-          text @notif_label "Notifications" {
-            use: dark_text
-          }
-          text @notif_desc "Push and email alerts" {
-            use: dark_muted
-          }
-        }
-        rect @switch_off {
-          spec "Toggle — OFF state"
-          ellipse @switch_knob_off {
-            w: 20 h: 20
-            fill: #6B7280  # blue
-          }
-          w: 44 h: 24
-          fill: #3D3D5C  # blue
-          corner: 12
-        }
-      }
-    }
-    w: 344 h: 56
-    use: dark_card
-    when :hover {
-      fill: #353550  # blue
-      ease: ease_out 150ms
-    }
-  }
   text @display_label "Display" {
     fill: #6B7280  # blue
     font: "Inter" semibold 13
   }
   x: 281.88
   y: 350.68
+}
+
+rect @toggle_notif {
+  group @_group_0 {
+    group @notif_row {
+      group @notif_info {
+        text @notif_label "Notifications" {
+          use: dark_text
+        }
+      }
+      rect @switch_off {
+        spec "Toggle — OFF state"
+        ellipse @switch_knob_off {
+          w: 20 h: 20
+          fill: #6B7280  # blue
+        }
+        w: 44 h: 24
+        fill: #3D3D5C  # blue
+        corner: 12
+      }
+    }
+  }
+  w: 344 h: 56
+  use: dark_card
+  x: 335.1
+  y: -13.28
+  when :hover {
+    fill: #353550  # blue
+    ease: ease_out 150ms
+  }
+}
+
+text @notif_desc "Push and email alerts" {
+  use: dark_muted
+  x: 430.48
+  y: -115.78
 }
 
 text @danger_label "Danger Zone" {
@@ -148,24 +156,30 @@ text @danger_label "Danger Zone" {
 rect @toggle_sound {
   group @sound_row {
     group @sound_info {
-      text @sound_label "Sound Effects" {
-        use: dark_text
-      }
-      text @sound_desc "UI interaction sounds" {
-        use: dark_muted
-      }
     }
     x: 12.4
     y: -91.55
   }
-  w: 344 h: 56
+  w: 328.18 h: 95.49
   use: dark_card
-  x: 429.14
-  y: 171.64
+  x: 513.48
+  y: 121.38
   when :hover {
     fill: #353550  # blue
     ease: ease_out 150ms
   }
+}
+
+text @sound_label "Sound Effects" {
+  use: dark_text
+  x: 507.85
+  y: -74.19
+}
+
+text @sound_desc "UI interaction sounds" {
+  use: dark_muted
+  x: 628.05
+  y: -31.92
 }
 
 rect @switch_sound_on {
@@ -179,8 +193,8 @@ rect @switch_sound_on {
   w: 47.81 h: 41.62
   fill: #6C5CE7  # blue
   corner: 12
-  x: 297.86
-  y: 201.63
+  x: 299.42
+  y: 206.44
 }
 
 rect @brightness_card {
@@ -197,6 +211,8 @@ rect @brightness_card {
       fill: #3D3D5C  # blue
       corner: 2
     }
+    x: 118.03
+    y: -199.92
   }
   w: 344 h: 72
   use: dark_card

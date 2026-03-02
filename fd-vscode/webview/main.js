@@ -2888,9 +2888,10 @@ function openInlineEditor(nodeId, propKey, currentValue) {
   const fontFamily = props.fontFamily || "Inter";
   const fontWeight = props.fontWeight || 400;
 
-  // Get text alignment (default: center/middle)
-  const hAlign = props.textAlign || "center";
-  const vAlign = props.textVAlign || "middle";
+  // Get text alignment — WASM API returns effective defaults (left/top for
+  // standalone text, center/middle for text-in-shape)
+  const hAlign = props.textAlign || "left";
+  const vAlign = props.textVAlign || "top";
 
   // Store original value for Esc rollback
   const originalValue = currentValue;
