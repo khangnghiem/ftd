@@ -819,29 +819,6 @@ impl FdCanvas {
         changed
     }
 
-    /// Hit-test for annotation badge dots.
-    /// Returns the node ID if the point hits a badge, or empty string.
-    pub fn hit_test_badge(&self, x: f32, y: f32) -> String {
-        for idx in self.engine.graph.graph.node_indices() {
-            let node = &self.engine.graph.graph[idx];
-            if node.annotations.is_empty() {
-                continue;
-            }
-            if let Some(bounds) = self.engine.current_bounds().get(&idx) {
-                // Badge is at top-right corner + 2px
-                let cx = bounds.x + bounds.width + 2.0;
-                let cy = bounds.y - 2.0;
-                let radius = 7.0; // Slightly larger hit area than visual
-                let dx = x - cx;
-                let dy = y - cy;
-                if dx * dx + dy * dy <= radius * radius {
-                    return node.id.as_str().to_string();
-                }
-            }
-        }
-        String::new()
-    }
-
     // ─── Detach Info API ─────────────────────────────────────────────────
 
     /// Get last detach event info. Returns JSON:

@@ -285,8 +285,9 @@ fn resolve_children(
             }
 
             // Auto-center: if parent is a shape with a single text child (no
-            // explicit position), expand text bounds to fill parent so the
-            // renderer's center/middle alignment visually centers the label.
+            // explicit position), center the text within parent bounds using
+            // its intrinsic size (hug-contents). The renderer's center/middle
+            // alignment handles visual centering within the tight bounds.
             let parent_is_shape = matches!(
                 parent_node.kind,
                 NodeKind::Rect { .. } | NodeKind::Ellipse { .. } | NodeKind::Frame { .. }
@@ -298,8 +299,21 @@ fn resolve_children(
                     .constraints
                     .iter()
                     .any(|c| matches!(c, Constraint::Position { .. }));
-                if matches!(child_node.kind, NodeKind::Text { .. }) && !has_position {
-                    bounds.insert(child_idx, parent_bounds);
+                if matches!(child_node.kind, NodeKind::Text { .. })
+                    && !has_position
+                    && let Some(child_b) = bounds.get(&child_idx).copied()
+                {
+                    let cx = parent_bounds.x + (parent_bounds.width - child_b.width) / 2.0;
+                    let cy = parent_bounds.y + (parent_bounds.height - child_b.height) / 2.0;
+                    bounds.insert(
+                        child_idx,
+                        ResolvedBounds {
+                            x: cx,
+                            y: cy,
+                            width: child_b.width,
+                            height: child_b.height,
+                        },
+                    );
                 }
             }
         }
@@ -374,7 +388,7 @@ fn intrinsic_size(node: &SceneNode) -> (f32, f32) {
         NodeKind::Text { content } => {
             let font_size = node.style.font.as_ref().map_or(14.0, |f| f.size);
             let char_width = font_size * 0.6;
-            (content.len() as f32 * char_width, font_size)
+            (content.chars().count() as f32 * char_width, font_size * 1.4)
         }
         NodeKind::Group => (0.0, 0.0), // Auto-sized: computed after children resolve
         NodeKind::Frame { width, height, .. } => (*width, *height),
@@ -711,16 +725,20 @@ frame @card {
             amount.y,
             button.y
         );
-        // Heading height should use font size (18), not hardcoded 20
+        // Heading height should use font size × 1.4 (line-height)
+        let expected_heading_h = 18.0 * 1.4;
         assert!(
-            (heading.height - 18.0).abs() < 0.01,
-            "heading height should be 18 (font size), got {}",
+            (heading.height - expected_heading_h).abs() < 0.01,
+            "heading height should be {} (font size × 1.4), got {}",
+            expected_heading_h,
             heading.height
         );
-        // Amount height should use font size (36)
+        // Amount height should use font size × 1.4 (line-height)
+        let expected_amount_h = 36.0 * 1.4;
         assert!(
-            (amount.height - 36.0).abs() < 0.01,
-            "amount height should be 36 (font size), got {}",
+            (amount.height - expected_amount_h).abs() < 0.01,
+            "amount height should be {} (font size × 1.4), got {}",
+            expected_amount_h,
             amount.height
         );
     }
@@ -920,30 +938,36 @@ rect @btn {
         let btn = bounds[&graph.index_of(NodeId::intern("btn")).unwrap()];
         let label = bounds[&graph.index_of(NodeId::intern("label")).unwrap()];
 
-        // Text bounds should match parent rect (renderer handles visual centering)
+        // Text should use intrinsic size (hug contents), not fill parent
         assert!(
-            (label.x - btn.x).abs() < 0.01,
-            "text x ({}) should match parent ({})",
-            label.x,
-            btn.x
-        );
-        assert!(
-            (label.y - btn.y).abs() < 0.01,
-            "text y ({}) should match parent ({})",
-            label.y,
-            btn.y
-        );
-        assert!(
-            (label.width - btn.width).abs() < 0.01,
-            "text width ({}) should match parent ({})",
+            label.width < btn.width,
+            "text width ({}) should be < parent ({})",
             label.width,
             btn.width
         );
         assert!(
-            (label.height - btn.height).abs() < 0.01,
-            "text height ({}) should match parent ({})",
+            label.height < btn.height,
+            "text height ({}) should be < parent ({})",
             label.height,
             btn.height
+        );
+
+        // Text should be centered within parent
+        let expected_cx = btn.x + btn.width / 2.0;
+        let actual_cx = label.x + label.width / 2.0;
+        assert!(
+            (actual_cx - expected_cx).abs() < 0.1,
+            "text center x ({}) should match parent center ({})",
+            actual_cx,
+            expected_cx
+        );
+        let expected_cy = btn.y + btn.height / 2.0;
+        let actual_cy = label.y + label.height / 2.0;
+        assert!(
+            (actual_cy - expected_cy).abs() < 0.1,
+            "text center y ({}) should match parent center ({})",
+            actual_cy,
+            expected_cy
         );
     }
 
@@ -967,18 +991,30 @@ ellipse @badge {
         let badge = bounds[&graph.index_of(NodeId::intern("badge")).unwrap()];
         let count = bounds[&graph.index_of(NodeId::intern("count")).unwrap()];
 
-        // Text bounds should fill the ellipse bounding box
+        // Text should use intrinsic size, not fill the ellipse
         assert!(
-            (count.width - badge.width).abs() < 0.01,
-            "text width ({}) should match ellipse ({})",
+            count.width < badge.width,
+            "text width ({}) should be < ellipse ({})",
             count.width,
             badge.width
         );
+
+        // Text should be centered within the ellipse bounding box
+        let expected_cx = badge.x + badge.width / 2.0;
+        let actual_cx = count.x + count.width / 2.0;
         assert!(
-            (count.height - badge.height).abs() < 0.01,
-            "text height ({}) should match ellipse ({})",
-            count.height,
-            badge.height
+            (actual_cx - expected_cx).abs() < 0.1,
+            "text center x ({}) should match ellipse center ({})",
+            actual_cx,
+            expected_cx
+        );
+        let expected_cy = badge.y + badge.height / 2.0;
+        let actual_cy = count.y + count.height / 2.0;
+        assert!(
+            (actual_cy - expected_cy).abs() < 0.1,
+            "text center y ({}) should match ellipse center ({})",
+            actual_cy,
+            expected_cy
         );
     }
 
@@ -1092,54 +1128,52 @@ group @form {
             btn_label.x, btn_label.y, btn_label.width, btn_label.height
         );
 
+        // Text should be centered within parent (hug-contents mode)
+        let email_field_cx = email_field.x + email_field.width / 2.0;
+        let email_hint_cx = email_hint.x + email_hint.width / 2.0;
         assert!(
-            (email_hint.x - email_field.x).abs() < 0.01,
-            "email_hint x ({}) should match email_field x ({})",
-            email_hint.x,
-            email_field.x
+            (email_hint_cx - email_field_cx).abs() < 0.1,
+            "email_hint center x ({}) should match email_field center x ({})",
+            email_hint_cx,
+            email_field_cx
         );
+        let email_field_cy = email_field.y + email_field.height / 2.0;
+        let email_hint_cy = email_hint.y + email_hint.height / 2.0;
         assert!(
-            (email_hint.y - email_field.y).abs() < 0.01,
-            "email_hint y ({}) should match email_field y ({})",
-            email_hint.y,
-            email_field.y
+            (email_hint_cy - email_field_cy).abs() < 0.1,
+            "email_hint center y ({}) should match email_field center y ({})",
+            email_hint_cy,
+            email_field_cy
         );
+        // Text should NOT fill parent — hug contents instead
         assert!(
-            (email_hint.width - email_field.width).abs() < 0.01,
-            "email_hint width ({}) should match email_field width ({})",
+            email_hint.width < email_field.width,
+            "email_hint width ({}) should be < email_field width ({})",
             email_hint.width,
             email_field.width
         );
-        assert!(
-            (email_hint.height - email_field.height).abs() < 0.01,
-            "email_hint height ({}) should match email_field height ({})",
-            email_hint.height,
-            email_field.height
-        );
 
+        let login_btn_cx = login_btn.x + login_btn.width / 2.0;
+        let btn_label_cx = btn_label.x + btn_label.width / 2.0;
         assert!(
-            (btn_label.x - login_btn.x).abs() < 0.01,
-            "btn_label x ({}) should match login_btn x ({})",
-            btn_label.x,
-            login_btn.x
+            (btn_label_cx - login_btn_cx).abs() < 0.1,
+            "btn_label center x ({}) should match login_btn center x ({})",
+            btn_label_cx,
+            login_btn_cx
+        );
+        let login_btn_cy = login_btn.y + login_btn.height / 2.0;
+        let btn_label_cy = btn_label.y + btn_label.height / 2.0;
+        assert!(
+            (btn_label_cy - login_btn_cy).abs() < 0.1,
+            "btn_label center y ({}) should match login_btn center y ({})",
+            btn_label_cy,
+            login_btn_cy
         );
         assert!(
-            (btn_label.y - login_btn.y).abs() < 0.01,
-            "btn_label y ({}) should match login_btn y ({})",
-            btn_label.y,
-            login_btn.y
-        );
-        assert!(
-            (btn_label.width - login_btn.width).abs() < 0.01,
-            "btn_label width ({}) should match login_btn width ({})",
+            btn_label.width < login_btn.width,
+            "btn_label width ({}) should be < login_btn width ({})",
             btn_label.width,
             login_btn.width
-        );
-        assert!(
-            (btn_label.height - login_btn.height).abs() < 0.01,
-            "btn_label height ({}) should match login_btn height ({})",
-            btn_label.height,
-            login_btn.height
         );
     }
 }

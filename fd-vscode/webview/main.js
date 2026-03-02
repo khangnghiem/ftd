@@ -564,12 +564,6 @@ function setupPointerEvents() {
     const x = (rawX - panX) / zoomLevel;
     const y = (rawY - panY) / zoomLevel;
 
-    // Check if clicking an annotation badge (scene-space coords)
-    const badgeHit = fdCanvas.hit_test_badge(x, y);
-    if (badgeHit) {
-      openAnnotationCard(badgeHit, e.clientX, e.clientY);
-      return;
-    }
 
     // Close annotation card if clicking elsewhere
     closeAnnotationCard();

@@ -12,7 +12,6 @@ use web_sys::CanvasRenderingContext2d;
 pub struct CanvasTheme {
     pub bg: &'static str,
     pub grid: &'static str,
-    pub badge_border: &'static str,
     pub placeholder_border: &'static str,
     pub placeholder_bg: &'static str,
     pub placeholder_text: &'static str,
@@ -24,7 +23,6 @@ impl CanvasTheme {
         Self {
             bg: "#F5F5F7",
             grid: "rgba(0, 0, 0, 0.05)",
-            badge_border: "#F5F5F7",
             placeholder_border: "#86868B",
             placeholder_bg: "rgba(142, 142, 147, 0.06)",
             placeholder_text: "#86868B",
@@ -36,7 +34,6 @@ impl CanvasTheme {
         Self {
             bg: "#1C1C1E",
             grid: "rgba(255, 255, 255, 0.04)",
-            badge_border: "#1C1C1E",
             placeholder_border: "#636366",
             placeholder_bg: "rgba(99, 99, 102, 0.08)",
             placeholder_text: "#98989D",
@@ -728,66 +725,6 @@ fn draw_smart_guides(ctx: &CanvasRenderingContext2d, guides: &[(f64, f64, f64, f
     ctx.restore();
 }
 
-// ─── Annotation badge ────────────────────────────────────────────────────
-
-#[allow(dead_code)]
-///
-/// Color encodes the first status found:
-///   - draft → red (#EF4444)
-///   - in_progress → yellow (#F59E0B)
-///   - done → green (#10B981)
-///   - no status → gray (#6B7280)
-fn draw_annotation_badge(
-    ctx: &CanvasRenderingContext2d,
-    b: &ResolvedBounds,
-    annotations: &[Annotation],
-    theme: &CanvasTheme,
-) {
-    let count = annotations.len();
-    let radius = 5.0;
-    let cx = b.x as f64 + b.width as f64 + 2.0;
-    let cy = b.y as f64 - 2.0;
-
-    // Determine color from first Status annotation
-    let color = annotations
-        .iter()
-        .find_map(|a| match a {
-            Annotation::Status(s) => Some(s.as_str()),
-            _ => None,
-        })
-        .map(|s| match s {
-            "draft" => "#EF4444",
-            "in_progress" => "#F59E0B",
-            "done" => "#10B981",
-            _ => "#6B7280",
-        })
-        .unwrap_or("#6B7280");
-
-    ctx.save();
-
-    // Draw dot
-    ctx.set_fill_style_str(color);
-    ctx.begin_path();
-    let _ = ctx.arc(cx, cy, radius, 0.0, std::f64::consts::TAU);
-    ctx.fill();
-
-    // Border matches canvas background for visibility
-    ctx.set_stroke_style_str(theme.badge_border);
-    ctx.set_line_width(1.5);
-    ctx.stroke();
-
-    // Count label if > 1
-    if count > 1 {
-        ctx.set_font("bold 8px Inter, sans-serif");
-        ctx.set_fill_style_str("#FFFFFF");
-        ctx.set_text_baseline("middle");
-        ctx.set_text_align("center");
-        let _ = ctx.fill_text(&count.to_string(), cx, cy);
-    }
-
-    ctx.restore();
-}
-
 // ─── Edge rendering ─────────────────────────────────────────────────────────
 
 fn draw_edges(
@@ -1360,7 +1297,7 @@ mod tests {
         let t = CanvasTheme::light();
         assert!(!t.bg.is_empty());
         assert!(!t.grid.is_empty());
-        assert!(!t.badge_border.is_empty());
+
         assert!(!t.placeholder_border.is_empty());
         assert!(!t.placeholder_bg.is_empty());
         assert!(!t.placeholder_text.is_empty());
@@ -1371,7 +1308,6 @@ mod tests {
         let t = CanvasTheme::dark();
         assert!(!t.bg.is_empty());
         assert!(!t.grid.is_empty());
-        assert!(!t.badge_border.is_empty());
     }
 
     #[test]

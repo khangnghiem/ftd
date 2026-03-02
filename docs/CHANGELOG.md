@@ -5,6 +5,19 @@
 
 ## Completed Requirements
 
+### v0.8.96 — Fix Selection Lost After Drag
+
+- **BUG FIX (R2.5)**: Fixed selection clearing after drag-and-release — `textChanged` handler in `extension.ts` now suppresses `onDidChangeTextEditorSelection` during `applyEdit` via `suppressCursorSync` flag; previously the cursor sync round-trip sent an empty `selectNode` back to the canvas, clearing the selection after every drag gesture
+
+### v0.8.95 — Text Hug-Contents + Detach Fix
+
+- **FIX (R3.36)**: Text nodes now use "hug-contents" sizing — standalone and in-shape text nodes use their intrinsic size (tight bounding box) instead of expanding to fill their parent shape; selection rectangles accurately wrap the text content
+- **FIX**: Text centering within parent shapes — text is centered via layout positioning (intrinsic size positioned at parent center) instead of expanding bounds to match parent; visual result is identical but selection and hit-testing are correct
+- **FIX**: Improved `intrinsic_size()` heuristic — uses `chars().count()` instead of `len()` for UTF-8 correctness, adds `1.4×` line-height multiplier for more accurate text height estimation
+- **FIX**: Synced detach heuristic — `handle_child_group_relationship()` and `evaluate_near_detach()` now use font-aware intrinsic size matching `intrinsic_size()` instead of crude `len * 8.0` / `16.0` constants
+- **TESTING**: Updated 4 layout tests to assert centered position + tight bounds; all 139 workspace tests pass
+- **CLEANUP**: Removed deprecated annotation badge dot at top-right corner of nodes — `hit_test_badge()` click interception from `main.js`, dead `draw_annotation_badge` function from `render2d.rs`, `badge_border` theme field, and `hit_test_badge` WASM API; annotation system (⌘I, context menu) still works via hover tooltip and spec view
+
 ### v0.8.94 — Label→Text Child Migration + Edge Text Detach
 
 - **BREAKING**: Removed `Edge.label: Option<String>` — `label: "text"` now auto-creates a text child node (`_edgeid_label`)

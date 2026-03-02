@@ -473,8 +473,13 @@ impl SyncEngine {
         let parent_b = *self.bounds.get(&parent_idx)?;
 
         if let NodeKind::Text { content } = child_kind {
-            let text_w = (content.len() as f32) * 8.0;
-            let text_h = 16.0;
+            let font_size = self.graph.graph[child_idx]
+                .style
+                .font
+                .as_ref()
+                .map_or(14.0, |f| f.size);
+            let text_w = content.chars().count() as f32 * font_size * 0.6;
+            let text_h = font_size * 1.4;
             let cx = child_b.x + child_b.width / 2.0;
             let cy = child_b.y + child_b.height / 2.0;
             child_b.width = text_w;
@@ -641,12 +646,16 @@ fn handle_child_group_relationship(
     // inflated to match the parent's size (from CenterIn or default layout).
     // For drag-to-detach, we want to test the actual visual text bounds.
     if let NodeKind::Text { content } = child_kind {
-        // Naive intrinsic text size matching what layout.rs uses
-        let text_w = (content.len() as f32) * 8.0;
-        let text_h = 16.0;
+        // Use same heuristic as intrinsic_size() in layout.rs
+        let font_size = graph.graph[child_idx]
+            .style
+            .font
+            .as_ref()
+            .map_or(14.0, |f| f.size);
+        let text_w = content.chars().count() as f32 * font_size * 0.6;
+        let text_h = font_size * 1.4;
 
-        // If the box is massive, the text is actually drawn at the center.
-        // We shrink the overlap test box to the visual text area.
+        // Shrink the overlap test box to the visual text area.
         let cx = child_b.x + child_b.width / 2.0;
         let cy = child_b.y + child_b.height / 2.0;
         child_b.width = text_w;
