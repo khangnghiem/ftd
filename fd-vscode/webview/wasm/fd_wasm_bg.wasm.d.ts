@@ -20,6 +20,7 @@ export const fdcanvas_get_annotations_json: (a: number, b: number, c: number) =>
 export const fdcanvas_get_arrow_preview: (a: number) => [number, number];
 export const fdcanvas_get_node_animations_json: (a: number, b: number, c: number) => [number, number];
 export const fdcanvas_get_node_bounds: (a: number, b: number, c: number) => [number, number];
+export const fdcanvas_get_node_props: (a: number, b: number, c: number) => [number, number];
 export const fdcanvas_get_selected_id: (a: number) => [number, number];
 export const fdcanvas_get_selected_ids: (a: number) => [number, number];
 export const fdcanvas_get_selected_node_props: (a: number) => [number, number];

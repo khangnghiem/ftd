@@ -1344,6 +1344,34 @@ impl FdCanvas {
         serde_json::Value::Object(props).to_string()
     }
 
+    /// Get basic properties of a node by its ID (without selecting it).
+    /// Returns JSON with `text`, `fontSize`, `fontFamily`, `fontWeight`.
+    /// Returns `{}` if the node is not found.
+    pub fn get_node_props(&self, node_id: &str) -> String {
+        let id = NodeId::intern(node_id);
+        let node = match self.engine.graph.get_by_id(id) {
+            Some(n) => n,
+            None => return "{}".to_string(),
+        };
+        let style = self.engine.graph.resolve_style(node, &[]);
+        let mut props = serde_json::Map::new();
+
+        if let NodeKind::Text { ref content } = node.kind {
+            props.insert("text".into(), serde_json::Value::String(content.clone()));
+        }
+
+        if let Some(ref font) = style.font {
+            props.insert(
+                "fontFamily".into(),
+                serde_json::Value::String(font.family.clone()),
+            );
+            props.insert("fontSize".into(), serde_json::json!(font.size));
+            props.insert("fontWeight".into(), serde_json::json!(font.weight));
+        }
+
+        serde_json::Value::Object(props).to_string()
+    }
+
     /// Set a property on the currently selected node.
     /// Returns `true` if the property was set.
     pub fn set_node_prop(&mut self, key: &str, value: &str) -> bool {

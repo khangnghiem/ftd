@@ -333,6 +333,9 @@ async function main() {
       fdCanvas.set_text(window.initialText);
     }
 
+    // Measure all text nodes for tight bounding boxes
+    measureAllTextNodes();
+
     // Start animation loop (covers flow animation + initial render)
     startAnimLoop();
 
@@ -1267,6 +1270,7 @@ window.addEventListener("message", (event) => {
       fdCanvas.set_text(message.text);
       lastSyncedText = message.text; // Keep dedup in sync
       bumpGeneration(); // External text change — invalidate caches
+      measureAllTextNodes(); // Tight text bounds after code edit
       render();
       suppressTextSync = false;
 
@@ -2975,7 +2979,7 @@ function openInlineEditor(nodeId, propKey, currentValue) {
     const changed = fdCanvas.set_node_prop(propKey, newVal);
     if (changed) {
       // Measure text content and update bounds for intrinsic sizing
-      if (propKey === "text") {
+      if (propKey === "content" || propKey === "label") {
         measureAndUpdateTextBounds(nodeId);
       }
       render();
